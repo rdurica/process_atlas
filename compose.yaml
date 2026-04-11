@@ -1,0 +1,36 @@
+services:
+  php-fpm:
+    build:
+      context: .
+      dockerfile: build/dev/Dockerfile
+    env_file: ./build/dev/example.env
+    volumes:
+      - ./src:/app/src
+      - ./build/dev/certs:/etc/nginx/certs
+    ports:
+      - 443:443
+      - 80:80
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    networks:
+      - apps
+  node:
+    build:
+      context: .
+      dockerfile: build/dev/node/Dockerfile
+    ports:
+      - 5173:5173
+    restart: unless-stopped
+    working_dir: /app/src
+    volumes:
+      - ./src:/app/src
+      - ./build/dev/certs:/etc/nginx/certs
+      - node_modules:/app/src/node_modules
+    networks:
+      - apps
+volumes:
+  node_modules:
+networks:
+  apps:
+    external: true
+    driver: bridge
