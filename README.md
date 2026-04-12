@@ -1,135 +1,144 @@
-# PHP Starter Kit
+# Process Atlas
 
-[![PHP](https://img.shields.io/badge/PHP-8.5-blue.svg)](http://php.net)
-[![Docker](https://img.shields.io/badge/Docker-powered-blue.svg)](https://www.docker.com/)
-[![composer](https://img.shields.io/badge/composer-latest-green.svg)](https://getcomposer.org/)
+> A process modeling and documentation platform built for agentic development — design, version, and publish visual workflows that AI agents can understand and navigate via MCP.
 
-![php8](https://github.com/user-attachments/assets/265bf808-0e8e-40a8-87fe-f473a708208d)
+[![PHP](https://img.shields.io/badge/PHP-8.3+-blue.svg)](https://php.net)
+[![Laravel](https://img.shields.io/badge/Laravel-13-red.svg)](https://laravel.com)
+[![React](https://img.shields.io/badge/React-18-61dafb.svg)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)](https://www.typescriptlang.org)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-"PHP Starter Kit" is a blank preconfigured docker template for building PHP applications.
+---
 
-## Overview
+## What is Process Atlas?
 
-This PHP Starter Kit provides a ready-to-use, out-of-the-box local development environment for modern PHP projects. It comes preconfigured with
-everything you need to start coding immediately, without wasting time on setup and configuration.
-The starter kit is built on the latest stable PHP version and includes all essential PHP extensions, a minimal and efficient Docker image, plus
-integrated support for popular PHP frameworks.
+Process Atlas is a web application for **modeling, documenting, and versioning business processes** as visual flow diagrams. It is designed with **agentic development** in mind — the process definitions created here are intended to be consumed by AI agents through **MCP (Model Context Protocol)**, giving agents a structured, up-to-date understanding of application processes, user flows, and business logic before and during autonomous task execution.
 
-**Key aspects of the starter kit:**
-- Docker image based on the latest php-fpm-alpine with NGINX using UNIX sockets for high performance.
-- Minimal production image size (~65 MB) while including all necessary tools and extensions.
-- Dedicated Docker network for local development.
-- Automatic SSL (HTTP/2) support with easy self-signed certificate generation.
-- Makefile included for simple container lifecycle management (init, rebuild, up, down, logs, etc.).
-- Node.js + npm included for frontend tooling and development (Vite, asset bundling).
-- Designed for maximum flexibility and ease use.
-- Enables hot reloading and smooth frontend-backend integration out of the box.
+Instead of an AI agent blindly navigating an unfamiliar system, it can query Process Atlas via MCP to answer questions like:
 
-## Supported Frameworks
+- *"What screens does the checkout flow consist of?"*
+- *"What conditions branch this process and what are the outcomes?"*
+- *"Where does this workflow hand off to another process?"*
 
-This starter kit is ready to use out of the box with popular PHP frameworks such as Laravel, Symfony, and Nette.
+Process Atlas is the living map that agents read.
 
-<p align="left">
-  <img src="https://laravel.com/img/logomark.min.svg" alt="Laravel" width="40" height="40" style="margin-right:10px;">
-  <img src="https://symfony.com/logos/symfony_black_03.png" alt="Symfony" width="40" height="40" style="margin-right:10px;">
-  <img src="https://avatars.githubusercontent.com/u/99965?s=200&v=4" alt="Nette" width="40" height="40">
-</p>
+---
 
-## HTTPS and SSL Certificates
+## Key Features
 
-For local HTTPS development, it is required to have mkcert installed. This tool helps you generate trusted self-signed certificates.
+- **Visual process editor** — drag-and-drop canvas powered by [@xyflow/react](https://xyflow.com)
+- **MCP integration** — process definitions exposed as MCP resources for AI agent consumption
+- **Rich node vocabulary** — Start, End, Screen, Flash (notification), Condition (branching), Action
+- **Workflow chaining** — End nodes link to downstream workflows, modeling multi-stage processes
+- **Screen documentation** — attach UI mockup images, descriptions, and typed custom fields to any step
+- **Version control** — draft/publish lifecycle with rollback to any previous version
+- **Role-based access** — granular `workflows.view`, `workflows.edit`, `workflows.publish` permissions
+- **Optimistic locking** — concurrent edit conflict detection
+- **Activity log** — full audit trail of all changes
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Backend | PHP 8.5, Laravel 13, Inertia.js |
+| Frontend | React, TypeScript, Vite, Tailwind CSS |
+| Canvas | @xyflow/react |
+| MCP | Model Context Protocol server (process resources & tools) |
+| Database | PostgreSQL |
+| Cache / Sessions / Queue | Redis |
+| Infrastructure | Docker (php-fpm + nginx + node), SSL via mkcert |
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- [Docker](https://www.docker.com/)
+- [mkcert](https://github.com/FiloSottile/mkcert) for local HTTPS
+
+### 1. Trust the local CA
 
 ```shell
 mkcert -install
 ```
 
-## Getting Started
+### 2. Build and start containers
 
-1. Build the Docker image & generate ssl certificates: `make init`
-2. Access the application in your browser at https://localhost
-
-After initial instalation you can use these commands:
-
-- `make rebuild:` Rebuild the Docker image (--pull --no-cache)
-- `make reload:` Rebuild the Docker image(with cache).
-- `make up:` Start the containers in detached mode (docker-compose up -d)
-- `make down:` DStop and remove containers
-- `make logs:` Show logs from all containers
-- `make php:` Open a shell inside the PHP container
-- `make node:` Open a shell inside the Node.js container
-- `make node-sync:` Synchronize node_modules from container to a root system.
-- `make manifest app_name=<$name>:` Generate example manifest for k8s. (for example `make manifest app_name=app1`).
-
-## Additional configuration & setup
-
-### <img src="https://laravel.com/img/logomark.min.svg" alt="Laravel" width="25" height="25" style="margin-right:10px;">Laravel
-
-in v**ite.config.js** add a server section.
-
-```js
-import fs from 'fs';
-
-export default defineConfig({
-    server: {
-        https: {
-            key: fs.readFileSync('/etc/nginx/certs/tls.key'),
-            cert: fs.readFileSync('/etc/nginx/certs/tls.crt'),
-        },
-        host: '0.0.0.0',
-        port: 5173,
-        origin: 'https://localhost:5173',
-        cors: {
-            origin: 'https://localhost',
-            credentials: true,
-        }
-    }
-});
+```shell
+make init
 ```
 
-If you’re starting a new Laravel project, simply enter the php container and run the official Laravel interactive installer:
+This generates SSL certificates, creates the Docker network, and starts all services.
+
+### 3. Bootstrap the application
+
 ```shell
 make php
-laravel
+composer setup
 ```
 
-### <img src="https://symfony.com/logos/symfony_black_03.png" alt="Symfony" width="25" height="25" style="margin-right:10px;">Symfony
-If you’re starting a new Symfony project, simply enter the php container and run initialize new project in current directory:
+`composer setup` installs PHP & JS dependencies, generates the app key, and runs migrations.
+
+### 4. Open in browser
+
+```
+https://localhost
+```
+
+---
+
+## Development Commands
+
+| Command | Description |
+|---|---|
+| `make up` | Start containers in detached mode |
+| `make down` | Stop and remove containers |
+| `make logs` | Stream logs from all containers |
+| `make rebuild` | Rebuild images without cache |
+| `make reload` | Rebuild images with cache |
+| `make php` | Open a shell in the PHP container |
+| `make node` | Open a shell in the Node container |
+| `make node-sync` | Copy `node_modules` from container to host |
+
+All `php artisan` and `npm` commands must be run inside their respective containers:
+
 ```shell
-make php
-symfony new . --webapp --no-git
+# PHP / Artisan
+docker compose exec php-fpm php artisan migrate
+
+# Node / npm
+docker compose exec node npm run build
 ```
 
-### <img src="https://avatars.githubusercontent.com/u/99965?s=200&v=4" alt="Laravel" width="25" height="25" style="margin-right:10px;">Nette
-If you’re starting a new Nette project, simply enter the php container and run initialize new project:
-```shell
-make php
-nette
+---
+
+## Project Structure
+
+```
+process_atlas/
+├── build/          # Docker build files and NGINX config
+├── src/            # Laravel application
+│   ├── app/
+│   │   ├── Http/Controllers/
+│   │   ├── Models/         # Workflow, WorkflowVersion, Screen, ...
+│   │   └── Services/
+│   ├── resources/
+│   │   ├── js/
+│   │   │   ├── Pages/      # Inertia page components (React + TypeScript)
+│   │   │   └── types/
+│   │   └── css/
+│   ├── routes/
+│   └── database/migrations/
+├── compose.yaml
+├── makefile
+└── LICENSE
 ```
 
-You need to change the default document root from `public/` to `www/`.
-Before building the containers, update the NGINX configuration in `build/dev/nginx/default.conf`:
-
-```editorconfig
-server {
-# /app/src/public -> /app/src/www
-root        /app/src/www ;
-
-location ~ \.php$ {
-    # /app/src/public -> /app/src/www
-    fastcgi_param        SCRIPT_FILENAME /app/src/www$fastcgi_script_name ;
-}
-```
-
-Note: If you have already initialized the containers, after making changes you can simply run:
-```shell
-make reload
-```
-
-## Contributing
-
-If you would like to contribute to this project, please fork the repository and create a pull request. We welcome all
-contributions, including bug fixes, new features, and documentation improvements.
+---
 
 ## License
 
-This project is licensed under the terms of the MIT license.
+MIT © [Robert Ďurica](LICENSE)
