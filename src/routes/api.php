@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\ProjectController;
+use App\Http\Controllers\Api\ProjectMemberController;
 use App\Http\Controllers\Api\ScreenController;
 use App\Http\Controllers\Api\ScreenCustomFieldController;
 use App\Http\Controllers\Api\WorkflowController;
@@ -15,6 +16,11 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function (): void {
     Route::patch('/projects/{project}', [ProjectController::class, 'update']);
     Route::delete('/projects/{project}', [ProjectController::class, 'destroy']);
 
+    Route::get('/projects/{project}/members', [ProjectMemberController::class, 'index']);
+    Route::post('/projects/{project}/members', [ProjectMemberController::class, 'store']);
+    Route::patch('/projects/{project}/members/{user}', [ProjectMemberController::class, 'update']);
+    Route::delete('/projects/{project}/members/{user}', [ProjectMemberController::class, 'destroy']);
+
     Route::get('/projects/{project}/workflows', [WorkflowController::class, 'index']);
     Route::post('/projects/{project}/workflows', [WorkflowController::class, 'store']);
 
@@ -26,6 +32,7 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function (): void {
     Route::get('/workflow-versions/{workflowVersion}', [WorkflowVersionController::class, 'show']);
     Route::patch('/workflow-versions/{workflowVersion}/graph', [WorkflowVersionController::class, 'updateGraph']);
     Route::post('/workflow-versions/{workflowVersion}/publish', [WorkflowVersionController::class, 'publish']);
+    Route::delete('/workflow-versions/{workflowVersion}', [WorkflowVersionController::class, 'destroy']);
 
     Route::post('/screens/upsert', [ScreenController::class, 'upsert']);
     Route::get('/screens/{screen}', [ScreenController::class, 'show']);

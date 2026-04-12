@@ -3,16 +3,10 @@ import { PropsWithChildren, ReactNode, useMemo, useState } from 'react';
 
 const navigation = [
     {
-        label: 'Overview',
+        label: 'Dashboard',
         href: 'dashboard',
         match: ['dashboard'],
         glyph: 'OV',
-    },
-    {
-        label: 'Workflow Editor',
-        href: 'dashboard',
-        match: ['workflows.editor'],
-        glyph: 'WF',
     },
 ];
 
@@ -59,7 +53,7 @@ export default function AuthenticatedLayout({
 
             <div className="px-3 py-4">
                 <p className="px-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                    Workspace
+                    Navigation
                 </p>
                 <nav className="mt-3 space-y-1.5">
                     {navigation.map((item) => {
@@ -128,33 +122,14 @@ export default function AuthenticatedLayout({
 
             <div className="shell-main xl:pl-[288px]">
                 <div className="topbar sticky top-0 z-30">
-                    <div className={`${contentClassName} flex items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8`}>
-                        <div className="flex items-center gap-3">
-                            <button
-                                type="button"
-                                className="btn-secondary px-3 py-2 text-sm xl:hidden"
-                                onClick={() => setMobileNavOpen(true)}
-                            >
-                                Menu
-                            </button>
-                            <div>
-                                <p className="eyebrow">Workspace</p>
-                                <p className="mt-1 text-sm text-slate-500">
-                                    Manage process models, versions, and release flow.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="hidden items-center gap-3 sm:flex">
-                            <div className="rounded-full border border-white/70 bg-white/80 px-4 py-2 text-right shadow-[0_10px_24px_rgba(15,23,42,0.06)] backdrop-blur">
-                                <p className="text-sm font-semibold text-slate-950">
-                                    {user?.name}
-                                </p>
-                                <p className="text-xs uppercase tracking-[0.16em] text-slate-400">
-                                    {user?.roles?.[0] ?? 'Member'}
-                                </p>
-                            </div>
-                        </div>
+                    <div className={`${contentClassName} flex items-center gap-4 px-4 py-3 sm:px-6 lg:px-8 xl:hidden`}>
+                        <button
+                            type="button"
+                            className="btn-secondary px-3 py-2 text-sm"
+                            onClick={() => setMobileNavOpen(true)}
+                        >
+                            Menu
+                        </button>
                     </div>
                 </div>
 

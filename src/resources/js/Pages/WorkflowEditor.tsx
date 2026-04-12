@@ -1,14 +1,13 @@
-import ActivityFeed from '@/Components/ActivityFeed';
 import Modal from '@/Components/Modal';
 import StatusBadge from '@/Components/StatusBadge';
-import type { PageProps } from '@/types';
 import type {
     ActivityItem,
     Screen,
     ScreenCustomField,
     WorkflowData,
+    WorkflowVersionSummary,
 } from '@/types/processAtlas';
-import { Head, router, usePage } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import {
     addEdge,
     Background,
@@ -33,8 +32,8 @@ import React, { DragEvent, FormEvent, useEffect, useMemo, useRef, useState } fro
 
 type WorkflowEditorProps = {
     workflow: WorkflowData;
-    recentActivity: ActivityItem[];
     projectWorkflows: { id: number; name: string; status: 'draft' | 'published' }[];
+    currentUserRole: 'process_owner' | 'editor' | 'viewer' | null;
 };
 
 type InspectorTab = 'screen' | 'fields';
@@ -350,14 +349,14 @@ function conditionOutputLabel(sourceHandle?: string | null): string {
 
 export default function WorkflowEditor({
     workflow,
-    recentActivity,
     projectWorkflows,
+    currentUserRole,
 }: WorkflowEditorProps) {
     const latestVersion = workflow.latest_version;
-    const page = usePage<PageProps>();
-    const permissions = new Set(page.props.auth.user?.permissions ?? []);
-    const canEditWorkflows = permissions.has('workflows.edit');
-    const canPublishWorkflows = permissions.has('workflows.publish');
+    const canEditInProject = currentUserRole === 'process_owner' || currentUserRole === 'editor';
+    const canPublishWorkflows = currentUserRole === 'process_owner';
+    const [previewVersion, setPreviewVersion] = useState<WorkflowVersionSummary | null>(null);
+    const canEditWorkflows = canEditInProject && latestVersion?.is_published !== true && previewVersion === null;
     const initialNodes = useMemo(
         () =>
             buildInitialNodes(
@@ -465,6 +464,24 @@ export default function WorkflowEditor({
     useEffect(() => {
         setEdgeDraftLabel(String(selectedEdge?.label ?? ''));
     }, [selectedEdge]);
+
+    // Sync canvas state when latestVersion changes (e.g. after rollback draft is created)
+    useEffect(() => {
+        if (!latestVersion) return;
+        graphInitialized.current = false;
+        setPreviewVersion(null);
+        setNodes(buildInitialNodes(latestVersion.graph_json?.nodes, latestVersion.screens ?? []));
+        setEdges(
+            (latestVersion.graph_json?.edges ?? []).map((edge) => ({
+                ...edge,
+                markerEnd: { type: MarkerType.ArrowClosed, color: '#0f5ef7', width: 10, height: 10 },
+            })),
+        );
+        setScreens(latestVersion.screens ?? []);
+        setLockVersion(latestVersion.lock_version ?? 0);
+        setGraphState('saved');
+        setGraphMessage('No pending canvas changes.');
+    }, [latestVersion?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const resetFieldDraft = () => {
         setEditingFieldId(null);
@@ -956,7 +973,7 @@ export default function WorkflowEditor({
 
     const reloadWorkflow = () => {
         router.reload({
-            only: ['workflow', 'recentActivity'],
+            only: ['workflow'],
         });
     };
 
@@ -980,7 +997,7 @@ export default function WorkflowEditor({
     };
 
     const createDraft = async () => {
-        if (!canEditWorkflows) {
+        if (!canEditInProject) {
             return;
         }
 
@@ -1004,6 +1021,50 @@ export default function WorkflowEditor({
                 );
             },
             'The current version was published.',
+        );
+    };
+
+    const handleVersionTimelineClick = async (version: WorkflowVersionSummary) => {
+        setRollbackVersionId(version.id);
+
+        if (latestVersion && version.id === latestVersion.id) {
+            graphInitialized.current = false;
+            setPreviewVersion(null);
+            setNodes(buildInitialNodes(latestVersion.graph_json?.nodes, latestVersion.screens ?? []));
+            setEdges(
+                (latestVersion.graph_json?.edges ?? []).map((edge: Edge) => ({
+                    ...edge,
+                    markerEnd: { type: MarkerType.ArrowClosed, color: '#0f5ef7', width: 10, height: 10 },
+                })),
+            );
+            return;
+        }
+
+        try {
+            const response = await window.axios.get<{ data: WorkflowVersionSummary }>(
+                `/api/v1/workflow-versions/${version.id}`,
+            );
+            const data = response.data.data;
+            graphInitialized.current = false;
+            setPreviewVersion(data);
+            setNodes(buildInitialNodes(data.graph_json?.nodes, data.screens ?? []));
+            setEdges(
+                (data.graph_json?.edges ?? []).map((edge: Edge) => ({
+                    ...edge,
+                    markerEnd: { type: MarkerType.ArrowClosed, color: '#0f5ef7', width: 10, height: 10 },
+                })),
+            );
+        } catch {
+            // silently ignore preview fetch errors
+        }
+    };
+
+    const deleteVersion = async (version: WorkflowVersionSummary) => {
+        await runWorkflowAction(
+            async () => {
+                await window.axios.delete(`/api/v1/workflow-versions/${version.id}`);
+            },
+            `Version ${version.version_number} was deleted.`,
         );
     };
 
@@ -1031,6 +1092,22 @@ export default function WorkflowEditor({
             <Head title={`${workflow.name} Editor`} />
 
             <div className="workflow-canvas-layer">
+                {previewVersion && (
+                    <div className="pointer-events-auto absolute inset-x-0 top-0 z-10 flex items-center justify-between gap-4 border-b border-amber-200 bg-amber-50 px-5 py-2.5">
+                        <p className="text-sm font-medium text-amber-900">
+                            Viewing version {previewVersion.version_number} (read-only)
+                        </p>
+                        {latestVersion && (
+                            <button
+                                type="button"
+                                onClick={() => handleVersionTimelineClick(latestVersion)}
+                                className="text-sm font-semibold text-amber-700 hover:text-amber-900"
+                            >
+                                Return to latest
+                            </button>
+                        )}
+                    </div>
+                )}
                 <ReactFlowProvider>
                     <FlowCanvas
                         nodes={nodes}
@@ -1045,12 +1122,19 @@ export default function WorkflowEditor({
                         onEdgeDoubleClick={(_, edge) => setEdgeSelected(edge.id)}
                         onPaneClick={clearCanvasSelection}
                         onDropNode={handleDropNode}
+                        editable={canEditWorkflows}
                     />
                 </ReactFlowProvider>
             </div>
 
             <header className="workflow-topbar">
                 <div className="flex items-center gap-3 min-w-0">
+                    <Link
+                        href={route('dashboard')}
+                        className="btn-ghost workflow-action-button"
+                    >
+                        ← Dashboard
+                    </Link>
                     <h1 className="truncate text-base font-bold text-slate-950 max-w-[14rem]">
                         {workflow.name}
                     </h1>
@@ -1070,6 +1154,23 @@ export default function WorkflowEditor({
                         className="btn-primary workflow-action-button"
                     >
                         Save
+                    </button>
+                    {latestVersion?.is_published && canEditInProject && (
+                        <button
+                            type="button"
+                            onClick={createDraft}
+                            className="btn-secondary workflow-action-button"
+                        >
+                            New Draft
+                        </button>
+                    )}
+                    <button
+                        type="button"
+                        onClick={publishCurrent}
+                        disabled={!canPublishWorkflows || latestVersion?.is_published === true}
+                        className="btn-secondary workflow-action-button"
+                    >
+                        Publish
                     </button>
                     <button
                         type="button"
@@ -1841,7 +1942,7 @@ export default function WorkflowEditor({
                                 <button
                                     key={version.id}
                                     type="button"
-                                    onClick={() => setRollbackVersionId(version.id)}
+                                    onClick={() => handleVersionTimelineClick(version)}
                                     className={`version-card w-full text-left ${
                                         isSelected ? 'version-card-active' : ''
                                     }`.trim()}
@@ -1855,7 +1956,7 @@ export default function WorkflowEditor({
                                                 {version.creator?.name ?? 'Unknown actor'}
                                             </p>
                                         </div>
-                                        <div className="flex flex-wrap justify-end gap-2">
+                                        <div className="flex flex-wrap items-start justify-end gap-2">
                                             {isCurrent && (
                                                 <StatusBadge tone="brand">
                                                     Current
@@ -1865,6 +1966,29 @@ export default function WorkflowEditor({
                                                 <StatusBadge tone="success">
                                                     Published
                                                 </StatusBadge>
+                                            )}
+                                            {version.rollback_from_version_id && (
+                                                <StatusBadge tone="warning">
+                                                    Rollback from v{
+                                                        workflow.versions.find(
+                                                            (v) => v.id === version.rollback_from_version_id,
+                                                        )?.version_number ?? '?'
+                                                    }
+                                                </StatusBadge>
+                                            )}
+                                            {!version.is_published && canPublishWorkflows && versions.length > 1 && (
+                                                <button
+                                                    type="button"
+                                                    disabled={isRunningAction}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        void deleteVersion(version);
+                                                    }}
+                                                    className="text-xs text-slate-400 hover:text-red-600 disabled:opacity-40"
+                                                    title="Delete version"
+                                                >
+                                                    Delete
+                                                </button>
                                             )}
                                         </div>
                                     </div>
@@ -1886,13 +2010,17 @@ export default function WorkflowEditor({
                             ? `Create a new draft from version ${selectedRollbackVersion.version_number}.`
                             : 'Select a version from the timeline to prepare rollback.'}
                     </p>
+                    {rollbackVersionId && canPublishWorkflows && (
+                        <button
+                            type="button"
+                            onClick={rollback}
+                            className="btn-primary mt-4 px-4 py-3 text-sm"
+                        >
+                            Create Rollback Draft
+                        </button>
+                    )}
                 </div>
 
-                <ActivityFeed
-                    className="mt-5 shadow-none"
-                    items={recentActivity}
-                    emptyMessage="Workflow actions will appear here once edits, versions, and publishes happen."
-                />
             </aside>
 
             {(actionError || actionNotice) && (
@@ -1952,6 +2080,7 @@ type FlowCanvasProps = {
     onEdgeDoubleClick: (event: React.MouseEvent, edge: Edge) => void;
     onPaneClick: () => void;
     onDropNode: (kind: WorkflowNodeKind, position: { x: number; y: number }) => void;
+    editable: boolean;
 };
 
 function FlowCanvas({
@@ -1967,6 +2096,7 @@ function FlowCanvas({
     onEdgeDoubleClick,
     onPaneClick,
     onDropNode,
+    editable,
 }: FlowCanvasProps) {
     const { screenToFlowPosition } = useReactFlow();
 
@@ -1990,14 +2120,17 @@ function FlowCanvas({
             nodeTypes={nodeTypes}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
+            onConnect={editable ? onConnect : undefined}
             onNodeClick={onNodeClick}
-            onNodeDoubleClick={onNodeDoubleClick}
+            onNodeDoubleClick={editable ? onNodeDoubleClick : undefined}
             onEdgeClick={onEdgeClick}
-            onEdgeDoubleClick={onEdgeDoubleClick}
+            onEdgeDoubleClick={editable ? onEdgeDoubleClick : undefined}
             onPaneClick={onPaneClick}
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
+            onDragOver={editable ? handleDragOver : undefined}
+            onDrop={editable ? handleDrop : undefined}
+            nodesDraggable={editable}
+            nodesConnectable={editable}
+            elementsSelectable={editable}
             fitView
         >
             <Background gap={28} size={1} color="#7aa7f7" />

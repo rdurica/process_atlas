@@ -23,6 +23,15 @@ export interface WorkflowSummary {
     updated_at?: string | null;
 }
 
+export type ProjectRole = 'process_owner' | 'editor' | 'viewer';
+
+export interface ProjectMember {
+    id: number;
+    name: string;
+    email: string;
+    role: ProjectRole;
+}
+
 export interface ProjectSummary {
     id: number;
     name: string;
@@ -30,6 +39,7 @@ export interface ProjectSummary {
     workflows_count: number;
     latest_version_label: string;
     status_summary: string;
+    current_user_role: ProjectRole | null;
     workflows: WorkflowSummary[];
 }
 
@@ -63,6 +73,7 @@ export interface WorkflowVersionSummary {
     version_number: number;
     lock_version: number;
     is_published: boolean;
+    rollback_from_version_id?: number | null;
     graph_json?: {
         nodes?: Node[];
         edges?: Edge[];

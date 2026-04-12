@@ -4,11 +4,13 @@ namespace App\Support;
 
 final class PermissionList
 {
-    public const PROJECTS_VIEW = 'projects.view';
-    public const PROJECTS_MANAGE = 'projects.manage';
-    public const WORKFLOWS_VIEW = 'workflows.view';
-    public const WORKFLOWS_EDIT = 'workflows.edit';
-    public const WORKFLOWS_PUBLISH = 'workflows.publish';
+    /** Can create new projects */
+    public const PROJECTS_CREATE = 'projects.create';
+
+    /** Bypasses project membership checks — sees and manages all projects */
+    public const PROJECTS_ADMIN = 'projects.admin';
+
+    /** Can use MCP integration */
     public const MCP_USE = 'mcp.use';
 
     /**
@@ -17,11 +19,8 @@ final class PermissionList
     public static function all(): array
     {
         return [
-            self::PROJECTS_VIEW,
-            self::PROJECTS_MANAGE,
-            self::WORKFLOWS_VIEW,
-            self::WORKFLOWS_EDIT,
-            self::WORKFLOWS_PUBLISH,
+            self::PROJECTS_CREATE,
+            self::PROJECTS_ADMIN,
             self::MCP_USE,
         ];
     }

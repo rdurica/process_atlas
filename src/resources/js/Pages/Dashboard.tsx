@@ -1,11 +1,11 @@
-import ActivityFeed from '@/Components/ActivityFeed';
 import Modal from '@/Components/Modal';
 import StatusBadge from '@/Components/StatusBadge';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { PageProps } from '@/types';
 import type {
-    ActivityItem,
     DashboardSummary,
+    ProjectMember,
+    ProjectRole,
     ProjectSummary,
     WorkflowSummary,
 } from '@/types/processAtlas';
@@ -15,7 +15,6 @@ import { FormEvent, Fragment, useEffect, useMemo, useState } from 'react';
 type DashboardProps = {
     summary: DashboardSummary;
     projects: ProjectSummary[];
-    recentActivity: ActivityItem[];
 };
 
 type StatusFilter = 'all' | 'draft' | 'published' | 'empty';
@@ -68,15 +67,30 @@ function formatTimestamp(value?: string | null): string {
     }).format(new Date(value));
 }
 
+function canEditInProject(role: ProjectRole | null): boolean {
+    return role === 'process_owner' || role === 'editor';
+}
+
+function canManageMembersInProject(role: ProjectRole | null): boolean {
+    return role === 'process_owner';
+}
+
+const ROLE_LABELS: Record<ProjectRole, string> = {
+    process_owner: 'Process Owner',
+    editor: 'Editor',
+    viewer: 'Viewer',
+};
+
 export default function Dashboard({
     summary,
     projects,
-    recentActivity,
 }: DashboardProps) {
     const page = usePage<PageProps>();
     const permissions = new Set(page.props.auth.user?.permissions ?? []);
-    const canManageProjects = permissions.has('projects.manage');
-    const canEditWorkflows = permissions.has('workflows.edit');
+    const canCreateProjects = permissions.has('projects.create');
+
+    // User can create workflows in at least one project they are editor+ in
+    const hasEditableProject = projects.some((p) => canEditInProject(p.current_user_role));
 
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
     const [query, setQuery] = useState('');
@@ -93,6 +107,15 @@ export default function Dashboard({
     const [pendingWorkflow, setPendingWorkflow] = useState(false);
     const [projectError, setProjectError] = useState<string | null>(null);
     const [workflowError, setWorkflowError] = useState<string | null>(null);
+
+    // Members modal state
+    const [membersModalProject, setMembersModalProject] = useState<ProjectSummary | null>(null);
+    const [members, setMembers] = useState<ProjectMember[]>([]);
+    const [membersLoading, setMembersLoading] = useState(false);
+    const [membersError, setMembersError] = useState<string | null>(null);
+    const [newMemberEmail, setNewMemberEmail] = useState('');
+    const [newMemberRole, setNewMemberRole] = useState<ProjectRole>('editor');
+    const [pendingMember, setPendingMember] = useState(false);
 
     useEffect(() => {
         if (!selectedProjectId && projects[0]) {
@@ -168,14 +191,14 @@ export default function Dashboard({
 
     const reloadDashboard = () => {
         router.reload({
-            only: ['summary', 'projects', 'recentActivity'],
+            only: ['summary', 'projects'],
         });
     };
 
     const createProject = async (event: FormEvent) => {
         event.preventDefault();
 
-        if (!canManageProjects) {
+        if (!canCreateProjects) {
             setProjectError('You do not have permission to create projects.');
             return;
         }
@@ -200,13 +223,10 @@ export default function Dashboard({
         }
     };
 
+    const editableProjects = projects.filter((p) => canEditInProject(p.current_user_role));
+
     const createWorkflow = async (event: FormEvent) => {
         event.preventDefault();
-
-        if (!canEditWorkflows) {
-            setWorkflowError('You do not have permission to create workflows.');
-            return;
-        }
 
         if (!selectedProjectId) {
             setWorkflowError('Select a project before creating a workflow.');
@@ -244,26 +264,110 @@ export default function Dashboard({
         }
     };
 
+    const openMembersModal = async (project: ProjectSummary) => {
+        setMembersModalProject(project);
+        setMembersLoading(true);
+        setMembersError(null);
+        setNewMemberEmail('');
+        setNewMemberRole('editor');
+
+        try {
+            const response = await window.axios.get(`/api/v1/projects/${project.id}/members`);
+            setMembers(response.data.data);
+        } catch (error) {
+            setMembersError(resolveApiError(error, 'Could not load members.'));
+        } finally {
+            setMembersLoading(false);
+        }
+    };
+
+    const closeMembersModal = () => {
+        setMembersModalProject(null);
+        setMembers([]);
+        setMembersError(null);
+    };
+
+    const addMember = async (event: FormEvent) => {
+        event.preventDefault();
+        if (!membersModalProject) return;
+
+        setPendingMember(true);
+        setMembersError(null);
+
+        try {
+            // Resolve user by email first via members endpoint (we pass email as user lookup)
+            const response = await window.axios.post(
+                `/api/v1/projects/${membersModalProject.id}/members`,
+                { email: newMemberEmail, role: newMemberRole },
+            );
+            setMembers((prev) => {
+                const existing = prev.find((m) => m.id === response.data.data.id);
+                if (existing) {
+                    return prev.map((m) => m.id === response.data.data.id ? response.data.data : m);
+                }
+                return [...prev, response.data.data];
+            });
+            setNewMemberEmail('');
+        } catch (error) {
+            setMembersError(resolveApiError(error, 'Could not add member.'));
+        } finally {
+            setPendingMember(false);
+        }
+    };
+
+    const updateMemberRole = async (memberId: number, role: ProjectRole) => {
+        if (!membersModalProject) return;
+
+        try {
+            const response = await window.axios.patch(
+                `/api/v1/projects/${membersModalProject.id}/members/${memberId}`,
+                { role },
+            );
+            setMembers((prev) =>
+                prev.map((m) => (m.id === memberId ? response.data.data : m)),
+            );
+        } catch (error) {
+            setMembersError(resolveApiError(error, 'Could not update role.'));
+        }
+    };
+
+    const removeMember = async (memberId: number) => {
+        if (!membersModalProject) return;
+
+        try {
+            await window.axios.delete(
+                `/api/v1/projects/${membersModalProject.id}/members/${memberId}`,
+            );
+            setMembers((prev) => prev.filter((m) => m.id !== memberId));
+        } catch (error) {
+            setMembersError(resolveApiError(error, 'Could not remove member.'));
+        }
+    };
+
     const metrics = [
         {
             label: 'Projects',
             value: summary.projects,
             detail: 'Active workspaces across the control plane.',
+            accentClass: 'metric-card-projects',
         },
         {
             label: 'Workflows',
             value: summary.workflows,
             detail: 'Modeled processes currently available to teams.',
+            accentClass: 'metric-card-workflows',
         },
         {
             label: 'Draft Versions',
             value: summary.draft_versions,
             detail: 'Unpublished changes waiting for review or release.',
+            accentClass: 'metric-card-drafts',
         },
         {
             label: 'Published Workflows',
             value: summary.published_workflows,
             detail: 'Processes with a live published version.',
+            accentClass: 'metric-card-published',
         },
     ];
 
@@ -271,38 +375,32 @@ export default function Dashboard({
         <AuthenticatedLayout
             contentWidth="wide"
             header={
-                <div className="surface-card overflow-hidden px-6 py-6 sm:px-7 sm:py-7">
-                    <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-                        <div className="max-w-3xl">
-                            <p className="eyebrow">Workflow Control Plane</p>
-                            <h1 className="page-title mt-3">Operations Overview</h1>
-                            <p className="mt-4 max-w-2xl text-base text-slate-600 sm:text-lg">
-                                Run the platform from a wider enterprise workspace with
-                                project visibility, fast creation flows, and recent change
-                                context in one place.
-                            </p>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-3">
-                            {canManageProjects && (
-                                <button
-                                    type="button"
-                                    onClick={() => setProjectModalOpen(true)}
-                                    className="btn-secondary px-4 py-3 text-sm"
-                                >
-                                    New Project
-                                </button>
-                            )}
-                            {canEditWorkflows && (
-                                <button
-                                    type="button"
-                                    onClick={() => openWorkflowModal()}
-                                    className="btn-primary px-4 py-3 text-sm"
-                                >
-                                    New Workflow
-                                </button>
-                            )}
-                        </div>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p className="eyebrow">Dashboard</p>
+                        <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
+                            Operations Overview
+                        </h1>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                        {canCreateProjects && (
+                            <button
+                                type="button"
+                                onClick={() => setProjectModalOpen(true)}
+                                className="btn-secondary px-4 py-2.5 text-sm"
+                            >
+                                New Project
+                            </button>
+                        )}
+                        {hasEditableProject && (
+                            <button
+                                type="button"
+                                onClick={() => openWorkflowModal()}
+                                className="btn-primary px-4 py-2.5 text-sm"
+                            >
+                                New Workflow
+                            </button>
+                        )}
                     </div>
                 </div>
             }
@@ -313,7 +411,7 @@ export default function Dashboard({
                 <div className="space-y-6">
                     <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
                         {metrics.map((metric) => (
-                            <article key={metric.label} className="surface-card metric-card">
+                            <article key={metric.label} className={`surface-card metric-card ${metric.accentClass}`}>
                                 <p className="eyebrow">{metric.label}</p>
                                 <p className="metric-value mt-4">{metric.value}</p>
                                 <p className="mt-3 max-w-[18rem] text-sm text-slate-600">
@@ -377,6 +475,8 @@ export default function Dashboard({
                                 <tbody>
                                     {filteredProjects.map((project) => {
                                         const isExpanded = expandedProjectIds.includes(project.id);
+                                        const userCanEdit = canEditInProject(project.current_user_role);
+                                        const userCanManage = canManageMembersInProject(project.current_user_role);
 
                                         return (
                                             <Fragment key={project.id}>
@@ -390,17 +490,17 @@ export default function Dashboard({
                                                                 {project.description ||
                                                                     'No project description yet.'}
                                                             </p>
+                                                            {project.current_user_role && (
+                                                                <span className="badge badge-neutral mt-2">
+                                                                    {ROLE_LABELS[project.current_user_role]}
+                                                                </span>
+                                                            )}
                                                         </div>
                                                     </td>
                                                     <td>
-                                                        <div>
-                                                            <p className="text-sm font-semibold text-slate-950">
-                                                                {project.workflows_count}
-                                                            </p>
-                                                            <p className="mt-1 text-sm text-slate-500">
-                                                                Registered workflows
-                                                            </p>
-                                                        </div>
+                                                        <p className="text-sm font-semibold tabular-nums text-slate-950">
+                                                            {project.workflows_count}
+                                                        </p>
                                                     </td>
                                                     <td>
                                                         <StatusBadge tone="brand">
@@ -408,7 +508,7 @@ export default function Dashboard({
                                                         </StatusBadge>
                                                     </td>
                                                     <td>
-                                                        <p className="text-sm font-semibold text-slate-950">
+                                                        <p className="text-sm text-slate-700">
                                                             {project.status_summary}
                                                         </p>
                                                     </td>
@@ -419,11 +519,9 @@ export default function Dashboard({
                                                                 onClick={() => toggleProject(project.id)}
                                                                 className="btn-ghost px-3 py-2 text-sm"
                                                             >
-                                                                {isExpanded
-                                                                    ? 'Collapse'
-                                                                    : 'Expand'}
+                                                                {isExpanded ? 'Collapse' : 'Expand'}
                                                             </button>
-                                                            {canEditWorkflows && (
+                                                            {userCanEdit && (
                                                                 <button
                                                                     type="button"
                                                                     onClick={() =>
@@ -434,48 +532,48 @@ export default function Dashboard({
                                                                     Add Workflow
                                                                 </button>
                                                             )}
+                                                            {userCanManage && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => openMembersModal(project)}
+                                                                    className="btn-ghost px-3 py-2 text-sm"
+                                                                >
+                                                                    Members
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     </td>
                                                 </tr>
                                                 {isExpanded && (
                                                     <tr key={`${project.id}-expanded`}>
-                                                        <td colSpan={5} className="bg-slate-50/70">
+                                                        <td colSpan={5} className="bg-slate-100/60 p-4">
                                                             {project.workflows.length === 0 ? (
                                                                 <div className="empty-state">
                                                                     This project does not have any workflows yet.
                                                                 </div>
                                                             ) : (
-                                                                <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
+                                                                <div className="divide-y divide-slate-200/60">
                                                                     {project.workflows.map((workflow) => (
-                                                                        <article
+                                                                        <div
                                                                             key={workflow.id}
-                                                                            className="surface-card-strong p-4"
+                                                                            className={`flex items-center gap-4 py-2.5 pl-3 border-l-[3px] ${workflow.status === 'published' ? 'border-l-emerald-500' : 'border-l-amber-400'}`}
                                                                         >
-                                                                            <div className="flex items-start justify-between gap-3">
-                                                                                <div>
-                                                                                    <p className="text-sm font-semibold text-slate-950">
-                                                                                        {workflow.name}
-                                                                                    </p>
-                                                                                    <p className="mt-1 text-sm text-slate-500">
-                                                                                        Last changed{' '}
-                                                                                        {formatTimestamp(
-                                                                                            workflow.updated_at,
-                                                                                        )}
-                                                                                    </p>
-                                                                                </div>
-                                                                                <StatusBadge
-                                                                                    tone={workflowTone(
-                                                                                        workflow.status,
-                                                                                    )}
-                                                                                >
-                                                                                    {workflow.status}
-                                                                                </StatusBadge>
+                                                                            <div className="min-w-0 flex-1">
+                                                                                <p className="truncate text-sm font-semibold text-slate-950">
+                                                                                    {workflow.name}
+                                                                                </p>
+                                                                                <p className="mt-0.5 text-xs text-slate-500">
+                                                                                    {formatTimestamp(workflow.updated_at)}
+                                                                                </p>
                                                                             </div>
-                                                                            <div className="mt-4 flex flex-wrap items-center gap-2">
+                                                                            <div className="flex shrink-0 items-center gap-2">
                                                                                 <StatusBadge tone="brand">
                                                                                     {workflow.latest_version
                                                                                         ? `v${workflow.latest_version.version_number}`
                                                                                         : 'No version'}
+                                                                                </StatusBadge>
+                                                                                <StatusBadge tone={workflowTone(workflow.status)}>
+                                                                                    {workflow.status}
                                                                                 </StatusBadge>
                                                                                 {workflow.published_version_id && (
                                                                                     <StatusBadge tone="success">
@@ -483,17 +581,15 @@ export default function Dashboard({
                                                                                     </StatusBadge>
                                                                                 )}
                                                                             </div>
-                                                                            <div className="mt-4">
-                                                                                <Link
-                                                                                    href={route('workflows.editor', {
-                                                                                        workflow: workflow.id,
-                                                                                    })}
-                                                                                    className="btn-primary px-4 py-3 text-sm"
-                                                                                >
-                                                                                    Open Editor
-                                                                                </Link>
-                                                                            </div>
-                                                                        </article>
+                                                                            <Link
+                                                                                href={route('workflows.editor', {
+                                                                                    workflow: workflow.id,
+                                                                                })}
+                                                                                className="btn-secondary shrink-0 px-3 py-1.5 text-xs"
+                                                                            >
+                                                                                Open Editor
+                                                                            </Link>
+                                                                        </div>
                                                                     ))}
                                                                 </div>
                                                             )}
@@ -519,15 +615,9 @@ export default function Dashboard({
                     </section>
                 </div>
 
-                <div className="space-y-6">
-                    <ActivityFeed
-                        items={recentActivity}
-                        className="rail-card"
-                        emptyMessage="Project and workflow changes will appear here once activity starts flowing."
-                    />
-                </div>
             </div>
 
+            {/* Create Project Modal */}
             <Modal show={projectModalOpen} onClose={closeProjectModal} maxWidth="lg">
                 <form onSubmit={createProject} className="space-y-5 p-6 sm:p-7">
                     <div>
@@ -544,7 +634,7 @@ export default function Dashboard({
                             value={projectName}
                             onChange={(event) => setProjectName(event.target.value)}
                             required
-                            disabled={!canManageProjects || pendingProject}
+                            disabled={!canCreateProjects || pendingProject}
                             className="input-shell mt-2"
                         />
                     </label>
@@ -554,7 +644,7 @@ export default function Dashboard({
                         <textarea
                             value={projectDescription}
                             onChange={(event) => setProjectDescription(event.target.value)}
-                            disabled={!canManageProjects || pendingProject}
+                            disabled={!canCreateProjects || pendingProject}
                             className="textarea-shell mt-2"
                         />
                     </label>
@@ -575,7 +665,7 @@ export default function Dashboard({
                         </button>
                         <button
                             type="submit"
-                            disabled={!canManageProjects || pendingProject}
+                            disabled={!canCreateProjects || pendingProject}
                             className="btn-primary px-4 py-3 text-sm"
                         >
                             Create Project
@@ -584,6 +674,7 @@ export default function Dashboard({
                 </form>
             </Modal>
 
+            {/* Create Workflow Modal */}
             <Modal show={workflowModalOpen} onClose={closeWorkflowModal} maxWidth="lg">
                 <form onSubmit={createWorkflow} className="space-y-5 p-6 sm:p-7">
                     <div>
@@ -601,10 +692,10 @@ export default function Dashboard({
                             onChange={(event) =>
                                 setSelectedProjectId(Number(event.target.value))
                             }
-                            disabled={!canEditWorkflows || pendingWorkflow || projects.length === 0}
+                            disabled={pendingWorkflow || editableProjects.length === 0}
                             className="select-shell mt-2"
                         >
-                            {projects.map((project) => (
+                            {editableProjects.map((project) => (
                                 <option key={project.id} value={project.id}>
                                     {project.name}
                                 </option>
@@ -618,7 +709,7 @@ export default function Dashboard({
                             value={workflowName}
                             onChange={(event) => setWorkflowName(event.target.value)}
                             required
-                            disabled={!canEditWorkflows || pendingWorkflow || !selectedProjectId}
+                            disabled={pendingWorkflow || !selectedProjectId}
                             className="input-shell mt-2"
                         />
                     </label>
@@ -639,18 +730,109 @@ export default function Dashboard({
                         </button>
                         <button
                             type="submit"
-                            disabled={
-                                pendingWorkflow ||
-                                !selectedProjectId ||
-                                !canEditWorkflows ||
-                                projects.length === 0
-                            }
+                            disabled={pendingWorkflow || !selectedProjectId || editableProjects.length === 0}
                             className="btn-primary px-4 py-3 text-sm"
                         >
                             Create Workflow
                         </button>
                     </div>
                 </form>
+            </Modal>
+
+            {/* Manage Members Modal */}
+            <Modal show={membersModalProject !== null} onClose={closeMembersModal} maxWidth="lg">
+                <div className="space-y-5 p-6 sm:p-7">
+                    <div>
+                        <p className="eyebrow">Project Members</p>
+                        <h2 className="panel-title mt-2">{membersModalProject?.name}</h2>
+                        <p className="mt-3 text-sm text-slate-600">
+                            Manage who has access to this project and what they can do.
+                        </p>
+                    </div>
+
+                    {membersError && (
+                        <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                            {membersError}
+                        </p>
+                    )}
+
+                    {membersLoading ? (
+                        <p className="text-sm text-slate-500">Loading members…</p>
+                    ) : (
+                        <div className="divide-y divide-slate-100">
+                            {members.map((member) => (
+                                <div key={member.id} className="flex items-center gap-3 py-3">
+                                    <div className="min-w-0 flex-1">
+                                        <p className="truncate text-sm font-semibold text-slate-950">
+                                            {member.name}
+                                        </p>
+                                        <p className="truncate text-sm text-slate-500">{member.email}</p>
+                                    </div>
+                                    <select
+                                        value={member.role}
+                                        onChange={(e) =>
+                                            updateMemberRole(member.id, e.target.value as ProjectRole)
+                                        }
+                                        className="select-shell w-40 shrink-0"
+                                    >
+                                        <option value="process_owner">Process Owner</option>
+                                        <option value="editor">Editor</option>
+                                        <option value="viewer">Viewer</option>
+                                    </select>
+                                    <button
+                                        type="button"
+                                        onClick={() => removeMember(member.id)}
+                                        className="btn-ghost px-3 py-2 text-sm text-rose-600"
+                                    >
+                                        Remove
+                                    </button>
+                                </div>
+                            ))}
+                            {members.length === 0 && (
+                                <p className="py-3 text-sm text-slate-500">No members yet.</p>
+                            )}
+                        </div>
+                    )}
+
+                    <form onSubmit={addMember} className="flex gap-2">
+                        <input
+                            type="email"
+                            value={newMemberEmail}
+                            onChange={(e) => setNewMemberEmail(e.target.value)}
+                            placeholder="user@example.com"
+                            required
+                            disabled={pendingMember}
+                            className="input-shell min-w-0 flex-1"
+                        />
+                        <select
+                            value={newMemberRole}
+                            onChange={(e) => setNewMemberRole(e.target.value as ProjectRole)}
+                            disabled={pendingMember}
+                            className="select-shell w-40 shrink-0"
+                        >
+                            <option value="process_owner">Process Owner</option>
+                            <option value="editor">Editor</option>
+                            <option value="viewer">Viewer</option>
+                        </select>
+                        <button
+                            type="submit"
+                            disabled={pendingMember}
+                            className="btn-primary shrink-0 px-4 py-3 text-sm"
+                        >
+                            Add
+                        </button>
+                    </form>
+
+                    <div className="flex justify-end">
+                        <button
+                            type="button"
+                            onClick={closeMembersModal}
+                            className="btn-ghost px-4 py-3 text-sm"
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
             </Modal>
         </AuthenticatedLayout>
     );

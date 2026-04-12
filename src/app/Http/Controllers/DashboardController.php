@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Project;
 use App\Models\Workflow;
 use App\Models\WorkflowVersion;
-use App\Support\ActivityFeed;
+use App\Services\ProjectAccessService;
 use App\Support\PermissionList;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -13,52 +13,58 @@ use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function __construct(private readonly ActivityFeed $activityFeed)
+    public function __construct(private readonly ProjectAccessService $access)
     {
     }
 
     public function __invoke(Request $request): Response
     {
         $user = $request->user();
-        $canViewProjects = $user->can(PermissionList::PROJECTS_VIEW);
+        $isAdmin = $user->can(PermissionList::PROJECTS_ADMIN);
 
-        $projects = collect();
+        $projects = Project::query()
+            ->when(
+                ! $isAdmin,
+                fn ($query) => $query->whereHas(
+                    'members',
+                    fn ($q) => $q->where('user_id', $user->id)
+                )
+            )
+            ->with([
+                'workflows' => fn ($query) => $query->with(['latestVersion', 'publishedVersion'])->orderBy('name'),
+            ])
+            ->withCount('workflows')
+            ->orderBy('name')
+            ->get();
+
+        $projectIds = $projects->pluck('id');
+
         $summary = [
-            'projects' => 0,
-            'workflows' => 0,
-            'draft_versions' => 0,
-            'published_workflows' => 0,
+            'projects' => $projects->count(),
+            'workflows' => Workflow::query()->whereIn('project_id', $projectIds)->count(),
+            'draft_versions' => WorkflowVersion::query()
+                ->whereHas('workflow', fn ($q) => $q->whereIn('project_id', $projectIds))
+                ->where('is_published', false)
+                ->count(),
+            'published_workflows' => Workflow::query()
+                ->whereIn('project_id', $projectIds)
+                ->where('status', 'published')
+                ->count(),
         ];
-        $recentActivity = [];
-
-        if ($canViewProjects) {
-            $projects = Project::query()
-                ->with([
-                    'workflows' => fn ($query) => $query->with(['latestVersion', 'publishedVersion'])->orderBy('name'),
-                ])
-                ->withCount('workflows')
-                ->orderBy('name')
-                ->get();
-
-            $summary = [
-                'projects' => $projects->count(),
-                'workflows' => Workflow::query()->count(),
-                'draft_versions' => WorkflowVersion::query()->where('is_published', false)->count(),
-                'published_workflows' => Workflow::query()->where('status', 'published')->count(),
-            ];
-
-            $recentActivity = $this->activityFeed->latestForDashboard();
-        }
 
         return Inertia::render('Dashboard', [
             'summary' => $summary,
-            'projects' => $projects->map(function (Project $project): array {
+            'projects' => $projects->map(function (Project $project) use ($user, $isAdmin): array {
                 $publishedCount = $project->workflows->where('status', 'published')->count();
                 $draftCount = $project->workflows->where('status', 'draft')->count();
                 $latestVersionNumber = $project->workflows
                     ->pluck('latestVersion.version_number')
                     ->filter()
                     ->max();
+
+                $currentUserRole = $isAdmin
+                    ? 'process_owner'
+                    : $user->projectRoleIn($project);
 
                 return [
                     'id' => $project->id,
@@ -72,6 +78,7 @@ class DashboardController extends Controller
                         $publishedCount > 0 => $publishedCount.' published',
                         default => $draftCount.' draft',
                     },
+                    'current_user_role' => $currentUserRole,
                     'workflows' => $project->workflows->map(fn (Workflow $workflow): array => [
                         'id' => $workflow->id,
                         'name' => $workflow->name,
@@ -86,7 +93,6 @@ class DashboardController extends Controller
                     ])->values()->all(),
                 ];
             })->values()->all(),
-            'recentActivity' => $recentActivity,
         ]);
     }
 }

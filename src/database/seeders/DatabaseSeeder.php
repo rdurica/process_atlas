@@ -14,9 +14,6 @@ class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
 
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
@@ -25,35 +22,41 @@ class DatabaseSeeder extends Seeder
             Permission::query()->firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
 
-        $ownerRole = Role::query()->firstOrCreate(['name' => 'owner', 'guard_name' => 'web']);
+        $adminRole = Role::query()->firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        $processOwnerRole = Role::query()->firstOrCreate(['name' => 'process_owner', 'guard_name' => 'web']);
         $editorRole = Role::query()->firstOrCreate(['name' => 'editor', 'guard_name' => 'web']);
         $viewerRole = Role::query()->firstOrCreate(['name' => 'viewer', 'guard_name' => 'web']);
 
-        $ownerRole->syncPermissions(PermissionList::all());
+        $adminRole->syncPermissions(PermissionList::all());
 
-        $editorRole->syncPermissions([
-            PermissionList::PROJECTS_VIEW,
-            PermissionList::PROJECTS_MANAGE,
-            PermissionList::WORKFLOWS_VIEW,
-            PermissionList::WORKFLOWS_EDIT,
+        $processOwnerRole->syncPermissions([
+            PermissionList::PROJECTS_CREATE,
             PermissionList::MCP_USE,
         ]);
 
-        $viewerRole->syncPermissions([
-            PermissionList::PROJECTS_VIEW,
-            PermissionList::WORKFLOWS_VIEW,
+        $editorRole->syncPermissions([
+            PermissionList::MCP_USE,
         ]);
 
+        $viewerRole->syncPermissions([]);
+
+        $admin = User::query()->firstOrCreate(
+            ['email' => 'admin@example.com'],
+            ['name' => 'Admin', 'password' => 'password']
+        );
+        $admin->syncRoles(['admin']);
+
+        // Keep owner@example.com as process_owner for backwards compatibility
         $owner = User::query()->firstOrCreate(
             ['email' => 'owner@example.com'],
             ['name' => 'Owner', 'password' => 'password']
         );
-        $owner->assignRole('owner');
+        $owner->syncRoles(['process_owner']);
 
         $viewer = User::query()->firstOrCreate(
             ['email' => 'viewer@example.com'],
             ['name' => 'Viewer', 'password' => 'password']
         );
-        $viewer->assignRole('viewer');
+        $viewer->syncRoles(['viewer']);
     }
 }

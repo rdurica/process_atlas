@@ -272,15 +272,19 @@ select {
         padding: 1.3rem 1.35rem;
     }
 
-    .metric-card::after {
+    .metric-card::before {
         content: '';
         position: absolute;
-        inset: auto -22% -42% auto;
-        height: 8rem;
-        width: 8rem;
-        border-radius: 9999px;
-        background: radial-gradient(circle, rgba(15, 94, 247, 0.18), transparent 68%);
+        inset: 0 0 auto 0;
+        height: 3px;
+        border-radius: 9999px 9999px 0 0;
+        background: var(--metric-accent, #0f5ef7);
     }
+
+    .metric-card-projects  { --metric-accent: #0f5ef7; }
+    .metric-card-workflows { --metric-accent: #059669; }
+    .metric-card-drafts    { --metric-accent: #d97706; }
+    .metric-card-published { --metric-accent: #0891b2; }
 
     .metric-value {
         font-size: 2rem;

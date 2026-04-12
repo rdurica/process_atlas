@@ -2,23 +2,26 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Api\Concerns\EnsuresPermission;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\UpsertScreenCustomFieldRequest;
 use App\Models\Screen;
 use App\Models\ScreenCustomField;
 use App\Services\Audit\AuditLogger;
-use App\Support\PermissionList;
+use App\Services\ProjectAccessService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ScreenCustomFieldController extends Controller
 {
-    use EnsuresPermission;
+    public function __construct(private readonly ProjectAccessService $access)
+    {
+    }
 
     public function upsert(UpsertScreenCustomFieldRequest $request, Screen $screen): JsonResponse
     {
-        $this->ensurePermission($request->user(), PermissionList::WORKFLOWS_EDIT);
+        $screen->loadMissing('workflowVersion.workflow.project');
+        abort_unless($this->access->canEdit($request->user(), $screen->workflowVersion->workflow->project), 403, 'Forbidden.');
+        abort_if($screen->workflowVersion->is_published, 422, 'Cannot modify a published version.');
 
         $validated = $request->validated();
 
@@ -38,7 +41,9 @@ class ScreenCustomFieldController extends Controller
 
     public function destroy(Request $request, ScreenCustomField $screenCustomField): JsonResponse
     {
-        $this->ensurePermission($request->user(), PermissionList::WORKFLOWS_EDIT);
+        $screenCustomField->loadMissing('screen.workflowVersion.workflow.project');
+        abort_unless($this->access->canEdit($request->user(), $screenCustomField->screen->workflowVersion->workflow->project), 403, 'Forbidden.');
+        abort_if($screenCustomField->screen->workflowVersion->is_published, 422, 'Cannot modify a published version.');
 
         $screenCustomField->delete();
 

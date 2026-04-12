@@ -2,29 +2,28 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Api\Concerns\EnsuresPermission;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreWorkflowRequest;
 use App\Http\Requests\Api\UpdateWorkflowRequest;
 use App\Models\Project;
 use App\Models\Workflow;
 use App\Services\Audit\AuditLogger;
+use App\Services\ProjectAccessService;
 use App\Services\Workflow\WorkflowVersionManager;
-use App\Support\PermissionList;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class WorkflowController extends Controller
 {
-    use EnsuresPermission;
-
-    public function __construct(private readonly WorkflowVersionManager $versionManager)
-    {
+    public function __construct(
+        private readonly WorkflowVersionManager $versionManager,
+        private readonly ProjectAccessService $access,
+    ) {
     }
 
     public function index(Request $request, Project $project): JsonResponse
     {
-        $this->ensurePermission($request->user(), PermissionList::WORKFLOWS_VIEW);
+        abort_unless($this->access->canView($request->user(), $project), 403, 'Forbidden.');
 
         $workflows = $project
             ->workflows()
@@ -37,7 +36,7 @@ class WorkflowController extends Controller
 
     public function store(StoreWorkflowRequest $request, Project $project): JsonResponse
     {
-        $this->ensurePermission($request->user(), PermissionList::WORKFLOWS_EDIT);
+        abort_unless($this->access->canEdit($request->user(), $project), 403, 'Forbidden.');
 
         $workflow = $project->workflows()->create([
             'name' => $request->validated('name'),
@@ -57,7 +56,8 @@ class WorkflowController extends Controller
 
     public function show(Request $request, Workflow $workflow): JsonResponse
     {
-        $this->ensurePermission($request->user(), PermissionList::WORKFLOWS_VIEW);
+        $workflow->loadMissing('project');
+        abort_unless($this->access->canView($request->user(), $workflow->project), 403, 'Forbidden.');
 
         $workflow->load([
             'project',
@@ -71,7 +71,8 @@ class WorkflowController extends Controller
 
     public function update(UpdateWorkflowRequest $request, Workflow $workflow): JsonResponse
     {
-        $this->ensurePermission($request->user(), PermissionList::WORKFLOWS_EDIT);
+        $workflow->loadMissing('project');
+        abort_unless($this->access->canEdit($request->user(), $workflow->project), 403, 'Forbidden.');
 
         $workflow->update($request->validated());
 

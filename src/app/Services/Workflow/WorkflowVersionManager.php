@@ -95,6 +95,7 @@ final class WorkflowVersionManager
                 'is_published' => false,
                 'graph_json' => $target->graph_json,
                 'lock_version' => 0,
+                'rollback_from_version_id' => $target->id,
             ]);
 
             $this->cloneScreens($target, $newVersion);
@@ -105,6 +106,26 @@ final class WorkflowVersionManager
             ]);
 
             return $newVersion;
+        });
+    }
+
+    public function deleteVersion(Workflow $workflow, WorkflowVersion $version): void
+    {
+        abort_if($version->is_published, 422, 'Cannot delete a published version.');
+        abort_if($workflow->versions()->count() <= 1, 422, 'Cannot delete the only remaining version.');
+
+        DB::transaction(function () use ($workflow, $version): void {
+            $isLatest = $workflow->latest_version_id === $version->id;
+
+            $version->delete();
+
+            if ($isLatest) {
+                $newLatest = $workflow->versions()->orderByDesc('version_number')->firstOrFail();
+                $workflow->update([
+                    'latest_version_id' => $newLatest->id,
+                    'status' => $newLatest->is_published ? 'published' : 'draft',
+                ]);
+            }
         });
     }
 

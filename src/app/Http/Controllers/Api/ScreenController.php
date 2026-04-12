@@ -2,23 +2,26 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Api\Concerns\EnsuresPermission;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\UpsertScreenRequest;
 use App\Models\Screen;
+use App\Models\WorkflowVersion;
 use App\Services\Audit\AuditLogger;
-use App\Support\PermissionList;
+use App\Services\ProjectAccessService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class ScreenController extends Controller
 {
-    use EnsuresPermission;
+    public function __construct(private readonly ProjectAccessService $access)
+    {
+    }
 
     public function show(Request $request, Screen $screen): JsonResponse
     {
-        $this->ensurePermission($request->user(), PermissionList::WORKFLOWS_VIEW);
+        $screen->loadMissing('workflowVersion.workflow.project');
+        abort_unless($this->access->canView($request->user(), $screen->workflowVersion->workflow->project), 403, 'Forbidden.');
 
         $screen->load(['customFields']);
 
@@ -27,7 +30,10 @@ class ScreenController extends Controller
 
     public function upsert(UpsertScreenRequest $request): JsonResponse
     {
-        $this->ensurePermission($request->user(), PermissionList::WORKFLOWS_EDIT);
+        $workflowVersion = WorkflowVersion::with('workflow.project')
+            ->findOrFail($request->validated('workflow_version_id'));
+        abort_unless($this->access->canEdit($request->user(), $workflowVersion->workflow->project), 403, 'Forbidden.');
+        abort_if($workflowVersion->is_published, 422, 'Cannot modify a published version.');
 
         $validated = $request->validated();
 
@@ -71,7 +77,9 @@ class ScreenController extends Controller
 
     public function update(Request $request, Screen $screen): JsonResponse
     {
-        $this->ensurePermission($request->user(), PermissionList::WORKFLOWS_EDIT);
+        $screen->loadMissing('workflowVersion.workflow.project');
+        abort_unless($this->access->canEdit($request->user(), $screen->workflowVersion->workflow->project), 403, 'Forbidden.');
+        abort_if($screen->workflowVersion->is_published, 422, 'Cannot modify a published version.');
 
         $data = $request->validate([
             'title' => ['nullable', 'string', 'max:255'],

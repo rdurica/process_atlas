@@ -18,6 +18,7 @@ class WorkflowVersion extends Model
         'is_published',
         'graph_json',
         'lock_version',
+        'rollback_from_version_id',
     ];
 
     /**
@@ -53,5 +54,13 @@ class WorkflowVersion extends Model
     public function screens(): HasMany
     {
         return $this->hasMany(Screen::class);
+    }
+
+    /**
+     * @return BelongsTo<WorkflowVersion, $this>
+     */
+    public function rollbackSource(): BelongsTo
+    {
+        return $this->belongsTo(WorkflowVersion::class, 'rollback_from_version_id');
     }
 }

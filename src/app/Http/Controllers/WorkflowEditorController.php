@@ -3,24 +3,23 @@
 namespace App\Http\Controllers;
 
 use App\Models\Workflow;
-use App\Support\ActivityFeed;
-use App\Support\PermissionList;
+use App\Services\ProjectAccessService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class WorkflowEditorController extends Controller
 {
-    public function __construct(private readonly ActivityFeed $activityFeed)
+    public function __construct(private readonly ProjectAccessService $access)
     {
     }
 
     public function __invoke(Request $request, Workflow $workflow): Response
     {
-        abort_unless($request->user()->can(PermissionList::WORKFLOWS_VIEW), 403);
+        $workflow->load('project');
+        abort_unless($this->access->canView($request->user(), $workflow->project), 403);
 
         $workflow->load([
-            'project',
             'latestVersion.creator',
             'latestVersion.screens.customFields',
             'versions' => fn ($query) => $query->with('creator')->orderByDesc('version_number'),
@@ -32,10 +31,15 @@ class WorkflowEditorController extends Controller
             ->orderBy('name')
             ->get();
 
+        $user = $request->user();
+        $currentUserRole = $user->isAdmin()
+            ? 'process_owner'
+            : $user->projectRoleIn($workflow->project);
+
         return Inertia::render('WorkflowEditor', [
             'workflow' => $workflow,
-            'recentActivity' => $this->activityFeed->latestForWorkflow($workflow),
             'projectWorkflows' => $projectWorkflows,
+            'currentUserRole' => $currentUserRole,
         ]);
     }
 }
