@@ -36,7 +36,7 @@ type WorkflowEditorProps = {
     currentUserRole: 'process_owner' | 'editor' | 'viewer' | null;
 };
 
-type InspectorTab = 'screen' | 'fields';
+type InspectorTab = 'screen' | 'fields' | 'general' | 'security';
 type GraphState = 'saved' | 'dirty' | 'saving' | 'conflict' | 'error';
 type WorkflowNodeKind = 'screen' | 'flash' | 'condition' | 'if' | 'action' | 'start' | 'end';
 type FlashType = 'error' | 'warning' | 'info' | 'success';
@@ -45,6 +45,7 @@ type ScreenNodeData = Record<string, unknown> & {
     label?: string;
     subtitle?: string;
     image_url?: string | null;
+    security_rule?: string | null;
 };
 type FlashNodeData = Record<string, unknown> & {
     type?: FlashType;
@@ -57,9 +58,11 @@ type ConditionNodeData = Record<string, unknown> & {
 type ActionNodeData = Record<string, unknown> & {
     title?: string;
     description?: string;
+    security_rule?: string | null;
 };
 type StartNodeData = Record<string, unknown> & {
     label?: string;
+    security_rule?: string | null;
 };
 type EndNodeData = Record<string, unknown> & {
     label?: string;
@@ -347,6 +350,37 @@ function conditionOutputLabel(sourceHandle?: string | null): string {
         : 'Output';
 }
 
+function defaultInspectorTab(nodeKind: WorkflowNodeKind): InspectorTab {
+    if (nodeKind === 'screen') {
+        return 'screen';
+    }
+
+    if (nodeKind === 'action' || nodeKind === 'start') {
+        return 'general';
+    }
+
+    return 'general';
+}
+
+function inspectorTabsForNodeKind(nodeKind: WorkflowNodeKind): [InspectorTab, string][] {
+    if (nodeKind === 'screen') {
+        return [
+            ['screen', 'Screen'],
+            ['fields', 'Fields'],
+            ['security', 'Security'],
+        ];
+    }
+
+    if (nodeKind === 'action' || nodeKind === 'start') {
+        return [
+            ['general', 'General'],
+            ['security', 'Security'],
+        ];
+    }
+
+    return [];
+}
+
 export default function WorkflowEditor({
     workflow,
     projectWorkflows,
@@ -426,6 +460,9 @@ export default function WorkflowEditor({
     const selectedNodeKind = isWorkflowNodeKind(selectedNode?.type)
         ? selectedNode.type
         : 'screen';
+    const selectedNodeInspectorTabs = selectedNode
+        ? inspectorTabsForNodeKind(selectedNodeKind)
+        : [];
 
     const selectedEdge = useMemo(
         () => edges.find((edge) => edge.id === selectedEdgeId) ?? null,
@@ -464,6 +501,21 @@ export default function WorkflowEditor({
     useEffect(() => {
         setEdgeDraftLabel(String(selectedEdge?.label ?? ''));
     }, [selectedEdge]);
+
+    useEffect(() => {
+        if (!selectedNode) {
+            return;
+        }
+
+        const availableTabs = inspectorTabsForNodeKind(selectedNodeKind).map(([key]) => key);
+        if (availableTabs.length === 0) {
+            return;
+        }
+
+        if (!availableTabs.includes(inspectorTab)) {
+            setInspectorTab(defaultInspectorTab(selectedNodeKind));
+        }
+    }, [inspectorTab, selectedNode, selectedNodeKind]);
 
     // Sync canvas state when latestVersion changes (e.g. after rollback draft is created)
     useEffect(() => {
@@ -512,10 +564,15 @@ export default function WorkflowEditor({
         setActionNotice(null);
     };
 
-    const setNodeSelected = (nodeId: string) => {
+    const setNodeSelected = (nodeId: string, nodeKind?: WorkflowNodeKind) => {
+        const resolvedNodeKind = nodeKind ?? (() => {
+            const nextNode = nodes.find((node) => node.id === nodeId);
+            return isWorkflowNodeKind(nextNode?.type) ? nextNode.type : 'screen';
+        })();
+
         setSelectedNodeId(nodeId);
         setSelectedEdgeId(null);
-        setInspectorTab('screen');
+        setInspectorTab(defaultInspectorTab(resolvedNodeKind));
         closeFieldEditor();
         setActionError(null);
         setActionNotice(null);
@@ -636,11 +693,15 @@ export default function WorkflowEditor({
                     y: Math.max(120, currentNodes.length * 90),
                 },
                 type: 'screen',
-                data: { label: `Screen ${currentNodes.length + 1}`, subtitle: '' },
+                data: {
+                    label: `Screen ${currentNodes.length + 1}`,
+                    subtitle: '',
+                    security_rule: null,
+                },
             },
         ]);
 
-        setNodeSelected(nextId);
+        setNodeSelected(nextId, 'screen');
     };
 
     const addWorkflowNode = (
@@ -666,12 +727,13 @@ export default function WorkflowEditor({
                         condition: `Condition ${labelIndex}`,
                     }
                   : nodeKind === 'start'
-                    ? { label: 'Start' }
+                    ? { label: 'Start', security_rule: null }
                     : nodeKind === 'end'
                       ? { label: 'End', linked_workflow_id: null, linked_workflow_name: null }
                       : {
                             title: `Action ${labelIndex}`,
                             description: '',
+                            security_rule: null,
                         };
 
         setNodes((currentNodes) => [
@@ -687,7 +749,7 @@ export default function WorkflowEditor({
             },
         ]);
 
-        setNodeSelected(nextId);
+        setNodeSelected(nextId, nodeKind);
     };
 
     const handleDropNode = (
@@ -705,10 +767,11 @@ export default function WorkflowEditor({
                     data: {
                         label: `Screen ${currentNodes.length + 1}`,
                         subtitle: '',
+                        security_rule: null,
                     },
                 },
             ]);
-            setNodeSelected(nextId);
+            setNodeSelected(nextId, 'screen');
         } else if (
             nodeKind === 'flash' ||
             nodeKind === 'condition' ||
@@ -1116,8 +1179,18 @@ export default function WorkflowEditor({
                         onNodesChange={handleNodesChange}
                         onEdgesChange={handleEdgesChange}
                         onConnect={onConnect}
-                        onNodeClick={(_, node) => setNodeSelected(node.id)}
-                        onNodeDoubleClick={(_, node) => setNodeSelected(node.id)}
+                        onNodeClick={(_, node) =>
+                            setNodeSelected(
+                                node.id,
+                                isWorkflowNodeKind(node.type) ? node.type : undefined,
+                            )
+                        }
+                        onNodeDoubleClick={(_, node) =>
+                            setNodeSelected(
+                                node.id,
+                                isWorkflowNodeKind(node.type) ? node.type : undefined,
+                            )
+                        }
                         onEdgeClick={(_, edge) => setEdgeSelected(edge.id)}
                         onEdgeDoubleClick={(_, edge) => setEdgeSelected(edge.id)}
                         onPaneClick={clearCanvasSelection}
@@ -1255,16 +1328,18 @@ export default function WorkflowEditor({
                             ) : null}
                         </div>
 
-                        {selectedNodeKind === 'screen' && selectedNode && (
-                            <div className="inspector-tabs mt-5">
-                                {[
-                                    ['screen', 'Screen'],
-                                    ['fields', 'Fields'],
-                                ].map(([key, label]) => (
+                        {selectedNode && selectedNodeInspectorTabs.length > 0 && (
+                            <div
+                                className="inspector-tabs mt-5"
+                                style={{
+                                    gridTemplateColumns: `repeat(${selectedNodeInspectorTabs.length}, minmax(0, 1fr))`,
+                                }}
+                            >
+                                {selectedNodeInspectorTabs.map(([key, label]) => (
                                     <button
                                         key={key}
                                         type="button"
-                                        onClick={() => setInspectorTab(key as InspectorTab)}
+                                        onClick={() => setInspectorTab(key)}
                                         className={`inspector-tab ${
                                             inspectorTab === key ? 'inspector-tab-active' : ''
                                         }`.trim()}
@@ -1429,47 +1504,105 @@ export default function WorkflowEditor({
 
                             {selectedNodeKind === 'action' && (
                                 <>
-                                    <label className="block text-sm font-medium text-slate-700">
-                                        Title
-                                        <textarea
-                                            value={
-                                                (selectedNode.data.title as string | undefined) ??
-                                                ''
-                                            }
-                                            onChange={(event) =>
-                                                updateSelectedNodeData({
-                                                    title: event.target.value,
-                                                })
-                                            }
-                                            disabled={!canEditWorkflows}
-                                            className="textarea-shell mt-2"
-                                        />
-                                    </label>
+                                    {inspectorTab === 'general' && (
+                                        <>
+                                            <label className="block text-sm font-medium text-slate-700">
+                                                Title
+                                                <textarea
+                                                    value={
+                                                        (selectedNode.data.title as string | undefined) ??
+                                                        ''
+                                                    }
+                                                    onChange={(event) =>
+                                                        updateSelectedNodeData({
+                                                            title: event.target.value,
+                                                        })
+                                                    }
+                                                    disabled={!canEditWorkflows}
+                                                    className="textarea-shell mt-2"
+                                                />
+                                            </label>
 
-                                    <label className="block text-sm font-medium text-slate-700">
-                                        Description
-                                        <textarea
-                                            value={
-                                                (selectedNode.data.description as
-                                                    | string
-                                                    | undefined) ?? ''
-                                            }
-                                            onChange={(event) =>
-                                                updateSelectedNodeData({
-                                                    description: event.target.value,
-                                                })
-                                            }
-                                            disabled={!canEditWorkflows}
-                                            className="textarea-shell textarea-shell-compact mt-2"
-                                        />
-                                    </label>
+                                            <label className="block text-sm font-medium text-slate-700">
+                                                Description
+                                                <textarea
+                                                    value={
+                                                        (selectedNode.data.description as
+                                                            | string
+                                                            | undefined) ?? ''
+                                                    }
+                                                    onChange={(event) =>
+                                                        updateSelectedNodeData({
+                                                            description: event.target.value,
+                                                        })
+                                                    }
+                                                    disabled={!canEditWorkflows}
+                                                    className="textarea-shell textarea-shell-compact mt-2"
+                                                />
+                                            </label>
+                                        </>
+                                    )}
+
+                                    {inspectorTab === 'security' && (
+                                        <div className="workflow-security-form">
+                                            <label className="workflow-security-label block text-sm font-medium text-slate-700">
+                                                Security rule (additional)
+                                                <textarea
+                                                    value={
+                                                        (selectedNode.data.security_rule as
+                                                            | string
+                                                            | undefined
+                                                            | null) ?? ''
+                                                    }
+                                                    onChange={(event) =>
+                                                        updateSelectedNodeData({
+                                                            security_rule: event.target.value.length > 0
+                                                                ? event.target.value
+                                                                : null,
+                                                        })
+                                                    }
+                                                    disabled={!canEditWorkflows}
+                                                    className="textarea-shell textarea-shell-security mt-2"
+                                                />
+                                            </label>
+                                        </div>
+                                    )}
                                 </>
                             )}
 
                             {selectedNodeKind === 'start' && (
-                                <div className="empty-state">
-                                    Entry point of the workflow — no configuration needed.
-                                </div>
+                                <>
+                                    {inspectorTab === 'general' && (
+                                        <div className="empty-state">
+                                            Entry point of the workflow — no configuration needed.
+                                        </div>
+                                    )}
+
+                                    {inspectorTab === 'security' && (
+                                        <div className="workflow-security-form">
+                                            <label className="workflow-security-label block text-sm font-medium text-slate-700">
+                                                Security rule (additional)
+                                                <textarea
+                                                    value={
+                                                        (selectedNode.data.security_rule as
+                                                            | string
+                                                            | undefined
+                                                            | null) ?? ''
+                                                    }
+                                                    onChange={(event) =>
+                                                        updateSelectedNodeData({
+                                                            security_rule: event.target.value.length > 0
+                                                                ? event.target.value
+                                                                : null,
+                                                        })
+                                                    }
+                                                    disabled={!canEditWorkflows}
+                                                    className="textarea-shell textarea-shell-security mt-2"
+                                                />
+                                            </label>
+                                        </div>
+                                    )}
+                                </>
                             )}
 
                             {selectedNodeKind === 'end' && (
@@ -1846,6 +1979,31 @@ export default function WorkflowEditor({
                                             </div>
                                         </form>
                                     )}
+                                </div>
+                            )}
+
+                            {inspectorTab === 'security' && (
+                                <div className="workflow-inline-form workflow-security-form">
+                                    <label className="workflow-security-label block text-sm font-medium text-slate-700">
+                                        Security rule (additional)
+                                        <textarea
+                                            value={
+                                                (selectedNode.data.security_rule as
+                                                    | string
+                                                    | undefined
+                                                    | null) ?? ''
+                                            }
+                                            onChange={(event) =>
+                                                updateSelectedNodeData({
+                                                    security_rule: event.target.value.length > 0
+                                                        ? event.target.value
+                                                        : null,
+                                                })
+                                            }
+                                            disabled={!canEditWorkflows}
+                                            className="textarea-shell textarea-shell-security mt-2"
+                                        />
+                                    </label>
                                 </div>
                             )}
 

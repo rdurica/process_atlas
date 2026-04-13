@@ -33,12 +33,44 @@ it('creates a workflow and edits screen properties via api', function (): void {
     $this->patchJson("/api/v1/workflow-versions/{$versionId}/graph", [
         'graph_json' => [
             'nodes' => [
-                ['id' => 'screen-1', 'data' => ['label' => 'Start'], 'position' => ['x' => 100, 'y' => 100]],
+                [
+                    'id' => 'start-1',
+                    'type' => 'start',
+                    'data' => ['label' => 'Start', 'security_rule' => 'agent.context.region == "EU"'],
+                    'position' => ['x' => 20, 'y' => 100],
+                ],
+                [
+                    'id' => 'action-1',
+                    'type' => 'action',
+                    'data' => ['title' => 'Verify Risk', 'security_rule' => 'agent.trust_score >= 0.7'],
+                    'position' => ['x' => 190, 'y' => 100],
+                ],
+                [
+                    'id' => 'screen-1',
+                    'type' => 'screen',
+                    'data' => ['label' => 'Start', 'security_rule' => 'user.department == "finance"'],
+                    'position' => ['x' => 360, 'y' => 100],
+                ],
             ],
-            'edges' => [],
+            'edges' => [
+                ['id' => 'e-start-action', 'source' => 'start-1', 'target' => 'action-1'],
+                ['id' => 'e-action-screen', 'source' => 'action-1', 'target' => 'screen-1'],
+            ],
         ],
         'lock_version' => 0,
     ])->assertOk()->assertJsonPath('data.lock_version', 1);
+
+    $savedVersion = $this->getJson("/api/v1/workflow-versions/{$versionId}")
+        ->assertOk();
+
+    $savedNodes = collect($savedVersion->json('data.graph_json.nodes'));
+
+    expect(data_get($savedNodes->firstWhere('id', 'start-1'), 'data.security_rule'))
+        ->toBe('agent.context.region == "EU"');
+    expect(data_get($savedNodes->firstWhere('id', 'action-1'), 'data.security_rule'))
+        ->toBe('agent.trust_score >= 0.7');
+    expect(data_get($savedNodes->firstWhere('id', 'screen-1'), 'data.security_rule'))
+        ->toBe('user.department == "finance"');
 
     $screenResponse = $this->postJson('/api/v1/screens/upsert', [
         'workflow_version_id' => $versionId,
@@ -71,6 +103,13 @@ it('creates a workflow and edits screen properties via api', function (): void {
 
     expect($draftVersion->json('data.screens.0.subtitle'))->toBe('Card capture');
     expect($draftVersion->json('data.screens.0'))->not->toHaveKey('flashes');
+    $draftNodes = collect($draftVersion->json('data.graph_json.nodes'));
+    expect(data_get($draftNodes->firstWhere('id', 'start-1'), 'data.security_rule'))
+        ->toBe('agent.context.region == "EU"');
+    expect(data_get($draftNodes->firstWhere('id', 'action-1'), 'data.security_rule'))
+        ->toBe('agent.trust_score >= 0.7');
+    expect(data_get($draftNodes->firstWhere('id', 'screen-1'), 'data.security_rule'))
+        ->toBe('user.department == "finance"');
 });
 
 it('denies project creation for viewer role', function (): void {

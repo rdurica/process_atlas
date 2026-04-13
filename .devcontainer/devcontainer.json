@@ -1,0 +1,23 @@
+{
+    "name": "Process Atlas",
+    "dockerComposeFile": "../compose.yaml",
+    "service": "php-fpm",
+    "workspaceFolder": "/app/src",
+    "overrideCommand": false,
+    "forwardPorts": [443, 5173],
+    "runServices": ["node"],
+    "remoteUser": "robbyte",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "bmewburn.vscode-intelephense-client",
+                "xdebug.php-debug",
+                "dbaeumer.vscode-eslint",
+                "esbenp.prettier-vscode",
+                "bradlc.vscode-tailwindcss",
+                "ms-vscode.vscode-typescript-next",
+                "christian-kohler.path-intellisense"
+            ]
+        }
+    }
+}

@@ -7,6 +7,7 @@ services:
     volumes:
       - ./src:/app/src
       - ./build/dev/certs:/etc/nginx/certs
+      - node_modules:/app/src/node_modules
     ports:
       - 443:443
       - 80:80

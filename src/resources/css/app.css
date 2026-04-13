@@ -1095,6 +1095,23 @@ select {
         gap: 0.85rem;
     }
 
+    .workflow-security-form {
+        display: grid;
+        gap: 0.75rem;
+    }
+
+    .workflow-security-label {
+        display: flex;
+        flex-direction: column;
+        min-height: clamp(18rem, calc(100vh - 23rem), 46rem);
+    }
+
+    .textarea-shell-security {
+        flex: 1 1 auto;
+        min-height: clamp(16rem, calc(100vh - 25rem), 44rem);
+        resize: vertical;
+    }
+
     .workflow-inline-actions {
         display: flex;
         flex-wrap: wrap;

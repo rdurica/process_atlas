@@ -23,3 +23,4 @@ manifest.yaml
 
 # Laravel
 !src/.env.example
+/src/nbproject/private/
