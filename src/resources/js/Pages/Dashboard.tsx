@@ -358,7 +358,7 @@ export default function Dashboard({
             accentClass: 'metric-card-workflows',
         },
         {
-            label: 'Draft Versions',
+            label: 'Draft Revisions',
             value: summary.draft_versions,
             detail: 'Unpublished changes waiting for review or release.',
             accentClass: 'metric-card-drafts',
@@ -366,7 +366,7 @@ export default function Dashboard({
         {
             label: 'Published Workflows',
             value: summary.published_workflows,
-            detail: 'Processes with a live published version.',
+            detail: 'Processes with a live published revision.',
             accentClass: 'metric-card-published',
         },
     ];
@@ -467,7 +467,7 @@ export default function Dashboard({
                                     <tr>
                                         <th>Project</th>
                                         <th>Workflows</th>
-                                        <th>Latest Version</th>
+                                        <th>Latest Revision</th>
                                         <th>Status</th>
                                         <th>Actions</th>
                                     </tr>
@@ -569,8 +569,8 @@ export default function Dashboard({
                                                                             <div className="flex shrink-0 items-center gap-2">
                                                                                 <StatusBadge tone="brand">
                                                                                     {workflow.latest_version
-                                                                                        ? `v${workflow.latest_version.version_number}`
-                                                                                        : 'No version'}
+                                                                                        ? `rev. ${workflow.latest_version.version_number}`
+                                                                                        : 'No revision'}
                                                                                 </StatusBadge>
                                                                                 <StatusBadge tone={workflowTone(workflow.status)}>
                                                                                     {workflow.status}
@@ -624,7 +624,7 @@ export default function Dashboard({
                         <p className="eyebrow">Create Project</p>
                         <h2 className="panel-title mt-2">Provision a new project workspace</h2>
                         <p className="mt-3 text-sm text-slate-600">
-                            Create a project shell first, then attach workflows and versioned process maps.
+                            Create a project shell first, then attach workflows and revision-tracked process maps.
                         </p>
                     </div>
 
@@ -681,7 +681,7 @@ export default function Dashboard({
                         <p className="eyebrow">Create Workflow</p>
                         <h2 className="panel-title mt-2">Open a new process model</h2>
                         <p className="mt-3 text-sm text-slate-600">
-                            New workflows start in draft mode with an initial version ready for editing.
+                            New workflows start in draft mode with an initial revision ready for editing.
                         </p>
                     </div>
 

@@ -41,7 +41,7 @@ export default function Login({
                     </h1>
                     <p className="mt-5 max-w-xl text-base leading-7 text-slate-600">
                         Review process models, update screen metadata, and publish
-                        workflow versions from one focused workspace.
+                        workflow revisions from one focused workspace.
                     </p>
                 </div>
 

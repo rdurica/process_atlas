@@ -101,7 +101,7 @@ final class ActivityFeed
         return match ($activity->subject_type) {
             Project::class => $subject?->name ?? 'Project',
             Workflow::class => $subject?->name ?? 'Workflow',
-            WorkflowVersion::class => $subject ? 'Version v'.$subject->version_number : 'Workflow version',
+            WorkflowVersion::class => $subject ? 'rev. '.$subject->version_number : 'Workflow revision',
             Screen::class => $subject?->title ?: ($subject?->node_id ?? 'Screen'),
             ScreenCustomField::class => $subject?->key ?? 'Custom field',
             default => 'Activity',

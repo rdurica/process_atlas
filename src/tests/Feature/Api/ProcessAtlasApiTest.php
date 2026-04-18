@@ -134,18 +134,158 @@ it('allows project creation for editor role', function (): void {
     ])->assertCreated();
 });
 
-it('handles mcp requests over api endpoint', function (): void {
+it('handles standard mcp initialize requests over api endpoint', function (): void {
     $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
     $token = $owner->createToken('mcp-test')->plainTextToken;
+
+    $response = $this->withHeader('Authorization', "Bearer {$token}")
+        ->postJson('/api/mcp', [
+            'jsonrpc' => '2.0',
+            'id' => 1,
+            'method' => 'initialize',
+            'params' => [
+                'protocolVersion' => '2024-11-05',
+                'capabilities' => [],
+                'clientInfo' => [
+                    'name' => 'feature-test',
+                    'version' => '1.0.0',
+                ],
+            ],
+        ]);
+
+    $response
+        ->assertOk()
+        ->assertJsonPath('jsonrpc', '2.0')
+        ->assertJsonPath('result.protocolVersion', '2024-11-05')
+        ->assertJsonPath('result.serverInfo.name', 'process-atlas')
+        ->assertJsonPath('result.capabilities.tools.listChanged', false);
 
     $this->withHeader('Authorization', "Bearer {$token}")
         ->postJson('/api/mcp', [
             'jsonrpc' => '2.0',
-            'id' => 1,
-            'method' => 'list_projects',
+            'method' => 'notifications/initialized',
+            'params' => [],
+        ])
+        ->assertNoContent();
+});
+
+it('lists and reads mcp resources over api endpoint', function (): void {
+    $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
+    $this->actingAs($owner);
+
+    $projectResponse = $this->postJson('/api/v1/projects', [
+        'name' => 'MCP Resource Project',
+    ])->assertCreated();
+    $projectId = (int) $projectResponse->json('data.id');
+
+    $workflowResponse = $this->postJson("/api/v1/projects/{$projectId}/workflows", [
+        'name' => 'MCP Resource Workflow',
+    ])->assertCreated();
+    $workflowId = (int) $workflowResponse->json('data.id');
+
+    $token = $owner->createToken('mcp-test-resources')->plainTextToken;
+
+    $resourcesResponse = $this->withHeader('Authorization', "Bearer {$token}")
+        ->postJson('/api/mcp', [
+            'jsonrpc' => '2.0',
+            'id' => 2,
+            'method' => 'resources/list',
             'params' => [],
         ])
         ->assertOk()
-        ->assertJsonPath('jsonrpc', '2.0')
-        ->assertJsonStructure(['result' => ['projects']]);
+        ->assertJsonPath('jsonrpc', '2.0');
+
+    expect($resourcesResponse->json('result.resources'))->toBeArray();
+    expect(collect($resourcesResponse->json('result.resources'))->contains(
+        fn (array $resource): bool => ($resource['uri'] ?? null) === "process-atlas://projects/{$projectId}"
+    ))->toBeTrue();
+
+    $readResponse = $this->withHeader('Authorization', "Bearer {$token}")
+        ->postJson('/api/mcp', [
+            'jsonrpc' => '2.0',
+            'id' => 3,
+            'method' => 'resources/read',
+            'params' => ['uri' => "process-atlas://workflows/{$workflowId}"],
+        ])
+        ->assertOk()
+        ->assertJsonPath('result.contents.0.uri', "process-atlas://workflows/{$workflowId}");
+
+    $payload = json_decode((string) $readResponse->json('result.contents.0.text'), true);
+    expect(data_get($payload, 'workflow.id'))->toBe($workflowId);
+});
+
+it('calls mcp tools and reports revision conflicts', function (): void {
+    $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
+    $this->actingAs($owner);
+
+    $projectResponse = $this->postJson('/api/v1/projects', [
+        'name' => 'MCP Tool Project',
+    ])->assertCreated();
+    $projectId = (int) $projectResponse->json('data.id');
+
+    $workflowResponse = $this->postJson("/api/v1/projects/{$projectId}/workflows", [
+        'name' => 'MCP Tool Workflow',
+    ])->assertCreated();
+    $workflowId = (int) $workflowResponse->json('data.id');
+
+    $workflowShow = $this->getJson("/api/v1/workflows/{$workflowId}")->assertOk();
+    $revisionId = (int) $workflowShow->json('data.latest_version.id');
+
+    $token = $owner->createToken('mcp-test-tools')->plainTextToken;
+
+    $this->withHeader('Authorization', "Bearer {$token}")
+        ->postJson('/api/mcp', [
+            'jsonrpc' => '2.0',
+            'id' => 4,
+            'method' => 'tools/call',
+            'params' => [
+                'name' => 'process_atlas.update_graph',
+                'arguments' => [
+                    'workflow_revision_id' => $revisionId,
+                    'lock_revision' => 0,
+                    'graph_json' => [
+                        'nodes' => [],
+                        'edges' => [],
+                    ],
+                ],
+            ],
+        ])
+        ->assertOk()
+        ->assertJsonPath('result.structuredContent.workflow_revision_id', $revisionId)
+        ->assertJsonPath('result.structuredContent.lock_revision', 1);
+
+    $this->withHeader('Authorization', "Bearer {$token}")
+        ->postJson('/api/mcp', [
+            'jsonrpc' => '2.0',
+            'id' => 5,
+            'method' => 'tools/call',
+            'params' => [
+                'name' => 'process_atlas.update_graph',
+                'arguments' => [
+                    'workflow_revision_id' => $revisionId,
+                    'lock_revision' => 0,
+                    'graph_json' => [
+                        'nodes' => [],
+                        'edges' => [],
+                    ],
+                ],
+            ],
+        ])
+        ->assertOk()
+        ->assertJsonPath('error.code', -32602)
+        ->assertJsonPath('error.message', 'Revision conflict. Reload the latest draft and retry.');
+});
+
+it('forbids mcp access without mcp.use permission', function (): void {
+    $viewer = User::query()->where('email', 'viewer@example.com')->firstOrFail();
+    $token = $viewer->createToken('mcp-test-forbidden')->plainTextToken;
+
+    $this->withHeader('Authorization', "Bearer {$token}")
+        ->postJson('/api/mcp', [
+            'jsonrpc' => '2.0',
+            'id' => 6,
+            'method' => 'initialize',
+            'params' => [],
+        ])
+        ->assertForbidden();
 });

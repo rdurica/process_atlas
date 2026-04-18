@@ -3,43 +3,29 @@
 namespace App\Http\Controllers;
 
 use App\Models\Workflow;
-use App\Services\ProjectAccessService;
+use App\Queries\WorkflowQueryService;
+use App\Support\ActivityFeed;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class WorkflowEditorController extends Controller
 {
-    public function __construct(private readonly ProjectAccessService $access)
-    {
+    public function __construct(
+        private readonly WorkflowQueryService $workflows,
+        private readonly ActivityFeed $activity,
+    ) {
     }
 
     public function __invoke(Request $request, Workflow $workflow): Response
     {
-        $workflow->load('project');
-        abort_unless($this->access->canView($request->user(), $workflow->project), 403);
-
-        $workflow->load([
-            'latestVersion.creator',
-            'latestVersion.screens.customFields',
-            'versions' => fn ($query) => $query->with('creator')->orderByDesc('version_number'),
-        ]);
-
-        $projectWorkflows = $workflow->project
-            ->workflows()
-            ->select(['id', 'name', 'status'])
-            ->orderBy('name')
-            ->get();
-
-        $user = $request->user();
-        $currentUserRole = $user->isAdmin()
-            ? 'process_owner'
-            : $user->projectRoleIn($workflow->project);
+        $this->authorize('view', $workflow);
 
         return Inertia::render('WorkflowEditor', [
-            'workflow' => $workflow,
-            'projectWorkflows' => $projectWorkflows,
-            'currentUserRole' => $currentUserRole,
+            'workflow' => $this->workflows->detailForEditor($workflow),
+            'projectWorkflows' => $this->workflows->projectWorkflowsForEditor($workflow),
+            'currentUserRole' => $this->workflows->currentUserRoleForWorkflow($request->user(), $workflow),
+            'recentActivity' => $this->activity->latestForWorkflow($workflow),
         ]);
     }
 }

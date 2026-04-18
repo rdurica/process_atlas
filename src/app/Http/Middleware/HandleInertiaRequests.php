@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\PermissionList;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 use Tighten\Ziggy\Ziggy;
@@ -31,6 +32,18 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $user = $request->user();
+        $permissions = collect();
+
+        if ($user) {
+            $permissions = $user->getAllPermissions()->pluck('name');
+            $permissions->push('projects.view', 'workflows.view');
+
+            if ($user->can(PermissionList::PROJECTS_ADMIN) || $user->hasRole('process_owner')) {
+                $permissions->push('projects.manage', 'workflows.edit');
+            } elseif ($user->hasRole('editor')) {
+                $permissions->push('workflows.edit');
+            }
+        }
 
         return [
             ...parent::share($request),
@@ -38,7 +51,7 @@ class HandleInertiaRequests extends Middleware
                 'user' => $user ? [
                     ...$user->only(['id', 'name', 'email', 'email_verified_at']),
                     'roles' => $user->getRoleNames()->values(),
-                    'permissions' => $user->getAllPermissions()->pluck('name')->values(),
+                    'permissions' => $permissions->unique()->values(),
                 ] : null,
             ],
             'ziggy' => fn () => [

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api;
 
+use App\DTO\Command\UpdateWorkflowCommand;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateWorkflowRequest extends FormRequest
@@ -20,5 +21,13 @@ class UpdateWorkflowRequest extends FormRequest
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'status' => ['sometimes', 'required', 'string', 'in:draft,published'],
         ];
+    }
+
+    public function toDto(): UpdateWorkflowCommand
+    {
+        /** @var array<string, mixed> $validated */
+        $validated = $this->validated();
+
+        return UpdateWorkflowCommand::fromArray($validated);
     }
 }

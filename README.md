@@ -1,6 +1,6 @@
 # Process Atlas
 
-> A process modeling and documentation platform built for agentic development — design, version, and publish visual workflows that AI agents can understand and navigate via MCP.
+> A process modeling and documentation platform built for agentic development — design, revise, and publish visual workflows that AI agents can understand and navigate via MCP.
 
 [![PHP](https://img.shields.io/badge/PHP-8.3+-blue.svg)](https://php.net)
 [![Laravel](https://img.shields.io/badge/Laravel-13-red.svg)](https://laravel.com)
@@ -12,7 +12,7 @@
 
 ## What is Process Atlas?
 
-Process Atlas is a web application for **modeling, documenting, and versioning business processes** as visual flow diagrams. It is designed with **agentic development** in mind — the process definitions created here are intended to be consumed by AI agents through **MCP (Model Context Protocol)**, giving agents a structured, up-to-date understanding of application processes, user flows, and business logic before and during autonomous task execution.
+Process Atlas is a web application for **modeling, documenting, and tracking revisions of business processes** as visual flow diagrams. It is designed with **agentic development** in mind — the process definitions created here are intended to be consumed by AI agents through **MCP (Model Context Protocol)**, giving agents a structured, up-to-date understanding of application processes, user flows, and business logic before and during autonomous task execution.
 
 Instead of an AI agent blindly navigating an unfamiliar system, it can query Process Atlas via MCP to answer questions like:
 
@@ -31,7 +31,7 @@ Process Atlas is the living map that agents read.
 - **Rich node vocabulary** — Start, End, Screen, Flash (notification), Condition (branching), Action
 - **Workflow chaining** — End nodes link to downstream workflows, modeling multi-stage processes
 - **Screen documentation** — attach UI mockup images, descriptions, and typed custom fields to any step
-- **Version control** — draft/publish lifecycle with rollback to any previous version
+- **Revision control** — draft/publish lifecycle with rollback to any previous revision
 - **Role-based access** — granular `workflows.view`, `workflows.edit`, `workflows.publish` permissions
 - **Optimistic locking** — concurrent edit conflict detection
 - **Activity log** — full audit trail of all changes
@@ -49,6 +49,23 @@ Process Atlas is the living map that agents read.
 | Database | PostgreSQL |
 | Cache / Sessions / Queue | Redis |
 | Infrastructure | Docker (php-fpm + nginx + node), SSL via mkcert |
+
+---
+
+## MCP Protocol
+
+Process Atlas exposes a standard MCP JSON-RPC server over:
+
+- HTTP: `POST /api/mcp` (requires `auth:sanctum` and `mcp.use`)
+- Stdio: `php artisan mcp:serve-stdio --user=<id>`
+
+Supported MCP methods:
+
+- `initialize`, `notifications/initialized`, `ping`
+- `tools/list`, `tools/call`
+- `resources/list`, `resources/read`, `resources/templates/list`
+
+Resource URIs use the `process-atlas://` scheme (for example `process-atlas://workflows/12`).
 
 ---
 

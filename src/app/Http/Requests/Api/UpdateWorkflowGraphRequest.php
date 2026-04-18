@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api;
 
+use App\DTO\Command\UpdateWorkflowGraphCommand;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateWorkflowGraphRequest extends FormRequest
@@ -22,5 +23,13 @@ class UpdateWorkflowGraphRequest extends FormRequest
             'graph_json.edges' => ['present', 'array'],
             'lock_version' => ['required', 'integer', 'min:0'],
         ];
+    }
+
+    public function toDto(): UpdateWorkflowGraphCommand
+    {
+        /** @var array<string, mixed> $validated */
+        $validated = $this->validated();
+
+        return UpdateWorkflowGraphCommand::fromArray($validated);
     }
 }

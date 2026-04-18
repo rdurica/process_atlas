@@ -2,85 +2,58 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\ProjectActionService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreProjectRequest;
 use App\Http\Requests\Api\UpdateProjectRequest;
 use App\Models\Project;
-use App\Services\Audit\AuditLogger;
-use App\Services\ProjectAccessService;
-use App\Support\PermissionList;
+use App\Queries\ProjectQueryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ProjectController extends Controller
 {
-    public function __construct(private readonly ProjectAccessService $access)
-    {
+    public function __construct(
+        private readonly ProjectQueryService $projects,
+        private readonly ProjectActionService $actions,
+    ) {
     }
 
     public function index(Request $request): JsonResponse
     {
-        $user = $request->user();
-
-        $projects = Project::query()
-            ->when(
-                ! $user->can(PermissionList::PROJECTS_ADMIN),
-                fn ($query) => $query->whereHas(
-                    'members',
-                    fn ($q) => $q->where('user_id', $user->id)
-                )
-            )
-            ->withCount('workflows')
-            ->orderBy('id')
-            ->get();
-
-        return response()->json(['data' => $projects]);
+        return response()->json(['data' => $this->projects->listForApi($request->user())]);
     }
 
     public function store(StoreProjectRequest $request): JsonResponse
     {
-        abort_unless($request->user()->can(PermissionList::PROJECTS_CREATE), 403, 'Forbidden.');
+        $this->authorize('create', Project::class);
 
-        $project = Project::query()->create([
-            ...$request->validated(),
-            'created_by' => $request->user()->id,
-        ]);
-
-        // Creator automatically becomes process_owner of the new project
-        $project->members()->attach($request->user()->id, ['role' => 'process_owner']);
-
-        AuditLogger::log($request->user(), $project, 'created', 'Project created');
+        $project = $this->actions->create($request->user(), $request->toDto());
 
         return response()->json(['data' => $project], 201);
     }
 
     public function show(Request $request, Project $project): JsonResponse
     {
-        abort_unless($this->access->canView($request->user(), $project), 403, 'Forbidden.');
+        $this->authorize('view', $project);
 
-        $project->load('workflows.latestVersion');
-
-        return response()->json(['data' => $project]);
+        return response()->json(['data' => $this->projects->detailForApi($project)]);
     }
 
     public function update(UpdateProjectRequest $request, Project $project): JsonResponse
     {
-        abort_unless($this->access->canManageMembers($request->user(), $project), 403, 'Forbidden.');
+        $this->authorize('update', $project);
 
-        $project->update($request->validated());
-
-        AuditLogger::log($request->user(), $project, 'updated', 'Project updated');
-
-        return response()->json(['data' => $project]);
+        return response()->json([
+            'data' => $this->actions->update($request->user(), $project, $request->toDto()),
+        ]);
     }
 
     public function destroy(Request $request, Project $project): JsonResponse
     {
-        abort_unless($this->access->canManageMembers($request->user(), $project), 403, 'Forbidden.');
+        $this->authorize('delete', $project);
 
-        $project->delete();
-
-        AuditLogger::log($request->user(), $project, 'deleted', 'Project deleted');
+        $this->actions->delete($request->user(), $project);
 
         return response()->json(status: 204);
     }

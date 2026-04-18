@@ -2,267 +2,76 @@
 
 namespace App\Services\Mcp;
 
-use App\Models\Screen;
-use App\Models\Project;
+use App\DTO\Mcp\McpRequest;
+use App\DTO\Mcp\McpResponse;
 use App\Models\User;
-use App\Models\Workflow;
-use App\Models\WorkflowVersion;
-use App\Services\Audit\AuditLogger;
-use App\Services\Workflow\WorkflowVersionManager;
-use App\Support\PermissionList;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 final class McpServer
 {
-    public function __construct(private readonly WorkflowVersionManager $versionManager)
+    public function __construct(private readonly McpMethodRegistry $registry)
     {
     }
 
-    /**
-     * @param array<string, mixed> $payload
-     * @return array<string, mixed>
-     */
-    public function handle(array $payload, User $actor): array
+    public function handle(McpRequest $request, User $actor): ?McpResponse
     {
-        $method = (string) ($payload['method'] ?? '');
-        $id = $payload['id'] ?? null;
-        $params = is_array($payload['params'] ?? null) ? $payload['params'] : [];
-
         try {
-            $result = match ($method) {
-                'list_projects' => $this->listProjects($actor),
-                'get_workflow' => $this->getWorkflow($actor, $params),
-                'get_screen' => $this->getScreen($actor, $params),
-                'update_screen' => $this->updateScreen($actor, $params),
-                'update_graph' => $this->updateGraph($actor, $params),
-                'create_workflow_version' => $this->createWorkflowVersion($actor, $params),
-                'publish_version' => $this->publishVersion($actor, $params),
-                'rollback_version' => $this->rollbackVersion($actor, $params),
-                default => throw ValidationException::withMessages(['method' => 'Unknown MCP method.']),
-            };
+            $result = $this->registry->handle($request->method, $request->params, $actor);
+        } catch (ValidationException $exception) {
+            if ($request->isNotification()) {
+                return null;
+            }
 
-            return [
-                'jsonrpc' => '2.0',
-                'id' => $id,
-                'result' => $result,
-            ];
-        } catch (\Throwable $exception) {
-            return [
-                'jsonrpc' => '2.0',
-                'id' => $id,
-                'error' => [
-                    'code' => 400,
-                    'message' => $exception->getMessage(),
-                ],
-            ];
-        }
-    }
+            return McpResponse::error($request->id, -32602, $this->firstValidationMessage($exception));
+        } catch (ModelNotFoundException) {
+            if ($request->isNotification()) {
+                return null;
+            }
 
-    /**
-     * @return array{projects: array<int, array{id: int, name: string, description: ?string}>}
-     */
-    private function listProjects(User $actor): array
-    {
-        $this->authorize($actor, PermissionList::PROJECTS_VIEW);
+            return McpResponse::error($request->id, -32004, 'Resource not found.');
+        } catch (AuthorizationException $exception) {
+            if ($request->isNotification()) {
+                return null;
+            }
 
-        return [
-            'projects' => Project::query()
-                ->select(['id', 'name', 'description'])
-                ->orderBy('id')
-                ->get()
-                ->map(fn ($project): array => [
-                    'id' => $project->id,
-                    'name' => $project->name,
-                    'description' => $project->description,
-                ])
-                ->all(),
-        ];
-    }
+            $message = $exception->getMessage() !== '' ? $exception->getMessage() : 'Forbidden.';
 
-    /**
-     * @param array<string, mixed> $params
-     * @return array<string, mixed>
-     */
-    private function getWorkflow(User $actor, array $params): array
-    {
-        $this->authorize($actor, PermissionList::WORKFLOWS_VIEW);
+            return McpResponse::error($request->id, -32003, $message);
+        } catch (HttpException $exception) {
+            if ($request->isNotification()) {
+                return null;
+            }
 
-        $workflowId = (int) ($params['workflow_id'] ?? 0);
-        $workflow = Workflow::query()
-            ->with(['latestVersion.screens.customFields'])
-            ->findOrFail($workflowId);
+            $code = $exception->getStatusCode() === 403 ? -32003 : -32000;
+            $message = $exception->getMessage() !== '' ? $exception->getMessage() : 'Request failed.';
 
-        return [
-            'workflow' => $workflow->toArray(),
-        ];
-    }
+            return McpResponse::error($request->id, $code, $message);
+        } catch (\Throwable) {
+            if ($request->isNotification()) {
+                return null;
+            }
 
-    /**
-     * @param array<string, mixed> $params
-     * @return array<string, mixed>
-     */
-    private function getScreen(User $actor, array $params): array
-    {
-        $this->authorize($actor, PermissionList::WORKFLOWS_VIEW);
-
-        $screenId = (int) ($params['screen_id'] ?? 0);
-
-        $screen = Screen::query()
-            ->with(['customFields'])
-            ->findOrFail($screenId);
-
-        return [
-            'screen' => $screen->toArray(),
-        ];
-    }
-
-    /**
-     * @param array<string, mixed> $params
-     * @return array<string, mixed>
-     */
-    private function updateScreen(User $actor, array $params): array
-    {
-        $this->authorize($actor, PermissionList::WORKFLOWS_EDIT);
-
-        $workflowVersionId = (int) ($params['workflow_version_id'] ?? 0);
-        $nodeId = (string) ($params['node_id'] ?? '');
-
-        if ($workflowVersionId <= 0 || $nodeId === '') {
-            throw ValidationException::withMessages([
-                'workflow_version_id' => 'workflow_version_id is required.',
-                'node_id' => 'node_id is required.',
-            ]);
+            return McpResponse::error($request->id, -32603, 'Internal MCP server error.');
         }
 
-        $screen = Screen::query()->firstOrCreate(
-            [
-                'workflow_version_id' => $workflowVersionId,
-                'node_id' => $nodeId,
-            ],
-            [
-                'created_by' => $actor->id,
-            ]
-        );
-
-        $screen->update([
-            'title' => array_key_exists('title', $params)
-                ? $params['title']
-                : $screen->title,
-            'subtitle' => array_key_exists('subtitle', $params)
-                ? $params['subtitle']
-                : $screen->subtitle,
-            'description' => array_key_exists('description', $params)
-                ? $params['description']
-                : $screen->description,
-            'updated_by' => $actor->id,
-        ]);
-
-        AuditLogger::log($actor, $screen, 'updated', 'Screen updated by MCP', [
-            'screen_id' => $screen->id,
-        ], source: 'mcp');
-
-        return ['screen' => $screen->fresh(['customFields'])->toArray()];
-    }
-
-    /**
-     * @param array<string, mixed> $params
-     * @return array<string, mixed>
-     */
-    private function updateGraph(User $actor, array $params): array
-    {
-        $this->authorize($actor, PermissionList::WORKFLOWS_EDIT);
-
-        $versionId = (int) ($params['workflow_version_id'] ?? 0);
-        $version = WorkflowVersion::query()->findOrFail($versionId);
-
-        $incomingLock = (int) ($params['lock_version'] ?? -1);
-        if ($incomingLock !== $version->lock_version) {
-            throw ValidationException::withMessages([
-                'lock_version' => 'Version conflict. Reload the latest draft and retry.',
-            ]);
+        if ($request->isNotification()) {
+            return null;
         }
 
-        $version->update([
-            'graph_json' => $params['graph_json'] ?? $version->graph_json,
-            'lock_version' => $version->lock_version + 1,
-        ]);
-
-        AuditLogger::log($actor, $version, 'updated', 'Workflow graph updated by MCP', [
-            'workflow_id' => $version->workflow_id,
-        ], source: 'mcp');
-
-        return [
-            'workflow_version_id' => $version->id,
-            'lock_version' => $version->lock_version,
-        ];
+        return McpResponse::success($request->id, $result);
     }
 
-    /**
-     * @param array<string, mixed> $params
-     * @return array<string, mixed>
-     */
-    private function createWorkflowVersion(User $actor, array $params): array
+    private function firstValidationMessage(ValidationException $exception): string
     {
-        $this->authorize($actor, PermissionList::WORKFLOWS_EDIT);
+        foreach ($exception->errors() as $messages) {
+            if (isset($messages[0])) {
+                return (string) $messages[0];
+            }
+        }
 
-        $workflowId = (int) ($params['workflow_id'] ?? 0);
-        $workflow = Workflow::query()->findOrFail($workflowId);
-
-        $version = $this->versionManager->createDraftFromLatest($workflow, $actor);
-
-        AuditLogger::log($actor, $version, 'created', 'Draft version created by MCP', [
-            'workflow_id' => $workflow->id,
-        ], source: 'mcp');
-
-        return ['workflow_version' => $version->toArray()];
-    }
-
-    /**
-     * @param array<string, mixed> $params
-     * @return array<string, mixed>
-     */
-    private function publishVersion(User $actor, array $params): array
-    {
-        $this->authorize($actor, PermissionList::WORKFLOWS_PUBLISH);
-
-        $versionId = (int) ($params['workflow_version_id'] ?? 0);
-        $version = WorkflowVersion::query()->with('workflow')->findOrFail($versionId);
-
-        $this->versionManager->publishVersion($version);
-
-        AuditLogger::log($actor, $version, 'published', 'Workflow version published by MCP', [
-            'workflow_id' => $version->workflow_id,
-        ], source: 'mcp');
-
-        return [
-            'workflow_id' => $version->workflow_id,
-            'published_version_id' => $version->id,
-        ];
-    }
-
-    /**
-     * @param array<string, mixed> $params
-     * @return array<string, mixed>
-     */
-    private function rollbackVersion(User $actor, array $params): array
-    {
-        $this->authorize($actor, PermissionList::WORKFLOWS_PUBLISH);
-
-        $workflow = Workflow::query()->findOrFail((int) ($params['workflow_id'] ?? 0));
-        $target = WorkflowVersion::query()->findOrFail((int) ($params['to_version_id'] ?? 0));
-
-        $newVersion = $this->versionManager->rollbackToVersion($workflow, $target, $actor);
-
-        AuditLogger::log($actor, $newVersion, 'created', 'Workflow rollback draft created by MCP', [
-            'workflow_id' => $workflow->id,
-            'source_version_id' => $target->id,
-        ], source: 'mcp');
-
-        return ['workflow_version' => $newVersion->toArray()];
-    }
-
-    private function authorize(User $actor, string $permission): void
-    {
-        abort_unless($actor->can($permission), 403, 'Forbidden.');
+        return $exception->getMessage();
     }
 }

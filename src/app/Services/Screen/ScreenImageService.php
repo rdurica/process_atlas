@@ -1,0 +1,67 @@
+<?php
+
+namespace App\Services\Screen;
+
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+
+final class ScreenImageService
+{
+    public function replace(?string $existingPath, UploadedFile $image, int $maxWidth = 1080): string
+    {
+        if ($existingPath) {
+            Storage::disk('public')->delete($existingPath);
+        }
+
+        $imagePath = $image->store('screens', 'public');
+        $this->resize(Storage::disk('public')->path($imagePath), $maxWidth);
+
+        return $imagePath;
+    }
+
+    private function resize(string $path, int $maxWidth): void
+    {
+        [$origWidth, $origHeight, $type] = getimagesize($path);
+
+        if ($origWidth <= $maxWidth) {
+            return;
+        }
+
+        $ratio = $maxWidth / $origWidth;
+        $newWidth = $maxWidth;
+        $newHeight = (int) round($origHeight * $ratio);
+
+        $dst = imagecreatetruecolor($newWidth, $newHeight);
+
+        switch ($type) {
+            case IMAGETYPE_JPEG:
+                $src = imagecreatefromjpeg($path);
+                imagecopyresampled($dst, $src, 0, 0, 0, 0, $newWidth, $newHeight, $origWidth, $origHeight);
+                imagejpeg($dst, $path, 88);
+                break;
+
+            case IMAGETYPE_PNG:
+                $src = imagecreatefrompng($path);
+                imagealphablending($dst, false);
+                imagesavealpha($dst, true);
+                $transparent = imagecolorallocatealpha($dst, 0, 0, 0, 127);
+                imagefill($dst, 0, 0, $transparent);
+                imagecopyresampled($dst, $src, 0, 0, 0, 0, $newWidth, $newHeight, $origWidth, $origHeight);
+                imagepng($dst, $path, 7);
+                break;
+
+            case IMAGETYPE_WEBP:
+                $src = imagecreatefromwebp($path);
+                imagecopyresampled($dst, $src, 0, 0, 0, 0, $newWidth, $newHeight, $origWidth, $origHeight);
+                imagewebp($dst, $path, 88);
+                break;
+
+            default:
+                imagedestroy($dst);
+                return;
+        }
+
+        imagedestroy($src);
+        imagedestroy($dst);
+    }
+}

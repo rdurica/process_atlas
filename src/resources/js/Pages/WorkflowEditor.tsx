@@ -253,7 +253,7 @@ function resolveApiError(error: unknown, fallback: string): string {
     }
 
     if (response.status === 409) {
-        return response.data?.message ?? 'A version conflict occurred. Refresh and retry.';
+        return response.data?.message ?? 'A revision conflict occurred. Refresh and retry.';
     }
 
     if (response.status === 403) {
@@ -1068,7 +1068,7 @@ export default function WorkflowEditor({
             async () => {
                 await window.axios.post(`/api/v1/workflows/${workflow.id}/versions`);
             },
-            'A new draft version was created.',
+            'A new draft revision was created.',
         );
     };
 
@@ -1083,7 +1083,7 @@ export default function WorkflowEditor({
                     `/api/v1/workflow-versions/${latestVersion.id}/publish`,
                 );
             },
-            'The current version was published.',
+            'The current revision was published.',
         );
     };
 
@@ -1127,7 +1127,7 @@ export default function WorkflowEditor({
             async () => {
                 await window.axios.delete(`/api/v1/workflow-versions/${version.id}`);
             },
-            `Version ${version.version_number} was deleted.`,
+            `rev. ${version.version_number} was deleted.`,
         );
     };
 
@@ -1142,7 +1142,7 @@ export default function WorkflowEditor({
                     to_version_id: rollbackVersionId,
                 });
             },
-            'A rollback draft was created from the selected version.',
+            'A rollback draft was created from the selected revision.',
         );
     };
 
@@ -1158,7 +1158,7 @@ export default function WorkflowEditor({
                 {previewVersion && (
                     <div className="pointer-events-auto absolute inset-x-0 top-0 z-10 flex items-center justify-between gap-4 border-b border-amber-200 bg-amber-50 px-5 py-2.5">
                         <p className="text-sm font-medium text-amber-900">
-                            Viewing version {previewVersion.version_number} (read-only)
+                            Viewing rev. {previewVersion.version_number} (read-only)
                         </p>
                         {latestVersion && (
                             <button
@@ -2041,7 +2041,7 @@ export default function WorkflowEditor({
                 <div className="flex items-start justify-between gap-3">
                     <div>
                         <p className="eyebrow">Workflow Metadata</p>
-                        <h2 className="panel-title mt-2">Versions & Activity</h2>
+                        <h2 className="panel-title mt-2">Revisions & Activity</h2>
                     </div>
                     <button
                         type="button"
@@ -2054,9 +2054,9 @@ export default function WorkflowEditor({
 
                 <div className="mt-5 grid grid-cols-3 gap-3">
                     <div className="workflow-metric">
-                        <p className="eyebrow">Version</p>
+                        <p className="eyebrow">Revision</p>
                         <p className="mt-2 text-xl font-bold text-slate-950">
-                            {latestVersion ? `v${latestVersion.version_number}` : 'N/A'}
+                            {latestVersion ? `rev. ${latestVersion.version_number}` : 'N/A'}
                         </p>
                     </div>
                     <div className="workflow-metric">
@@ -2084,10 +2084,10 @@ export default function WorkflowEditor({
 
                 <div className="mt-6">
                     <div className="flex items-center justify-between gap-3">
-                        <p className="panel-title">Version Timeline</p>
+                        <p className="panel-title">Revision Timeline</p>
                         {selectedRollbackVersion && (
                             <StatusBadge tone="warning">
-                                Selected v{selectedRollbackVersion.version_number}
+                                Selected rev. {selectedRollbackVersion.version_number}
                             </StatusBadge>
                         )}
                     </div>
@@ -2108,7 +2108,7 @@ export default function WorkflowEditor({
                                     <div className="flex items-start justify-between gap-3">
                                         <div>
                                             <p className="text-sm font-semibold text-slate-950">
-                                                Version {version.version_number}
+                                                rev. {version.version_number}
                                             </p>
                                             <p className="mt-1 text-sm text-slate-500">
                                                 {version.creator?.name ?? 'Unknown actor'}
@@ -2127,7 +2127,7 @@ export default function WorkflowEditor({
                                             )}
                                             {version.rollback_from_version_id && (
                                                 <StatusBadge tone="warning">
-                                                    Rollback from v{
+                                                    Rollback from rev. {
                                                         workflow.versions.find(
                                                             (v) => v.id === version.rollback_from_version_id,
                                                         )?.version_number ?? '?'
@@ -2143,7 +2143,7 @@ export default function WorkflowEditor({
                                                         void deleteVersion(version);
                                                     }}
                                                     className="text-xs text-slate-400 hover:text-red-600 disabled:opacity-40"
-                                                    title="Delete version"
+                                                    title="Delete revision"
                                                 >
                                                     Delete
                                                 </button>
@@ -2165,8 +2165,8 @@ export default function WorkflowEditor({
                     </p>
                     <p className="mt-2 text-sm text-amber-800">
                         {selectedRollbackVersion
-                            ? `Create a new draft from version ${selectedRollbackVersion.version_number}.`
-                            : 'Select a version from the timeline to prepare rollback.'}
+                            ? `Create a new draft from revision ${selectedRollbackVersion.version_number}.`
+                            : 'Select a revision from the timeline to prepare rollback.'}
                     </p>
                     {rollbackVersionId && canPublishWorkflows && (
                         <button

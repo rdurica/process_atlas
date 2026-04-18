@@ -120,7 +120,7 @@ export default function Welcome({ auth }: PageProps) {
                     </h1>
 
                     <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-[#4f5f82]">
-                        Process Atlas lets your team design, version, and publish visual
+                        Process Atlas lets your team design, revise, and publish visual
                         workflow diagrams — with role-based access, one-click publishing,
                         and AI-assisted documentation built in.
                     </p>
@@ -152,7 +152,7 @@ export default function Welcome({ auth }: PageProps) {
                     </div>
 
                     <p className="mono mt-8 text-xs text-[#4f5f82]/70">
-                        Visual graphs · Version control · Role-based access · AI-powered
+                        Visual graphs · Revision control · Role-based access · AI-powered
                     </p>
                 </div>
             </section>
@@ -193,7 +193,7 @@ export default function Welcome({ auth }: PageProps) {
                             </p>
                         </div>
 
-                        {/* Version Control */}
+                        {/* Revision Control */}
                         <div className="panel rounded-2xl p-6">
                             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#eaf1ff]">
                                 <svg className="h-5 w-5 text-[#0059ff]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -205,9 +205,9 @@ export default function Welcome({ auth }: PageProps) {
                                     <line x1="8" y1="6" x2="16" y2="6" />
                                 </svg>
                             </div>
-                            <h3 className="mt-5 text-base font-bold text-[#16316a]">Version Control & Publishing</h3>
+                            <h3 className="mt-5 text-base font-bold text-[#16316a]">Revision Control & Publishing</h3>
                             <p className="mt-2 text-sm leading-relaxed text-[#4f5f82]">
-                                Every change is versioned. Publish with confidence and roll
+                                Every change is revision-tracked. Publish with confidence and roll
                                 back to any prior state in one click.
                             </p>
                         </div>
@@ -315,7 +315,7 @@ export default function Welcome({ auth }: PageProps) {
                                 </div>
                                 <h3 className="mt-5 text-lg font-bold text-[#16316a]">Publish & Share</h3>
                                 <p className="mt-2 text-sm leading-relaxed text-[#4f5f82]">
-                                    Publish a versioned snapshot so your team always reads the
+                                    Publish a revision snapshot so your team always reads the
                                     latest approved process — and roll back instantly if needed.
                                 </p>
                             </div>

@@ -35,6 +35,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $editorRole->syncPermissions([
+            PermissionList::PROJECTS_CREATE,
             PermissionList::MCP_USE,
         ]);
 

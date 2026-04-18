@@ -2,8 +2,11 @@
 
 namespace App\Console\Commands;
 
+use App\DTO\Mcp\McpRequest;
+use App\DTO\Mcp\McpResponse;
 use App\Models\User;
 use App\Services\Mcp\McpServer;
+use App\Support\PermissionList;
 use Illuminate\Console\Command;
 
 class McpServeStdioCommand extends Command
@@ -43,27 +46,88 @@ class McpServeStdioCommand extends Command
             return self::FAILURE;
         }
 
-        while (($line = fgets(STDIN)) !== false) {
-            $line = trim($line);
+        if (! $actor->can(PermissionList::MCP_USE)) {
+            $this->error('Actor user is missing mcp.use permission.');
 
-            if ($line === '') {
-                continue;
-            }
+            return self::FAILURE;
+        }
 
-            $payload = json_decode($line, true);
+        while (($body = $this->readFrameBody()) !== null) {
+            $payload = json_decode($body, true);
             if (! is_array($payload)) {
-                $this->output->write(json_encode([
-                    'jsonrpc' => '2.0',
-                    'id' => null,
-                    'error' => ['code' => 400, 'message' => 'Invalid JSON input.'],
-                ], JSON_UNESCAPED_SLASHES).PHP_EOL);
+                $this->writeErrorResponse(null, -32700, 'Invalid JSON input.');
                 continue;
             }
 
-            $response = $mcpServer->handle($payload, $actor);
-            $this->output->write(json_encode($response, JSON_UNESCAPED_SLASHES).PHP_EOL);
+            $response = $mcpServer->handle(McpRequest::fromArray($payload), $actor);
+            if ($response !== null) {
+                $this->writeFrame($response->toArray());
+            }
         }
 
         return self::SUCCESS;
+    }
+
+    private function readFrameBody(): ?string
+    {
+        while (true) {
+            $headers = [];
+
+            while (($line = fgets(STDIN)) !== false) {
+                $line = rtrim($line, "\r\n");
+
+                if ($line === '') {
+                    break;
+                }
+
+                [$name, $value] = array_pad(explode(':', $line, 2), 2, '');
+                $headers[strtolower(trim($name))] = trim($value);
+            }
+
+            if ($line === false) {
+                return null;
+            }
+
+            if ($headers === []) {
+                continue;
+            }
+
+            $contentLength = isset($headers['content-length']) ? (int) $headers['content-length'] : 0;
+            if ($contentLength <= 0) {
+                $this->writeErrorResponse(null, -32700, 'Invalid Content-Length header.');
+                continue;
+            }
+
+            $body = '';
+            while (strlen($body) < $contentLength) {
+                $chunk = fread(STDIN, $contentLength - strlen($body));
+
+                if ($chunk === false || $chunk === '') {
+                    return null;
+                }
+
+                $body .= $chunk;
+            }
+
+            return $body;
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private function writeFrame(array $payload): void
+    {
+        $json = json_encode($payload, JSON_UNESCAPED_SLASHES);
+        if ($json === false) {
+            return;
+        }
+
+        fwrite(STDOUT, 'Content-Length: '.strlen($json)."\r\n\r\n".$json);
+    }
+
+    private function writeErrorResponse(mixed $id, int $code, string $message): void
+    {
+        $this->writeFrame(McpResponse::error($id, $code, $message)->toArray());
     }
 }

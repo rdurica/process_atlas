@@ -2,82 +2,53 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\WorkflowActionService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreWorkflowRequest;
 use App\Http\Requests\Api\UpdateWorkflowRequest;
 use App\Models\Project;
 use App\Models\Workflow;
-use App\Services\Audit\AuditLogger;
-use App\Services\ProjectAccessService;
-use App\Services\Workflow\WorkflowVersionManager;
+use App\Queries\WorkflowQueryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class WorkflowController extends Controller
 {
     public function __construct(
-        private readonly WorkflowVersionManager $versionManager,
-        private readonly ProjectAccessService $access,
+        private readonly WorkflowQueryService $workflows,
+        private readonly WorkflowActionService $actions,
     ) {
     }
 
     public function index(Request $request, Project $project): JsonResponse
     {
-        abort_unless($this->access->canView($request->user(), $project), 403, 'Forbidden.');
+        $this->authorize('view', $project);
 
-        $workflows = $project
-            ->workflows()
-            ->with(['latestVersion', 'publishedVersion'])
-            ->orderBy('id')
-            ->get();
-
-        return response()->json(['data' => $workflows]);
+        return response()->json(['data' => $this->workflows->listForProject($project)]);
     }
 
     public function store(StoreWorkflowRequest $request, Project $project): JsonResponse
     {
-        abort_unless($this->access->canEdit($request->user(), $project), 403, 'Forbidden.');
+        $this->authorize('editWorkflows', $project);
 
-        $workflow = $project->workflows()->create([
-            'name' => $request->validated('name'),
-            'status' => 'draft',
-        ]);
+        $workflow = $this->actions->create($request->user(), $project, $request->toDto());
 
-        $initialVersion = $this->versionManager->createInitialVersion($workflow, $request->user());
-
-        AuditLogger::log($request->user(), $workflow, 'created', 'Workflow created', [
-            'initial_version_id' => $initialVersion->id,
-        ]);
-
-        return response()->json([
-            'data' => $workflow->fresh(['latestVersion', 'publishedVersion']),
-        ], 201);
+        return response()->json(['data' => $workflow], 201);
     }
 
     public function show(Request $request, Workflow $workflow): JsonResponse
     {
-        $workflow->loadMissing('project');
-        abort_unless($this->access->canView($request->user(), $workflow->project), 403, 'Forbidden.');
+        $this->authorize('view', $workflow);
 
-        $workflow->load([
-            'project',
-            'latestVersion.screens.customFields',
-            'publishedVersion',
-            'versions' => fn ($query) => $query->orderByDesc('version_number'),
-        ]);
-
-        return response()->json(['data' => $workflow]);
+        return response()->json(['data' => $this->workflows->detailForApi($workflow)]);
     }
 
     public function update(UpdateWorkflowRequest $request, Workflow $workflow): JsonResponse
     {
-        $workflow->loadMissing('project');
-        abort_unless($this->access->canEdit($request->user(), $workflow->project), 403, 'Forbidden.');
+        $this->authorize('update', $workflow);
 
-        $workflow->update($request->validated());
-
-        AuditLogger::log($request->user(), $workflow, 'updated', 'Workflow updated');
-
-        return response()->json(['data' => $workflow]);
+        return response()->json([
+            'data' => $this->actions->update($request->user(), $workflow, $request->toDto()),
+        ]);
     }
 }

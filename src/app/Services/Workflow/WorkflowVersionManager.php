@@ -82,7 +82,7 @@ final class WorkflowVersionManager
 
     public function rollbackToVersion(Workflow $workflow, WorkflowVersion $target, User $actor): WorkflowVersion
     {
-        abort_unless($target->workflow_id === $workflow->id, 422, 'Target version does not belong to this workflow.');
+        abort_unless($target->workflow_id === $workflow->id, 422, 'Target revision does not belong to this workflow.');
 
         $target->loadMissing(['screens.customFields']);
 
@@ -111,8 +111,8 @@ final class WorkflowVersionManager
 
     public function deleteVersion(Workflow $workflow, WorkflowVersion $version): void
     {
-        abort_if($version->is_published, 422, 'Cannot delete a published version.');
-        abort_if($workflow->versions()->count() <= 1, 422, 'Cannot delete the only remaining version.');
+        abort_if($version->is_published, 422, 'Cannot delete a published revision.');
+        abort_if($workflow->versions()->count() <= 1, 422, 'Cannot delete the only remaining revision.');
 
         DB::transaction(function () use ($workflow, $version): void {
             $isLatest = $workflow->latest_version_id === $version->id;

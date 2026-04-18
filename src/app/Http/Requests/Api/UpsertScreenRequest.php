@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api;
 
+use App\DTO\Command\UpsertScreenCommand;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpsertScreenRequest extends FormRequest
@@ -24,5 +25,13 @@ class UpsertScreenRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'image' => ['nullable', 'file', 'image', 'max:4096'],
         ];
+    }
+
+    public function toDto(): UpsertScreenCommand
+    {
+        /** @var array<string, mixed> $validated */
+        $validated = $this->validated();
+
+        return UpsertScreenCommand::fromArray($validated, $this->file('image'));
     }
 }

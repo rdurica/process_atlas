@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api;
 
+use App\DTO\Command\UpsertScreenCustomFieldCommand;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpsertScreenCustomFieldRequest extends FormRequest
@@ -22,5 +23,13 @@ class UpsertScreenCustomFieldRequest extends FormRequest
             'value' => ['nullable', 'string'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
         ];
+    }
+
+    public function toDto(): UpsertScreenCustomFieldCommand
+    {
+        /** @var array<string, mixed> $validated */
+        $validated = $this->validated();
+
+        return UpsertScreenCustomFieldCommand::fromArray($validated);
     }
 }

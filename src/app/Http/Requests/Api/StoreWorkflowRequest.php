@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api;
 
+use App\DTO\Command\CreateWorkflowCommand;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreWorkflowRequest extends FormRequest
@@ -19,5 +20,13 @@ class StoreWorkflowRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
         ];
+    }
+
+    public function toDto(): CreateWorkflowCommand
+    {
+        /** @var array<string, mixed> $validated */
+        $validated = $this->validated();
+
+        return CreateWorkflowCommand::fromArray($validated);
     }
 }

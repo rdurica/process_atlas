@@ -2,119 +2,79 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\WorkflowVersionActionService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\RollbackWorkflowRequest;
 use App\Http\Requests\Api\UpdateWorkflowGraphRequest;
 use App\Models\Workflow;
 use App\Models\WorkflowVersion;
-use App\Services\Audit\AuditLogger;
-use App\Services\ProjectAccessService;
-use App\Services\Workflow\WorkflowVersionManager;
+use App\Queries\WorkflowQueryService;
+use App\Queries\WorkflowVersionQueryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class WorkflowVersionController extends Controller
 {
     public function __construct(
-        private readonly WorkflowVersionManager $versionManager,
-        private readonly ProjectAccessService $access,
+        private readonly WorkflowVersionQueryService $versions,
+        private readonly WorkflowQueryService $workflows,
+        private readonly WorkflowVersionActionService $actions,
     ) {
     }
 
     public function show(Request $request, WorkflowVersion $workflowVersion): JsonResponse
     {
-        $workflowVersion->loadMissing('workflow.project');
-        abort_unless($this->access->canView($request->user(), $workflowVersion->workflow->project), 403, 'Forbidden.');
+        $this->authorize('view', $workflowVersion);
 
-        $workflowVersion->load(['screens.customFields', 'workflow']);
-
-        return response()->json(['data' => $workflowVersion]);
+        return response()->json(['data' => $this->versions->detailForApi($workflowVersion)]);
     }
 
     public function createDraft(Request $request, Workflow $workflow): JsonResponse
     {
-        $workflow->loadMissing('project');
-        abort_unless($this->access->canEdit($request->user(), $workflow->project), 403, 'Forbidden.');
+        $this->authorize('createDraft', $workflow);
 
-        $version = $this->versionManager->createDraftFromLatest($workflow, $request->user());
-
-        AuditLogger::log($request->user(), $version, 'created', 'Draft workflow version created', [
-            'workflow_id' => $workflow->id,
-        ]);
+        $version = $this->actions->createDraft($request->user(), $workflow);
 
         return response()->json(['data' => $version], 201);
     }
 
     public function updateGraph(UpdateWorkflowGraphRequest $request, WorkflowVersion $workflowVersion): JsonResponse
     {
-        $workflowVersion->loadMissing('workflow.project');
-        abort_unless($this->access->canEdit($request->user(), $workflowVersion->workflow->project), 403, 'Forbidden.');
-        abort_if($workflowVersion->is_published, 422, 'Cannot modify a published version.');
+        $this->authorize('updateGraph', $workflowVersion);
 
-        $lockVersion = $request->integer('lock_version');
-        abort_if($lockVersion !== $workflowVersion->lock_version, 409, 'Version conflict. Reload and retry.');
+        $payload = $this->actions->updateGraph(
+            $request->user(),
+            $workflowVersion,
+            $request->toDto(),
+        );
 
-        $workflowVersion->update([
-            'graph_json' => $request->validated('graph_json'),
-            'lock_version' => $workflowVersion->lock_version + 1,
-        ]);
-
-        AuditLogger::log($request->user(), $workflowVersion, 'updated', 'Workflow graph updated');
-
-        return response()->json([
-            'data' => [
-                'workflow_version_id' => $workflowVersion->id,
-                'lock_version' => $workflowVersion->lock_version,
-            ],
-        ]);
+        return response()->json(['data' => $payload->toApiArray()]);
     }
 
     public function publish(Request $request, WorkflowVersion $workflowVersion): JsonResponse
     {
-        $workflowVersion->loadMissing('workflow.project');
-        abort_unless($this->access->canPublish($request->user(), $workflowVersion->workflow->project), 403, 'Forbidden.');
+        $this->authorize('publish', $workflowVersion);
 
-        $this->versionManager->publishVersion($workflowVersion);
-
-        AuditLogger::log($request->user(), $workflowVersion, 'published', 'Workflow version published', [
-            'workflow_id' => $workflowVersion->workflow_id,
+        return response()->json([
+            'data' => $this->actions->publish($request->user(), $workflowVersion),
         ]);
-
-        return response()->json(['data' => $workflowVersion->fresh()]);
     }
 
     public function rollback(RollbackWorkflowRequest $request, Workflow $workflow): JsonResponse
     {
-        $workflow->loadMissing('project');
-        abort_unless($this->access->canPublish($request->user(), $workflow->project), 403, 'Forbidden.');
+        $this->authorize('rollback', $workflow);
 
-        $target = WorkflowVersion::query()->findOrFail($request->integer('to_version_id'));
-
-        $newVersion = $this->versionManager->rollbackToVersion($workflow, $target, $request->user());
-
-        AuditLogger::log($request->user(), $newVersion, 'created', 'Rollback draft created', [
-            'workflow_id' => $workflow->id,
-            'source_version_id' => $target->id,
-        ]);
+        $target = $this->workflows->findRollbackTarget($request->integer('to_version_id'));
+        $newVersion = $this->actions->rollback($request->user(), $workflow, $target);
 
         return response()->json(['data' => $newVersion], 201);
     }
 
     public function destroy(Request $request, WorkflowVersion $workflowVersion): JsonResponse
     {
-        $workflowVersion->loadMissing('workflow.project');
-        abort_unless($this->access->canPublish($request->user(), $workflowVersion->workflow->project), 403, 'Forbidden.');
+        $this->authorize('delete', $workflowVersion);
 
-        $versionNumber = $workflowVersion->version_number;
-        $workflowId = $workflowVersion->workflow_id;
-
-        $this->versionManager->deleteVersion($workflowVersion->workflow, $workflowVersion);
-
-        AuditLogger::log($request->user(), $workflowVersion->workflow, 'deleted', 'Workflow version deleted', [
-            'version_id' => $workflowVersion->id,
-            'version_number' => $versionNumber,
-            'workflow_id' => $workflowId,
-        ]);
+        $this->actions->delete($request->user(), $workflowVersion);
 
         return response()->json(null, 204);
     }
