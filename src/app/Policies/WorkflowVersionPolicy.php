@@ -8,9 +8,7 @@ use App\Services\ProjectAccessService;
 
 final class WorkflowVersionPolicy
 {
-    public function __construct(private readonly ProjectAccessService $access)
-    {
-    }
+    public function __construct(private readonly ProjectAccessService $access) {}
 
     public function view(User $user, WorkflowVersion $workflowVersion): bool
     {

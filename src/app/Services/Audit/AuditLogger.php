@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 final class AuditLogger
 {
     /**
-     * @param array<string, mixed> $properties
+     * @param  array<string, mixed>  $properties
      */
     public static function log(
         User $actor,

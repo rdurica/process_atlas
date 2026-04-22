@@ -5,14 +5,13 @@ namespace App\DTO\Mcp;
 final readonly class McpToolDefinition
 {
     /**
-     * @param array<string, mixed> $inputSchema
+     * @param  array<string, mixed>  $inputSchema
      */
     public function __construct(
         public string $name,
         public string $description,
         public array $inputSchema,
-    ) {
-    }
+    ) {}
 
     /**
      * @return array<string, mixed>

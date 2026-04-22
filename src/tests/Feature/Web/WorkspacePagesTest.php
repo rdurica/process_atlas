@@ -1,8 +1,8 @@
 <?php
 
 use App\Models\User;
-use Inertia\Testing\AssertableInertia as Assert;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 
 uses(RefreshDatabase::class);
 
@@ -36,10 +36,9 @@ it('renders dashboard with enterprise summary and activity props', function (): 
             ->where('projects.0.latest_version_label', 'rev. 1')
             ->has('projects.0.workflows', 1)
             ->has('recentActivity')
-            ->where('recentActivity', fn ($activities): bool =>
-                collect($activities)->contains(
-                    fn ($activity): bool => ($activity['subject_label'] ?? null) === 'Checkout Flow'
-                )
+            ->where('recentActivity', fn ($activities): bool => collect($activities)->contains(
+                fn ($activity): bool => ($activity['subject_label'] ?? null) === 'Checkout Flow'
+            )
             ));
 });
 
@@ -51,8 +50,7 @@ it('shares read only permissions for viewer dashboard access', function (): void
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('Dashboard')
-            ->where('auth.user.permissions', fn ($permissions): bool =>
-                collect($permissions)->contains('projects.view')
+            ->where('auth.user.permissions', fn ($permissions): bool => collect($permissions)->contains('projects.view')
                 && collect($permissions)->contains('workflows.view')
                 && ! collect($permissions)->contains('projects.manage')
                 && ! collect($permissions)->contains('workflows.edit')
@@ -96,9 +94,8 @@ it('renders workflow editor with recent activity and version metadata', function
             ->has('workflow.versions', 1)
             ->where('workflow.versions.0.creator.name', 'Owner')
             ->has('recentActivity')
-            ->where('recentActivity', fn ($activities): bool =>
-                collect($activities)->contains(
-                    fn ($activity): bool => ($activity['subject_label'] ?? null) === 'rev. 1'
-                )
+            ->where('recentActivity', fn ($activities): bool => collect($activities)->contains(
+                fn ($activity): bool => ($activity['subject_label'] ?? null) === 'rev. 1'
+            )
             ));
 });

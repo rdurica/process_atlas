@@ -30,7 +30,7 @@ class McpServeStdioCommand extends Command
      */
     public function handle(McpServer $mcpServer): int
     {
-        $userId = (int) ($this->option('user') ?? env('MCP_USER_ID', 0));
+        $userId = (int) ($this->option('user') ?? config('services.mcp.user_id', 0));
 
         if ($userId <= 0) {
             $this->error('Provide --user=<id> or MCP_USER_ID environment variable.');
@@ -56,6 +56,7 @@ class McpServeStdioCommand extends Command
             $payload = json_decode($body, true);
             if (! is_array($payload)) {
                 $this->writeErrorResponse(null, -32700, 'Invalid JSON input.');
+
                 continue;
             }
 
@@ -95,6 +96,7 @@ class McpServeStdioCommand extends Command
             $contentLength = isset($headers['content-length']) ? (int) $headers['content-length'] : 0;
             if ($contentLength <= 0) {
                 $this->writeErrorResponse(null, -32700, 'Invalid Content-Length header.');
+
                 continue;
             }
 
@@ -114,7 +116,7 @@ class McpServeStdioCommand extends Command
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      */
     private function writeFrame(array $payload): void
     {
@@ -123,7 +125,7 @@ class McpServeStdioCommand extends Command
             return;
         }
 
-        fwrite(STDOUT, 'Content-Length: '.strlen($json)."\r\n\r\n".$json);
+        fwrite(STDOUT, 'Content-Length: ' . strlen($json) . "\r\n\r\n" . $json);
     }
 
     private function writeErrorResponse(mixed $id, int $code, string $message): void

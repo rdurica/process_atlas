@@ -18,7 +18,7 @@ it('promotes viewer users to editor while preserving fixture viewer and owners',
     $owner = User::factory()->create([
         'email' => 'owner-with-viewer@example.com',
     ]);
-    $owner->assignRole('owner');
+    $owner->assignRole('process_owner');
     $owner->assignRole('viewer');
 
     $fixtureViewer = User::query()->where('email', 'viewer@example.com')->firstOrFail();
@@ -34,7 +34,7 @@ it('promotes viewer users to editor while preserving fixture viewer and owners',
     expect($viewerToPromote->hasRole('editor'))->toBeTrue();
     expect($viewerToPromote->hasRole('viewer'))->toBeFalse();
 
-    expect($owner->hasRole('owner'))->toBeTrue();
+    expect($owner->hasRole('process_owner'))->toBeTrue();
     expect($owner->hasRole('viewer'))->toBeTrue();
 
     expect($fixtureViewer->hasRole('viewer'))->toBeTrue();

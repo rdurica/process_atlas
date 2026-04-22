@@ -3,9 +3,9 @@
 namespace App\Queries;
 
 use App\Models\Project;
+use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowVersion;
-use App\Models\User;
 use Illuminate\Support\Collection;
 
 final class WorkflowQueryService

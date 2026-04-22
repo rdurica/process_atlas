@@ -12,9 +12,7 @@ use Illuminate\Http\Request;
 
 class ScreenCustomFieldController extends Controller
 {
-    public function __construct(private readonly ScreenCustomFieldActionService $actions)
-    {
-    }
+    public function __construct(private readonly ScreenCustomFieldActionService $actions) {}
 
     public function upsert(UpsertScreenCustomFieldRequest $request, Screen $screen): JsonResponse
     {

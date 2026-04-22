@@ -17,7 +17,7 @@ export default function Login({
         remember: false as boolean,
     });
 
-    const submit: FormEventHandler = (e) => {
+    const submit: FormEventHandler = e => {
         e.preventDefault();
 
         post(route('login'), {
@@ -40,21 +40,15 @@ export default function Login({
                         Sign in and continue mapping workflow decisions.
                     </h1>
                     <p className="mt-5 max-w-xl text-base leading-7 text-slate-600">
-                        Review process models, update screen metadata, and publish
-                        workflow revisions from one focused workspace.
+                        Review process models, update screen metadata, and publish workflow
+                        revisions from one focused workspace.
                     </p>
                 </div>
 
                 <div className="login-preview" aria-hidden="true">
-                    <div className="login-preview-node login-preview-node-start">
-                        Intake
-                    </div>
-                    <div className="login-preview-node login-preview-node-review">
-                        Review
-                    </div>
-                    <div className="login-preview-node login-preview-node-approve">
-                        Publish
-                    </div>
+                    <div className="login-preview-node login-preview-node-start">Intake</div>
+                    <div className="login-preview-node login-preview-node-review">Review</div>
+                    <div className="login-preview-node login-preview-node-approve">Publish</div>
                     <div className="login-preview-line login-preview-line-a" />
                     <div className="login-preview-line login-preview-line-b" />
                 </div>
@@ -64,9 +58,7 @@ export default function Login({
                 <div className="w-full max-w-md">
                     <div className="mb-8">
                         <p className="eyebrow text-slate-500">Secure Workspace</p>
-                        <h2 className="mt-3 text-3xl font-bold text-slate-950">
-                            Log in
-                        </h2>
+                        <h2 className="mt-3 text-3xl font-bold text-slate-950">Log in</h2>
                     </div>
 
                     {status && (
@@ -86,7 +78,7 @@ export default function Login({
                                 className="login-input mt-2 block w-full"
                                 autoComplete="username"
                                 isFocused={true}
-                                onChange={(e) => setData('email', e.target.value)}
+                                onChange={e => setData('email', e.target.value)}
                             />
                             <InputError message={errors.email} className="mt-2" />
                         </label>
@@ -100,7 +92,7 @@ export default function Login({
                                 value={data.password}
                                 className="login-input mt-2 block w-full"
                                 autoComplete="current-password"
-                                onChange={(e) => setData('password', e.target.value)}
+                                onChange={e => setData('password', e.target.value)}
                             />
                             <InputError message={errors.password} className="mt-2" />
                         </label>
@@ -110,16 +102,11 @@ export default function Login({
                                 <Checkbox
                                     name="remember"
                                     checked={data.remember}
-                                    onChange={(e) =>
-                                        setData(
-                                            'remember',
-                                            (e.target.checked || false) as false,
-                                        )
+                                    onChange={e =>
+                                        setData('remember', (e.target.checked || false) as false)
                                     }
                                 />
-                                <span className="ms-2 text-sm text-slate-600">
-                                    Remember me
-                                </span>
+                                <span className="ms-2 text-sm text-slate-600">Remember me</span>
                             </label>
 
                             {canResetPassword && (
@@ -132,11 +119,7 @@ export default function Login({
                             )}
                         </div>
 
-                        <button
-                            type="submit"
-                            className="login-submit"
-                            disabled={processing}
-                        >
+                        <button type="submit" className="login-submit" disabled={processing}>
                             Log in
                         </button>
                     </form>

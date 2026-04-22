@@ -15,9 +15,14 @@ RUN apk update && apk add --no-cache \
     zlib-dev \
     libxml2-dev \
     icu-dev \
+    linux-headers \
+    libjpeg-turbo-dev \
+    libpng-dev \
+    libwebp-dev \
     && rm -rf /var/cache/apk/*
 
-RUN docker-php-ext-install sockets pdo pdo_mysql mysqli pdo_pgsql pgsql zip intl bcmath && \
+RUN docker-php-ext-configure gd --with-jpeg --with-webp && \
+    docker-php-ext-install sockets gd pdo pdo_mysql mysqli pdo_pgsql pgsql zip intl bcmath && \
     curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 WORKDIR /app/src
@@ -32,6 +37,19 @@ RUN composer install --no-dev --prefer-dist --no-progress --no-scripts --no-inte
 
 COPY src .
 RUN composer dump-autoload --optimize --classmap-authoritative --no-dev --no-scripts
+
+FROM node:22-alpine AS frontend
+
+WORKDIR /app/src
+
+COPY src/package.json src/package-lock.json ./
+RUN npm ci
+
+COPY --from=vendor /app/src/vendor/tightenco ./vendor/tightenco
+COPY src/resources ./resources
+COPY src/public ./public
+COPY src/vite.config.js src/tsconfig.json src/tailwind.config.js src/postcss.config.js ./
+RUN npm run build
 
 FROM base AS runtime
 
@@ -60,6 +78,8 @@ RUN chmod +x /usr/local/bin/start.sh && \
 
 WORKDIR /app/src
 COPY --from=vendor /app/src /app/src
+COPY --from=frontend /app/src/public/build /app/src/public/build
+COPY --from=frontend /app/src/bootstrap/ssr /app/src/bootstrap/ssr
 
 RUN chown -R robbyte:robbyte /app/src
 USER robbyte

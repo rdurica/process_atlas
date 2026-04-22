@@ -30,8 +30,7 @@ final class ToolsCallMethodHandler implements McpMethodHandler
         private readonly McpQueryService $queries,
         private readonly ScreenActionService $screenActions,
         private readonly WorkflowVersionActionService $versionActions,
-    ) {
-    }
+    ) {}
 
     public function method(): string
     {

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Project;
 use App\Support\PermissionList;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -45,6 +46,35 @@ class HandleInertiaRequests extends Middleware
             }
         }
 
+        $projects = [];
+        if ($user) {
+            $isAdmin = $user->can(PermissionList::PROJECTS_ADMIN);
+            $projects = Project::query()
+                ->when(
+                    ! $isAdmin,
+                    fn ($query) => $query->whereHas(
+                        'members',
+                        fn ($q) => $q->where('user_id', $user->id)
+                    )
+                )
+                ->orderBy('name')
+                ->get()
+                ->map(function (Project $project) use ($user, $isAdmin) {
+                    $currentUserRole = $isAdmin
+                        ? 'process_owner'
+                        : $user->projectRoleIn($project);
+
+                    return [
+                        'id' => $project->id,
+                        'name' => $project->name,
+                        'description' => $project->description,
+                        'current_user_role' => $currentUserRole,
+                    ];
+                })
+                ->values()
+                ->all();
+        }
+
         return [
             ...parent::share($request),
             'auth' => [
@@ -58,6 +88,7 @@ class HandleInertiaRequests extends Middleware
                 ...(new Ziggy)->toArray(),
                 'location' => $request->url(),
             ],
+            'projects' => $projects,
         ];
     }
 }

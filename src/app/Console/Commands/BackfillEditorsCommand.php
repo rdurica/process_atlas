@@ -20,7 +20,7 @@ class BackfillEditorsCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Promote existing viewer users to editor except fixture viewer@example.com and owners.';
+    protected $description = 'Promote existing viewer users to editor except fixture viewer@example.com and process owners.';
 
     /**
      * Execute the console command.
@@ -41,8 +41,9 @@ class BackfillEditorsCommand extends Command
         $skippedOwner = 0;
 
         foreach ($candidates as $user) {
-            if ($user->hasRole('owner')) {
+            if ($user->hasRole('process_owner')) {
                 $skippedOwner++;
+
                 continue;
             }
 

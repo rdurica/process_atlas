@@ -5,14 +5,12 @@ namespace App\DTO\Mcp;
 final readonly class McpParams
 {
     /**
-     * @param array<string, mixed> $values
+     * @param  array<string, mixed>  $values
      */
-    public function __construct(private array $values)
-    {
-    }
+    public function __construct(private array $values) {}
 
     /**
-     * @param array<string, mixed> $values
+     * @param  array<string, mixed>  $values
      */
     public static function fromArray(array $values): self
     {

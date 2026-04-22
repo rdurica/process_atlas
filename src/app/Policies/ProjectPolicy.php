@@ -9,9 +9,7 @@ use App\Support\PermissionList;
 
 final class ProjectPolicy
 {
-    public function __construct(private readonly ProjectAccessService $access)
-    {
-    }
+    public function __construct(private readonly ProjectAccessService $access) {}
 
     public function view(User $user, Project $project): bool
     {

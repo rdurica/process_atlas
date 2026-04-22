@@ -9,8 +9,7 @@ final readonly class McpResourceUri
     public function __construct(
         public string $kind,
         public ?int $id,
-    ) {
-    }
+    ) {}
 
     public static function parse(string $uri): self
     {

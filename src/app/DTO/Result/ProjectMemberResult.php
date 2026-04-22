@@ -11,8 +11,7 @@ final readonly class ProjectMemberResult
         public string $name,
         public string $email,
         public string $role,
-    ) {
-    }
+    ) {}
 
     public static function fromUser(User $member, string $role): self
     {

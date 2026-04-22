@@ -16,8 +16,7 @@ class ProjectController extends Controller
     public function __construct(
         private readonly ProjectQueryService $projects,
         private readonly ProjectActionService $actions,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): JsonResponse
     {

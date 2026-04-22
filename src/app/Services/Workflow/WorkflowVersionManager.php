@@ -14,6 +14,8 @@ final class WorkflowVersionManager
     public function createInitialVersion(Workflow $workflow, User $actor): WorkflowVersion
     {
         return DB::transaction(function () use ($workflow, $actor): WorkflowVersion {
+            $workflow = $this->lockWorkflow($workflow);
+
             $version = $workflow->versions()->create([
                 'created_by' => $actor->id,
                 'version_number' => 1,
@@ -33,16 +35,17 @@ final class WorkflowVersionManager
 
     public function createDraftFromLatest(Workflow $workflow, User $actor): WorkflowVersion
     {
-        $source = $workflow
-            ->latestVersion()
-            ->with(['screens.customFields'])
-            ->first();
+        return DB::transaction(function () use ($workflow, $actor): WorkflowVersion {
+            $workflow = $this->lockWorkflow($workflow);
+            $source = $workflow
+                ->latestVersion()
+                ->with(['screens.customFields'])
+                ->first();
 
-        if (! $source) {
-            return $this->createInitialVersion($workflow, $actor);
-        }
+            if (! $source) {
+                return $this->createInitialVersion($workflow, $actor);
+            }
 
-        return DB::transaction(function () use ($workflow, $source, $actor): WorkflowVersion {
             $nextVersionNumber = ((int) $workflow->versions()->max('version_number')) + 1;
 
             $newVersion = $workflow->versions()->create([
@@ -68,6 +71,7 @@ final class WorkflowVersionManager
     {
         DB::transaction(function () use ($version): void {
             $workflow = $version->workflow()->lockForUpdate()->firstOrFail();
+            $version = $workflow->versions()->whereKey($version->id)->firstOrFail();
 
             $workflow->versions()->update(['is_published' => false]);
             $version->update(['is_published' => true]);
@@ -84,9 +88,14 @@ final class WorkflowVersionManager
     {
         abort_unless($target->workflow_id === $workflow->id, 422, 'Target revision does not belong to this workflow.');
 
-        $target->loadMissing(['screens.customFields']);
-
         return DB::transaction(function () use ($workflow, $target, $actor): WorkflowVersion {
+            $workflow = $this->lockWorkflow($workflow);
+            $target = $workflow
+                ->versions()
+                ->with(['screens.customFields'])
+                ->whereKey($target->id)
+                ->firstOrFail();
+
             $nextVersionNumber = ((int) $workflow->versions()->max('version_number')) + 1;
 
             $newVersion = $workflow->versions()->create([
@@ -111,10 +120,13 @@ final class WorkflowVersionManager
 
     public function deleteVersion(Workflow $workflow, WorkflowVersion $version): void
     {
-        abort_if($version->is_published, 422, 'Cannot delete a published revision.');
-        abort_if($workflow->versions()->count() <= 1, 422, 'Cannot delete the only remaining revision.');
-
         DB::transaction(function () use ($workflow, $version): void {
+            $workflow = $this->lockWorkflow($workflow);
+            $version = $workflow->versions()->whereKey($version->id)->firstOrFail();
+
+            abort_if($version->is_published, 422, 'Cannot delete a published revision.');
+            abort_if($workflow->versions()->count() <= 1, 422, 'Cannot delete the only remaining revision.');
+
             $isLatest = $workflow->latest_version_id === $version->id;
 
             $version->delete();
@@ -138,6 +150,7 @@ final class WorkflowVersionManager
                 'title' => $sourceScreen->title,
                 'subtitle' => $sourceScreen->subtitle,
                 'description' => $sourceScreen->description,
+                'image_path' => $sourceScreen->image_path,
                 'created_by' => $sourceScreen->created_by,
                 'updated_by' => $sourceScreen->updated_by,
             ]);
@@ -152,5 +165,10 @@ final class WorkflowVersionManager
                 ]);
             }
         }
+    }
+
+    private function lockWorkflow(Workflow $workflow): Workflow
+    {
+        return Workflow::query()->whereKey($workflow->id)->lockForUpdate()->firstOrFail();
     }
 }

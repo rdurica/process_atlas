@@ -9,11 +9,19 @@ export interface User {
     permissions: string[];
 }
 
-export type PageProps<
-    T extends Record<string, unknown> = Record<string, unknown>,
-> = T & {
+export type ProjectRole = 'process_owner' | 'editor' | 'viewer';
+
+export interface ProjectNavItem {
+    id: number;
+    name: string;
+    description?: string | null;
+    current_user_role: ProjectRole | null;
+}
+
+export type PageProps<T extends Record<string, unknown> = Record<string, unknown>> = T & {
     auth: {
         user: User | null;
     };
     ziggy: Config & { location: string };
+    projects?: ProjectNavItem[];
 };

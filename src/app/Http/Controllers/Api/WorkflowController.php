@@ -17,8 +17,7 @@ class WorkflowController extends Controller
     public function __construct(
         private readonly WorkflowQueryService $workflows,
         private readonly WorkflowActionService $actions,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request, Project $project): JsonResponse
     {

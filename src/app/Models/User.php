@@ -52,8 +52,9 @@ class User extends Authenticatable
     public function projectRoleIn(Project $project): ?string
     {
         $membership = $this->projectMemberships()->where('project_id', $project->id)->first();
+        $role = $membership?->pivot->getAttribute('role');
 
-        return $membership?->pivot->role;
+        return is_string($role) ? $role : null;
     }
 
     public function isAdmin(): bool

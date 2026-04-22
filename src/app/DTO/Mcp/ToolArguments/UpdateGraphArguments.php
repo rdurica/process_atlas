@@ -7,7 +7,7 @@ use App\DTO\Mcp\McpParams;
 final readonly class UpdateGraphArguments
 {
     /**
-     * @param array<string, mixed> $graphJson
+     * @param  array<string, mixed>  $graphJson
      */
     public function __construct(
         public int $workflowRevisionId,
@@ -15,8 +15,7 @@ final readonly class UpdateGraphArguments
         public array $graphJson,
         public bool $hasGraphJson,
         public bool $graphJsonIsObject,
-    ) {
-    }
+    ) {}
 
     public static function fromParams(McpParams $params): self
     {

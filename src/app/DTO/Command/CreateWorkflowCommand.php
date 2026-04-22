@@ -4,12 +4,10 @@ namespace App\DTO\Command;
 
 final readonly class CreateWorkflowCommand
 {
-    public function __construct(public string $name)
-    {
-    }
+    public function __construct(public string $name) {}
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      */
     public static function fromArray(array $payload): self
     {

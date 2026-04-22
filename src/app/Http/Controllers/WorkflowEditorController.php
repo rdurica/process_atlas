@@ -14,8 +14,7 @@ class WorkflowEditorController extends Controller
     public function __construct(
         private readonly WorkflowQueryService $workflows,
         private readonly ActivityFeed $activity,
-    ) {
-    }
+    ) {}
 
     public function __invoke(Request $request, Workflow $workflow): Response
     {

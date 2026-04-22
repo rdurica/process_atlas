@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Api;
 
 use App\DTO\Command\CreateWorkflowCommand;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreWorkflowRequest extends FormRequest
@@ -13,7 +14,7 @@ class StoreWorkflowRequest extends FormRequest
     }
 
     /**
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {

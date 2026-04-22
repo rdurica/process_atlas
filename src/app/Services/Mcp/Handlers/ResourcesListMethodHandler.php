@@ -12,9 +12,7 @@ use App\Support\PermissionList;
 
 final class ResourcesListMethodHandler implements McpMethodHandler
 {
-    public function __construct(private readonly McpQueryService $queries)
-    {
-    }
+    public function __construct(private readonly McpQueryService $queries) {}
 
     public function method(): string
     {
@@ -68,7 +66,7 @@ final class ResourcesListMethodHandler implements McpMethodHandler
         foreach ($screens as $screen) {
             $resources[] = new McpResourceDefinition(
                 uri: "process-atlas://screens/{$screen->id}",
-                name: "Screen {$screen->id}: ".($screen->title ?: $screen->node_id),
+                name: "Screen {$screen->id}: " . ($screen->title ?: $screen->node_id),
                 description: 'Screen details and custom fields.',
                 mimeType: 'application/json',
             );

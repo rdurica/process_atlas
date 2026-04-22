@@ -8,8 +8,7 @@ final readonly class McpResponse
         public mixed $id,
         public ?McpMethodResult $result,
         public ?McpError $error,
-    ) {
-    }
+    ) {}
 
     public static function success(mixed $id, McpMethodResult $result): self
     {

@@ -9,35 +9,38 @@ use App\Models\User;
 use App\Models\Workflow;
 use App\Services\Audit\AuditLogger;
 use App\Services\Workflow\WorkflowVersionManager;
+use Illuminate\Support\Facades\DB;
 
 final class WorkflowActionService
 {
-    public function __construct(private readonly WorkflowVersionManager $versionManager)
-    {
-    }
+    public function __construct(private readonly WorkflowVersionManager $versionManager) {}
 
     public function create(User $actor, Project $project, CreateWorkflowCommand $command): Workflow
     {
-        $workflow = $project->workflows()->create([
-            'name' => $command->name,
-            'status' => 'draft',
-        ]);
+        return DB::transaction(function () use ($actor, $project, $command): Workflow {
+            $workflow = $project->workflows()->create([
+                'name' => $command->name,
+                'status' => 'draft',
+            ]);
 
-        $initialVersion = $this->versionManager->createInitialVersion($workflow, $actor);
+            $initialVersion = $this->versionManager->createInitialVersion($workflow, $actor);
 
-        AuditLogger::log($actor, $workflow, 'created', 'Workflow created', [
-            'initial_version_id' => $initialVersion->id,
-        ]);
+            AuditLogger::log($actor, $workflow, 'created', 'Workflow created', [
+                'initial_version_id' => $initialVersion->id,
+            ]);
 
-        return $workflow->fresh(['latestVersion', 'publishedVersion']);
+            return $workflow->fresh(['latestVersion', 'publishedVersion']);
+        });
     }
 
     public function update(User $actor, Workflow $workflow, UpdateWorkflowCommand $command): Workflow
     {
-        $workflow->update($command->toArray());
+        return DB::transaction(function () use ($actor, $workflow, $command): Workflow {
+            $workflow->update($command->toArray());
 
-        AuditLogger::log($actor, $workflow, 'updated', 'Workflow updated');
+            AuditLogger::log($actor, $workflow, 'updated', 'Workflow updated');
 
-        return $workflow;
+            return $workflow;
+        });
     }
 }

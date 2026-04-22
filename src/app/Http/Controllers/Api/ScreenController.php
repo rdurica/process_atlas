@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Actions\ScreenActionService;
-use App\DTO\Command\UpdateScreenCommand;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\UpdateScreenRequest;
 use App\Http\Requests\Api\UpsertScreenRequest;
 use App\Models\Screen;
 use App\Queries\ScreenQueryService;
@@ -18,8 +18,7 @@ class ScreenController extends Controller
         private readonly ScreenQueryService $screens,
         private readonly WorkflowVersionQueryService $versions,
         private readonly ScreenActionService $actions,
-    ) {
-    }
+    ) {}
 
     public function show(Request $request, Screen $screen): JsonResponse
     {
@@ -44,18 +43,12 @@ class ScreenController extends Controller
         return response()->json(['data' => $screen]);
     }
 
-    public function update(Request $request, Screen $screen): JsonResponse
+    public function update(UpdateScreenRequest $request, Screen $screen): JsonResponse
     {
         $this->authorize('update', $screen);
 
-        $data = $request->validate([
-            'title' => ['nullable', 'string', 'max:255'],
-            'subtitle' => ['nullable', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-        ]);
-
         return response()->json([
-            'data' => $this->actions->update($request->user(), $screen, UpdateScreenCommand::fromArray($data)),
+            'data' => $this->actions->update($request->user(), $screen, $request->toDto()),
         ]);
     }
 }

@@ -2,30 +2,26 @@ import Modal from '@/Components/Modal';
 import StatusBadge from '@/Components/StatusBadge';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { PageProps } from '@/types';
-import type {
-    DashboardSummary,
-    ProjectMember,
-    ProjectRole,
-    ProjectSummary,
-    WorkflowSummary,
-} from '@/types/processAtlas';
+import type { DashboardSummary, ProjectRole, ProjectSummary } from '@/types/processAtlas';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { FormEvent, Fragment, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
 
 type DashboardProps = {
     summary: DashboardSummary;
     projects: ProjectSummary[];
 };
 
-type StatusFilter = 'all' | 'draft' | 'published' | 'empty';
+type StatusFilter = 'all' | 'published' | 'draft' | 'empty';
 
 function resolveApiError(error: unknown, fallback: string): string {
-    const response = (error as {
-        response?: {
-            status?: number;
-            data?: { message?: string; errors?: Record<string, string[]> };
-        };
-    })?.response;
+    const response = (
+        error as {
+            response?: {
+                status?: number;
+                data?: { message?: string; errors?: Record<string, string[]> };
+            };
+        }
+    )?.response;
 
     if (!response) {
         return fallback;
@@ -50,98 +46,33 @@ function resolveApiError(error: unknown, fallback: string): string {
     return response.data?.message ?? fallback;
 }
 
-function workflowTone(status: WorkflowSummary['status']) {
-    return status === 'published' ? 'success' : 'warning';
-}
-
-function formatTimestamp(value?: string | null): string {
-    if (!value) {
-        return 'No recent changes';
-    }
-
-    return new Intl.DateTimeFormat('en', {
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-    }).format(new Date(value));
-}
-
-function canEditInProject(role: ProjectRole | null): boolean {
-    return role === 'process_owner' || role === 'editor';
-}
-
-function canManageMembersInProject(role: ProjectRole | null): boolean {
-    return role === 'process_owner';
-}
-
 const ROLE_LABELS: Record<ProjectRole, string> = {
     process_owner: 'Process Owner',
     editor: 'Editor',
     viewer: 'Viewer',
 };
 
-export default function Dashboard({
-    summary,
-    projects,
-}: DashboardProps) {
+export default function Dashboard({ summary, projects }: DashboardProps) {
     const page = usePage<PageProps>();
     const permissions = new Set(page.props.auth.user?.permissions ?? []);
     const canCreateProjects = permissions.has('projects.create');
 
-    // User can create workflows in at least one project they are editor+ in
-    const hasEditableProject = projects.some((p) => canEditInProject(p.current_user_role));
-
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
     const [query, setQuery] = useState('');
-    const [expandedProjectIds, setExpandedProjectIds] = useState<number[]>([]);
     const [projectModalOpen, setProjectModalOpen] = useState(false);
-    const [workflowModalOpen, setWorkflowModalOpen] = useState(false);
     const [projectName, setProjectName] = useState('');
     const [projectDescription, setProjectDescription] = useState('');
-    const [workflowName, setWorkflowName] = useState('');
-    const [selectedProjectId, setSelectedProjectId] = useState<number | null>(
-        projects[0]?.id ?? null,
-    );
     const [pendingProject, setPendingProject] = useState(false);
-    const [pendingWorkflow, setPendingWorkflow] = useState(false);
     const [projectError, setProjectError] = useState<string | null>(null);
-    const [workflowError, setWorkflowError] = useState<string | null>(null);
-
-    // Members modal state
-    const [membersModalProject, setMembersModalProject] = useState<ProjectSummary | null>(null);
-    const [members, setMembers] = useState<ProjectMember[]>([]);
-    const [membersLoading, setMembersLoading] = useState(false);
-    const [membersError, setMembersError] = useState<string | null>(null);
-    const [newMemberEmail, setNewMemberEmail] = useState('');
-    const [newMemberRole, setNewMemberRole] = useState<ProjectRole>('editor');
-    const [pendingMember, setPendingMember] = useState(false);
-
-    useEffect(() => {
-        if (!selectedProjectId && projects[0]) {
-            setSelectedProjectId(projects[0].id);
-            return;
-        }
-
-        if (
-            selectedProjectId &&
-            !projects.some((project) => project.id === selectedProjectId)
-        ) {
-            setSelectedProjectId(projects[0]?.id ?? null);
-        }
-    }, [projects, selectedProjectId]);
 
     const filteredProjects = useMemo(() => {
         const normalizedQuery = query.trim().toLowerCase();
 
-        return projects.filter((project) => {
+        return projects.filter(project => {
             const matchesQuery =
                 normalizedQuery.length === 0 ||
                 project.name.toLowerCase().includes(normalizedQuery) ||
-                (project.description ?? '').toLowerCase().includes(normalizedQuery) ||
-                project.workflows.some((workflow) =>
-                    workflow.name.toLowerCase().includes(normalizedQuery),
-                );
+                (project.description ?? '').toLowerCase().includes(normalizedQuery);
 
             if (!matchesQuery) {
                 return false;
@@ -152,41 +83,18 @@ export default function Dashboard({
             }
 
             if (statusFilter === 'empty') {
-                return project.workflows.length === 0;
+                return project.workflows_count === 0;
             }
 
-            return project.workflows.some((workflow) => workflow.status === statusFilter);
+            return project.workflows.some(workflow => workflow.status === statusFilter);
         });
     }, [projects, query, statusFilter]);
-
-    const toggleProject = (projectId: number) => {
-        setExpandedProjectIds((current) =>
-            current.includes(projectId)
-                ? current.filter((id) => id !== projectId)
-                : [...current, projectId],
-        );
-    };
-
-    const openWorkflowModal = (projectId?: number) => {
-        if (typeof projectId === 'number') {
-            setSelectedProjectId(projectId);
-        }
-
-        setWorkflowError(null);
-        setWorkflowModalOpen(true);
-    };
 
     const closeProjectModal = () => {
         setProjectModalOpen(false);
         setProjectError(null);
         setProjectName('');
         setProjectDescription('');
-    };
-
-    const closeWorkflowModal = () => {
-        setWorkflowModalOpen(false);
-        setWorkflowError(null);
-        setWorkflowName('');
     };
 
     const reloadDashboard = () => {
@@ -215,132 +123,9 @@ export default function Dashboard({
             closeProjectModal();
             reloadDashboard();
         } catch (error) {
-            setProjectError(
-                resolveApiError(error, 'The project could not be created.'),
-            );
+            setProjectError(resolveApiError(error, 'The project could not be created.'));
         } finally {
             setPendingProject(false);
-        }
-    };
-
-    const editableProjects = projects.filter((p) => canEditInProject(p.current_user_role));
-
-    const createWorkflow = async (event: FormEvent) => {
-        event.preventDefault();
-
-        if (!selectedProjectId) {
-            setWorkflowError('Select a project before creating a workflow.');
-            return;
-        }
-
-        setPendingWorkflow(true);
-        setWorkflowError(null);
-
-        try {
-            const response = await window.axios.post(
-                `/api/v1/projects/${selectedProjectId}/workflows`,
-                {
-                    name: workflowName,
-                },
-            );
-
-            const workflowId = response.data?.data?.id;
-            closeWorkflowModal();
-
-            if (workflowId) {
-                window.location.href = route('workflows.editor', {
-                    workflow: workflowId,
-                });
-                return;
-            }
-
-            reloadDashboard();
-        } catch (error) {
-            setWorkflowError(
-                resolveApiError(error, 'The workflow could not be created.'),
-            );
-        } finally {
-            setPendingWorkflow(false);
-        }
-    };
-
-    const openMembersModal = async (project: ProjectSummary) => {
-        setMembersModalProject(project);
-        setMembersLoading(true);
-        setMembersError(null);
-        setNewMemberEmail('');
-        setNewMemberRole('editor');
-
-        try {
-            const response = await window.axios.get(`/api/v1/projects/${project.id}/members`);
-            setMembers(response.data.data);
-        } catch (error) {
-            setMembersError(resolveApiError(error, 'Could not load members.'));
-        } finally {
-            setMembersLoading(false);
-        }
-    };
-
-    const closeMembersModal = () => {
-        setMembersModalProject(null);
-        setMembers([]);
-        setMembersError(null);
-    };
-
-    const addMember = async (event: FormEvent) => {
-        event.preventDefault();
-        if (!membersModalProject) return;
-
-        setPendingMember(true);
-        setMembersError(null);
-
-        try {
-            // Resolve user by email first via members endpoint (we pass email as user lookup)
-            const response = await window.axios.post(
-                `/api/v1/projects/${membersModalProject.id}/members`,
-                { email: newMemberEmail, role: newMemberRole },
-            );
-            setMembers((prev) => {
-                const existing = prev.find((m) => m.id === response.data.data.id);
-                if (existing) {
-                    return prev.map((m) => m.id === response.data.data.id ? response.data.data : m);
-                }
-                return [...prev, response.data.data];
-            });
-            setNewMemberEmail('');
-        } catch (error) {
-            setMembersError(resolveApiError(error, 'Could not add member.'));
-        } finally {
-            setPendingMember(false);
-        }
-    };
-
-    const updateMemberRole = async (memberId: number, role: ProjectRole) => {
-        if (!membersModalProject) return;
-
-        try {
-            const response = await window.axios.patch(
-                `/api/v1/projects/${membersModalProject.id}/members/${memberId}`,
-                { role },
-            );
-            setMembers((prev) =>
-                prev.map((m) => (m.id === memberId ? response.data.data : m)),
-            );
-        } catch (error) {
-            setMembersError(resolveApiError(error, 'Could not update role.'));
-        }
-    };
-
-    const removeMember = async (memberId: number) => {
-        if (!membersModalProject) return;
-
-        try {
-            await window.axios.delete(
-                `/api/v1/projects/${membersModalProject.id}/members/${memberId}`,
-            );
-            setMembers((prev) => prev.filter((m) => m.id !== memberId));
-        } catch (error) {
-            setMembersError(resolveApiError(error, 'Could not remove member.'));
         }
     };
 
@@ -392,229 +177,111 @@ export default function Dashboard({
                                 New Project
                             </button>
                         )}
-                        {hasEditableProject && (
-                            <button
-                                type="button"
-                                onClick={() => openWorkflowModal()}
-                                className="btn-primary px-4 py-2.5 text-sm"
-                            >
-                                New Workflow
-                            </button>
-                        )}
                     </div>
                 </div>
             }
         >
             <Head title="Dashboard" />
 
-            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-                <div className="space-y-6">
-                    <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
-                        {metrics.map((metric) => (
-                            <article key={metric.label} className={`surface-card metric-card ${metric.accentClass}`}>
-                                <p className="eyebrow">{metric.label}</p>
-                                <p className="metric-value mt-4">{metric.value}</p>
-                                <p className="mt-3 max-w-[18rem] text-sm text-slate-600">
-                                    {metric.detail}
-                                </p>
-                            </article>
-                        ))}
-                    </section>
+            <div className="space-y-6">
+                <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
+                    {metrics.map(metric => (
+                        <article
+                            key={metric.label}
+                            className={`surface-card metric-card ${metric.accentClass}`}
+                        >
+                            <p className="eyebrow">{metric.label}</p>
+                            <p className="metric-value mt-4">{metric.value}</p>
+                            <p className="mt-3 max-w-[18rem] text-sm text-slate-600">
+                                {metric.detail}
+                            </p>
+                        </article>
+                    ))}
+                </section>
 
-                    <section className="surface-card table-shell">
-                        <div className="command-bar border-b border-slate-200/70">
-                            <div>
-                                <p className="eyebrow">Project Registry</p>
-                                <h2 className="panel-title mt-2">Delivery Portfolio</h2>
+                <section className="surface-card table-shell">
+                    <div className="command-bar border-b border-slate-200/70">
+                        <div>
+                            <p className="eyebrow">Projects</p>
+                            <h2 className="panel-title mt-2">Your Workspaces</h2>
+                        </div>
+
+                        <div className="flex w-full flex-col gap-3 lg:w-auto lg:flex-row lg:items-center">
+                            <div className="min-w-[260px] lg:w-[320px]">
+                                <input
+                                    value={query}
+                                    onChange={event => setQuery(event.target.value)}
+                                    placeholder="Search projects"
+                                    className="input-shell"
+                                />
                             </div>
-
-                            <div className="flex w-full flex-col gap-3 lg:w-auto lg:flex-row lg:items-center">
-                                <div className="min-w-[260px] lg:w-[320px]">
-                                    <input
-                                        value={query}
-                                        onChange={(event) => setQuery(event.target.value)}
-                                        placeholder="Search projects or workflows"
-                                        className="input-shell"
-                                    />
-                                </div>
-                                <div className="min-w-[180px]">
-                                    <select
-                                        value={statusFilter}
-                                        onChange={(event) =>
-                                            setStatusFilter(event.target.value as StatusFilter)
-                                        }
-                                        className="select-shell"
-                                    >
-                                        <option value="all">All statuses</option>
-                                        <option value="published">Published</option>
-                                        <option value="draft">Draft</option>
-                                        <option value="empty">No workflows</option>
-                                    </select>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={reloadDashboard}
-                                    className="btn-ghost px-4 py-3 text-sm"
+                            <div className="min-w-[180px]">
+                                <select
+                                    value={statusFilter}
+                                    onChange={event =>
+                                        setStatusFilter(event.target.value as StatusFilter)
+                                    }
+                                    className="select-shell"
                                 >
-                                    Refresh
-                                </button>
+                                    <option value="all">All statuses</option>
+                                    <option value="published">Has published</option>
+                                    <option value="draft">Has drafts</option>
+                                    <option value="empty">No workflows</option>
+                                </select>
                             </div>
                         </div>
+                    </div>
 
-                        <div className="table-scroll">
-                            <table className="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Project</th>
-                                        <th>Workflows</th>
-                                        <th>Latest Revision</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredProjects.map((project) => {
-                                        const isExpanded = expandedProjectIds.includes(project.id);
-                                        const userCanEdit = canEditInProject(project.current_user_role);
-                                        const userCanManage = canManageMembersInProject(project.current_user_role);
+                    <div className="p-6">
+                        {filteredProjects.length === 0 ? (
+                            <div className="empty-state py-12">
+                                No projects match the current filters.
+                            </div>
+                        ) : (
+                            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                                {filteredProjects.map(project => (
+                                    <Link
+                                        key={project.id}
+                                        href={route('projects.show', { project: project.id })}
+                                        className="group relative rounded-2xl border border-slate-200/60 bg-white p-5 shadow-sm transition-all hover:border-slate-300 hover:shadow-md"
+                                    >
+                                        <div className="flex items-start justify-between">
+                                            <div className="min-w-0 flex-1">
+                                                <h3 className="truncate text-base font-semibold text-slate-950 group-hover:text-blue-600">
+                                                    {project.name}
+                                                </h3>
+                                                <p className="mt-1 line-clamp-2 text-sm text-slate-500">
+                                                    {project.description ||
+                                                        'No project description'}
+                                                </p>
+                                            </div>
+                                            <span className="badge badge-neutral shrink-0">
+                                                {project.workflows_count} workflows
+                                            </span>
+                                        </div>
 
-                                        return (
-                                            <Fragment key={project.id}>
-                                                <tr key={project.id} className="data-row">
-                                                    <td>
-                                                        <div className="max-w-[28rem]">
-                                                            <p className="text-sm font-semibold text-slate-950">
-                                                                {project.name}
-                                                            </p>
-                                                            <p className="mt-1 text-sm text-slate-600">
-                                                                {project.description ||
-                                                                    'No project description yet.'}
-                                                            </p>
-                                                            {project.current_user_role && (
-                                                                <span className="badge badge-neutral mt-2">
-                                                                    {ROLE_LABELS[project.current_user_role]}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <p className="text-sm font-semibold tabular-nums text-slate-950">
-                                                            {project.workflows_count}
-                                                        </p>
-                                                    </td>
-                                                    <td>
-                                                        <StatusBadge tone="brand">
-                                                            {project.latest_version_label}
-                                                        </StatusBadge>
-                                                    </td>
-                                                    <td>
-                                                        <p className="text-sm text-slate-700">
-                                                            {project.status_summary}
-                                                        </p>
-                                                    </td>
-                                                    <td>
-                                                        <div className="flex flex-wrap gap-2">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => toggleProject(project.id)}
-                                                                className="btn-ghost px-3 py-2 text-sm"
-                                                            >
-                                                                {isExpanded ? 'Collapse' : 'Expand'}
-                                                            </button>
-                                                            {userCanEdit && (
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() =>
-                                                                        openWorkflowModal(project.id)
-                                                                    }
-                                                                    className="btn-secondary px-3 py-2 text-sm"
-                                                                >
-                                                                    Add Workflow
-                                                                </button>
-                                                            )}
-                                                            {userCanManage && (
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => openMembersModal(project)}
-                                                                    className="btn-ghost px-3 py-2 text-sm"
-                                                                >
-                                                                    Members
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                                {isExpanded && (
-                                                    <tr key={`${project.id}-expanded`}>
-                                                        <td colSpan={5} className="bg-slate-100/60 p-4">
-                                                            {project.workflows.length === 0 ? (
-                                                                <div className="empty-state">
-                                                                    This project does not have any workflows yet.
-                                                                </div>
-                                                            ) : (
-                                                                <div className="divide-y divide-slate-200/60">
-                                                                    {project.workflows.map((workflow) => (
-                                                                        <div
-                                                                            key={workflow.id}
-                                                                            className={`flex items-center gap-4 py-2.5 pl-3 border-l-[3px] ${workflow.status === 'published' ? 'border-l-emerald-500' : 'border-l-amber-400'}`}
-                                                                        >
-                                                                            <div className="min-w-0 flex-1">
-                                                                                <p className="truncate text-sm font-semibold text-slate-950">
-                                                                                    {workflow.name}
-                                                                                </p>
-                                                                                <p className="mt-0.5 text-xs text-slate-500">
-                                                                                    {formatTimestamp(workflow.updated_at)}
-                                                                                </p>
-                                                                            </div>
-                                                                            <div className="flex shrink-0 items-center gap-2">
-                                                                                <StatusBadge tone="brand">
-                                                                                    {workflow.latest_version
-                                                                                        ? `rev. ${workflow.latest_version.version_number}`
-                                                                                        : 'No revision'}
-                                                                                </StatusBadge>
-                                                                                <StatusBadge tone={workflowTone(workflow.status)}>
-                                                                                    {workflow.status}
-                                                                                </StatusBadge>
-                                                                                {workflow.published_version_id && (
-                                                                                    <StatusBadge tone="success">
-                                                                                        Live
-                                                                                    </StatusBadge>
-                                                                                )}
-                                                                            </div>
-                                                                            <Link
-                                                                                href={route('workflows.editor', {
-                                                                                    workflow: workflow.id,
-                                                                                })}
-                                                                                className="btn-secondary shrink-0 px-3 py-1.5 text-xs"
-                                                                            >
-                                                                                Open Editor
-                                                                            </Link>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            )}
-                                                        </td>
-                                                    </tr>
-                                                )}
-                                            </Fragment>
-                                        );
-                                    })}
+                                        <div className="mt-4 flex items-center gap-2">
+                                            <StatusBadge tone="brand">
+                                                {project.latest_version_label}
+                                            </StatusBadge>
+                                            <StatusBadge tone="neutral">
+                                                {project.status_summary}
+                                            </StatusBadge>
+                                        </div>
 
-                                    {filteredProjects.length === 0 && (
-                                        <tr>
-                                            <td colSpan={5}>
-                                                <div className="empty-state my-3">
-                                                    No projects match the current filters.
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </section>
-                </div>
-
+                                        {project.current_user_role && (
+                                            <div className="mt-3">
+                                                <span className="badge badge-neutral">
+                                                    {ROLE_LABELS[project.current_user_role]}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </Link>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </section>
             </div>
 
             {/* Create Project Modal */}
@@ -624,7 +291,8 @@ export default function Dashboard({
                         <p className="eyebrow">Create Project</p>
                         <h2 className="panel-title mt-2">Provision a new project workspace</h2>
                         <p className="mt-3 text-sm text-slate-600">
-                            Create a project shell first, then attach workflows and revision-tracked process maps.
+                            Create a project shell first, then attach workflows and revision-tracked
+                            process maps.
                         </p>
                     </div>
 
@@ -632,7 +300,7 @@ export default function Dashboard({
                         Project Name
                         <input
                             value={projectName}
-                            onChange={(event) => setProjectName(event.target.value)}
+                            onChange={event => setProjectName(event.target.value)}
                             required
                             disabled={!canCreateProjects || pendingProject}
                             className="input-shell mt-2"
@@ -643,7 +311,7 @@ export default function Dashboard({
                         Description
                         <textarea
                             value={projectDescription}
-                            onChange={(event) => setProjectDescription(event.target.value)}
+                            onChange={event => setProjectDescription(event.target.value)}
                             disabled={!canCreateProjects || pendingProject}
                             className="textarea-shell mt-2"
                         />
@@ -672,167 +340,6 @@ export default function Dashboard({
                         </button>
                     </div>
                 </form>
-            </Modal>
-
-            {/* Create Workflow Modal */}
-            <Modal show={workflowModalOpen} onClose={closeWorkflowModal} maxWidth="lg">
-                <form onSubmit={createWorkflow} className="space-y-5 p-6 sm:p-7">
-                    <div>
-                        <p className="eyebrow">Create Workflow</p>
-                        <h2 className="panel-title mt-2">Open a new process model</h2>
-                        <p className="mt-3 text-sm text-slate-600">
-                            New workflows start in draft mode with an initial revision ready for editing.
-                        </p>
-                    </div>
-
-                    <label className="block text-sm font-medium text-slate-700">
-                        Project
-                        <select
-                            value={selectedProjectId ?? ''}
-                            onChange={(event) =>
-                                setSelectedProjectId(Number(event.target.value))
-                            }
-                            disabled={pendingWorkflow || editableProjects.length === 0}
-                            className="select-shell mt-2"
-                        >
-                            {editableProjects.map((project) => (
-                                <option key={project.id} value={project.id}>
-                                    {project.name}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-
-                    <label className="block text-sm font-medium text-slate-700">
-                        Workflow Name
-                        <input
-                            value={workflowName}
-                            onChange={(event) => setWorkflowName(event.target.value)}
-                            required
-                            disabled={pendingWorkflow || !selectedProjectId}
-                            className="input-shell mt-2"
-                        />
-                    </label>
-
-                    {workflowError && (
-                        <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                            {workflowError}
-                        </p>
-                    )}
-
-                    <div className="flex justify-end gap-3">
-                        <button
-                            type="button"
-                            onClick={closeWorkflowModal}
-                            className="btn-ghost px-4 py-3 text-sm"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={pendingWorkflow || !selectedProjectId || editableProjects.length === 0}
-                            className="btn-primary px-4 py-3 text-sm"
-                        >
-                            Create Workflow
-                        </button>
-                    </div>
-                </form>
-            </Modal>
-
-            {/* Manage Members Modal */}
-            <Modal show={membersModalProject !== null} onClose={closeMembersModal} maxWidth="lg">
-                <div className="space-y-5 p-6 sm:p-7">
-                    <div>
-                        <p className="eyebrow">Project Members</p>
-                        <h2 className="panel-title mt-2">{membersModalProject?.name}</h2>
-                        <p className="mt-3 text-sm text-slate-600">
-                            Manage who has access to this project and what they can do.
-                        </p>
-                    </div>
-
-                    {membersError && (
-                        <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                            {membersError}
-                        </p>
-                    )}
-
-                    {membersLoading ? (
-                        <p className="text-sm text-slate-500">Loading members…</p>
-                    ) : (
-                        <div className="divide-y divide-slate-100">
-                            {members.map((member) => (
-                                <div key={member.id} className="flex items-center gap-3 py-3">
-                                    <div className="min-w-0 flex-1">
-                                        <p className="truncate text-sm font-semibold text-slate-950">
-                                            {member.name}
-                                        </p>
-                                        <p className="truncate text-sm text-slate-500">{member.email}</p>
-                                    </div>
-                                    <select
-                                        value={member.role}
-                                        onChange={(e) =>
-                                            updateMemberRole(member.id, e.target.value as ProjectRole)
-                                        }
-                                        className="select-shell w-40 shrink-0"
-                                    >
-                                        <option value="process_owner">Process Owner</option>
-                                        <option value="editor">Editor</option>
-                                        <option value="viewer">Viewer</option>
-                                    </select>
-                                    <button
-                                        type="button"
-                                        onClick={() => removeMember(member.id)}
-                                        className="btn-ghost px-3 py-2 text-sm text-rose-600"
-                                    >
-                                        Remove
-                                    </button>
-                                </div>
-                            ))}
-                            {members.length === 0 && (
-                                <p className="py-3 text-sm text-slate-500">No members yet.</p>
-                            )}
-                        </div>
-                    )}
-
-                    <form onSubmit={addMember} className="flex gap-2">
-                        <input
-                            type="email"
-                            value={newMemberEmail}
-                            onChange={(e) => setNewMemberEmail(e.target.value)}
-                            placeholder="user@example.com"
-                            required
-                            disabled={pendingMember}
-                            className="input-shell min-w-0 flex-1"
-                        />
-                        <select
-                            value={newMemberRole}
-                            onChange={(e) => setNewMemberRole(e.target.value as ProjectRole)}
-                            disabled={pendingMember}
-                            className="select-shell w-40 shrink-0"
-                        >
-                            <option value="process_owner">Process Owner</option>
-                            <option value="editor">Editor</option>
-                            <option value="viewer">Viewer</option>
-                        </select>
-                        <button
-                            type="submit"
-                            disabled={pendingMember}
-                            className="btn-primary shrink-0 px-4 py-3 text-sm"
-                        >
-                            Add
-                        </button>
-                    </form>
-
-                    <div className="flex justify-end">
-                        <button
-                            type="button"
-                            onClick={closeMembersModal}
-                            className="btn-ghost px-4 py-3 text-sm"
-                        >
-                            Close
-                        </button>
-                    </div>
-                </div>
             </Modal>
         </AuthenticatedLayout>
     );

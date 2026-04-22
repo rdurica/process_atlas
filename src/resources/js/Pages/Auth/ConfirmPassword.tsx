@@ -11,7 +11,7 @@ export default function ConfirmPassword() {
         password: '',
     });
 
-    const submit: FormEventHandler = (e) => {
+    const submit: FormEventHandler = e => {
         e.preventDefault();
 
         post(route('password.confirm'), {
@@ -24,8 +24,8 @@ export default function ConfirmPassword() {
             <Head title="Confirm Password" />
 
             <div className="mb-4 text-sm text-gray-600">
-                This is a secure area of the application. Please confirm your
-                password before continuing.
+                This is a secure area of the application. Please confirm your password before
+                continuing.
             </div>
 
             <form onSubmit={submit}>
@@ -39,7 +39,7 @@ export default function ConfirmPassword() {
                         value={data.password}
                         className="mt-1 block w-full"
                         isFocused={true}
-                        onChange={(e) => setData('password', e.target.value)}
+                        onChange={e => setData('password', e.target.value)}
                     />
 
                     <InputError message={errors.password} className="mt-2" />

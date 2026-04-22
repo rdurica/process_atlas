@@ -7,14 +7,12 @@ use Illuminate\Validation\ValidationException;
 final readonly class McpToolResult
 {
     /**
-     * @param array<string, mixed> $structuredContent
+     * @param  array<string, mixed>  $structuredContent
      */
-    public function __construct(private array $structuredContent)
-    {
-    }
+    public function __construct(private array $structuredContent) {}
 
     /**
-     * @param array<string, mixed> $structuredContent
+     * @param  array<string, mixed>  $structuredContent
      */
     public static function fromStructuredContent(array $structuredContent): self
     {

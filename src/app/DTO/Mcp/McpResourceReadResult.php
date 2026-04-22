@@ -7,16 +7,15 @@ use Illuminate\Validation\ValidationException;
 final readonly class McpResourceReadResult
 {
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      */
     public function __construct(
         private string $uri,
         private array $payload,
-    ) {
-    }
+    ) {}
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      */
     public static function fromPayload(string $uri, array $payload): self
     {

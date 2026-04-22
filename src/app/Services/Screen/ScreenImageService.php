@@ -9,14 +9,26 @@ final class ScreenImageService
 {
     public function replace(?string $existingPath, UploadedFile $image, int $maxWidth = 1080): string
     {
-        if ($existingPath) {
-            Storage::disk('public')->delete($existingPath);
-        }
+        $imagePath = $this->storeResized($image, $maxWidth);
 
+        $this->delete($existingPath);
+
+        return $imagePath;
+    }
+
+    public function storeResized(UploadedFile $image, int $maxWidth = 1080): string
+    {
         $imagePath = $image->store('screens', 'public');
         $this->resize(Storage::disk('public')->path($imagePath), $maxWidth);
 
         return $imagePath;
+    }
+
+    public function delete(?string $path): void
+    {
+        if ($path) {
+            Storage::disk('public')->delete($path);
+        }
     }
 
     private function resize(string $path, int $maxWidth): void
@@ -58,6 +70,7 @@ final class ScreenImageService
 
             default:
                 imagedestroy($dst);
+
                 return;
         }
 

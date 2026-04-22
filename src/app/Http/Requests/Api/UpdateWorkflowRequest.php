@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Api;
 
 use App\DTO\Command\UpdateWorkflowCommand;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateWorkflowRequest extends FormRequest
@@ -13,13 +14,13 @@ class UpdateWorkflowRequest extends FormRequest
     }
 
     /**
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         return [
             'name' => ['sometimes', 'required', 'string', 'max:255'],
-            'status' => ['sometimes', 'required', 'string', 'in:draft,published'],
+            'status' => ['prohibited'],
         ];
     }
 

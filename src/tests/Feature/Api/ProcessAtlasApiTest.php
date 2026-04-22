@@ -2,6 +2,8 @@
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
@@ -132,6 +134,95 @@ it('allows project creation for editor role', function (): void {
     $this->postJson('/api/v1/projects', [
         'name' => 'Allowed for editor',
     ])->assertCreated();
+});
+
+it('does not allow direct workflow status updates', function (): void {
+    $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
+    $this->actingAs($owner);
+
+    $projectResponse = $this->postJson('/api/v1/projects', [
+        'name' => 'Status Guard Project',
+    ])->assertCreated();
+    $projectId = (int) $projectResponse->json('data.id');
+
+    $workflowResponse = $this->postJson("/api/v1/projects/{$projectId}/workflows", [
+        'name' => 'Status Guard Workflow',
+    ])->assertCreated();
+    $workflowId = (int) $workflowResponse->json('data.id');
+
+    $this->patchJson("/api/v1/workflows/{$workflowId}", [
+        'status' => 'published',
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors('status');
+
+    $this->getJson("/api/v1/workflows/{$workflowId}")
+        ->assertOk()
+        ->assertJsonPath('data.status', 'draft');
+});
+
+it('prevents demoting the last process owner in a project', function (): void {
+    $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
+    $this->actingAs($owner);
+
+    $projectResponse = $this->postJson('/api/v1/projects', [
+        'name' => 'Ownership Guard Project',
+    ])->assertCreated();
+    $projectId = (int) $projectResponse->json('data.id');
+
+    $this->patchJson("/api/v1/projects/{$projectId}/members/{$owner->id}", [
+        'role' => 'viewer',
+    ])->assertUnprocessable();
+
+    $secondOwner = User::factory()->create(['email' => 'second-owner@example.com']);
+
+    $this->postJson("/api/v1/projects/{$projectId}/members", [
+        'email' => $secondOwner->email,
+        'role' => 'process_owner',
+    ])->assertCreated();
+
+    $this->patchJson("/api/v1/projects/{$projectId}/members/{$owner->id}", [
+        'role' => 'viewer',
+    ])->assertOk()
+        ->assertJsonPath('data.role', 'viewer');
+});
+
+it('keeps screen image metadata when creating a draft revision', function (): void {
+    Storage::fake('public');
+
+    $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
+    $this->actingAs($owner);
+
+    $projectResponse = $this->postJson('/api/v1/projects', [
+        'name' => 'Image Clone Project',
+    ])->assertCreated();
+    $projectId = (int) $projectResponse->json('data.id');
+
+    $workflowResponse = $this->postJson("/api/v1/projects/{$projectId}/workflows", [
+        'name' => 'Image Clone Workflow',
+    ])->assertCreated();
+    $workflowId = (int) $workflowResponse->json('data.id');
+
+    $workflowShow = $this->getJson("/api/v1/workflows/{$workflowId}")->assertOk();
+    $versionId = (int) $workflowShow->json('data.latest_version.id');
+
+    $screenResponse = $this->post('/api/v1/screens/upsert', [
+        'workflow_version_id' => $versionId,
+        'node_id' => 'screen-image-1',
+        'title' => 'Image screen',
+        'image' => UploadedFile::fake()->image('screen.png', 800, 600),
+    ])->assertOk();
+
+    $imagePath = $screenResponse->json('data.image_path');
+    expect($imagePath)->not->toBeNull();
+    Storage::disk('public')->assertExists($imagePath);
+
+    $draftResponse = $this->postJson("/api/v1/workflows/{$workflowId}/versions")
+        ->assertCreated();
+    $draftVersionId = (int) $draftResponse->json('data.id');
+
+    $this->getJson("/api/v1/workflow-versions/{$draftVersionId}")
+        ->assertOk()
+        ->assertJsonPath('data.screens.0.image_path', $imagePath);
 });
 
 it('handles standard mcp initialize requests over api endpoint', function (): void {

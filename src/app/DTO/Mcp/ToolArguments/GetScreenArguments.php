@@ -6,9 +6,7 @@ use App\DTO\Mcp\McpParams;
 
 final readonly class GetScreenArguments
 {
-    public function __construct(public int $screenId)
-    {
-    }
+    public function __construct(public int $screenId) {}
 
     public static function fromParams(McpParams $params): self
     {

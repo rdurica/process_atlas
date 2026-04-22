@@ -21,9 +21,12 @@ RUN apk update && apk add --no-cache \
     zlib-dev \
     libxml2-dev \
     icu-dev \
+    freetype-dev \
+    libjpeg-turbo-dev \
+    libpng-dev \
     && rm -rf /var/cache/apk/*
 
-RUN docker-php-ext-install sockets pdo pdo_mysql mysqli pdo_pgsql pgsql zip intl bcmath && \
+RUN docker-php-ext-install sockets pdo pdo_mysql mysqli pdo_pgsql pgsql zip intl bcmath gd && \
     curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 RUN curl -sS https://get.symfony.com/cli/installer | bash -s -- --install-dir=/usr/local/bin \

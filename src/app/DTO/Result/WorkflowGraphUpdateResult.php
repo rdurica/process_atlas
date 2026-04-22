@@ -7,8 +7,7 @@ final readonly class WorkflowGraphUpdateResult
     public function __construct(
         public int $workflowVersionId,
         public int $lockVersion,
-    ) {
-    }
+    ) {}
 
     /**
      * @return array{workflow_version_id: int, lock_version: int}

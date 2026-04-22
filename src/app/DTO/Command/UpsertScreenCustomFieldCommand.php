@@ -10,11 +10,10 @@ final readonly class UpsertScreenCustomFieldCommand
         public ?string $value,
         public ?int $sortOrder,
         public bool $hasSortOrder,
-    ) {
-    }
+    ) {}
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      */
     public static function fromArray(array $payload): self
     {

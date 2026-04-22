@@ -14,9 +14,7 @@ use Illuminate\Validation\ValidationException;
 
 final class ResourcesReadMethodHandler implements McpMethodHandler
 {
-    public function __construct(private readonly McpQueryService $queries)
-    {
-    }
+    public function __construct(private readonly McpQueryService $queries) {}
 
     public function method(): string
     {

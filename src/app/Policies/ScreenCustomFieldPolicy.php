@@ -8,9 +8,7 @@ use App\Services\ProjectAccessService;
 
 final class ScreenCustomFieldPolicy
 {
-    public function __construct(private readonly ProjectAccessService $access)
-    {
-    }
+    public function __construct(private readonly ProjectAccessService $access) {}
 
     public function delete(User $user, ScreenCustomField $screenCustomField): bool
     {

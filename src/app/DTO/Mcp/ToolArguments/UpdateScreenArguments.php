@@ -12,8 +12,7 @@ final readonly class UpdateScreenArguments
         public ?string $title,
         public ?string $subtitle,
         public ?string $description,
-    ) {
-    }
+    ) {}
 
     public static function fromParams(McpParams $params): self
     {

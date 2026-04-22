@@ -16,11 +16,10 @@ final readonly class UpsertScreenCommand
         public ?string $description,
         public bool $hasDescription,
         public ?UploadedFile $image,
-    ) {
-    }
+    ) {}
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      */
     public static function fromArray(array $payload, ?UploadedFile $image = null): self
     {
@@ -38,7 +37,7 @@ final readonly class UpsertScreenCommand
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      */
     public static function fromMcpArray(array $payload): self
     {

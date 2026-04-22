@@ -8,9 +8,7 @@ use App\Services\ProjectAccessService;
 
 final class WorkflowPolicy
 {
-    public function __construct(private readonly ProjectAccessService $access)
-    {
-    }
+    public function __construct(private readonly ProjectAccessService $access) {}
 
     public function view(User $user, Workflow $workflow): bool
     {

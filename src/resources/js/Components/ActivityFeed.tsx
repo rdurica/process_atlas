@@ -38,7 +38,7 @@ export default function ActivityFeed({
                 <div className="empty-state mt-4">{emptyMessage}</div>
             ) : (
                 <div className="mt-4 space-y-3">
-                    {items.map((item) => (
+                    {items.map(item => (
                         <article key={item.id} className="activity-item">
                             <div className="flex items-start justify-between gap-3">
                                 <div>
@@ -49,9 +49,7 @@ export default function ActivityFeed({
                                         {item.subject_label} · {item.causer_name}
                                     </p>
                                 </div>
-                                <span className="badge badge-neutral">
-                                    {item.event}
-                                </span>
+                                <span className="badge badge-neutral">{item.event}</span>
                             </div>
                             <p className="mt-2 text-xs uppercase tracking-[0.16em] text-slate-400">
                                 {formatTimestamp(item.created_at)}

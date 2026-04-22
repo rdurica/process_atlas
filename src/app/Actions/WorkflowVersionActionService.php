@@ -9,12 +9,11 @@ use App\Models\Workflow;
 use App\Models\WorkflowVersion;
 use App\Services\Audit\AuditLogger;
 use App\Services\Workflow\WorkflowVersionManager;
+use Illuminate\Support\Facades\DB;
 
 final class WorkflowVersionActionService
 {
-    public function __construct(private readonly WorkflowVersionManager $versionManager)
-    {
-    }
+    public function __construct(private readonly WorkflowVersionManager $versionManager) {}
 
     public function createDraft(User $actor, Workflow $workflow): WorkflowVersion
     {
@@ -33,20 +32,29 @@ final class WorkflowVersionActionService
         UpdateWorkflowGraphCommand $command,
         string $source = 'ui',
     ): WorkflowGraphUpdateResult {
-        abort_if($workflowVersion->is_published, 422, 'Cannot modify a published revision.');
-        abort_if($command->lockVersion !== $workflowVersion->lock_version, 409, 'Revision conflict. Reload and retry.');
+        return DB::transaction(function () use ($actor, $workflowVersion, $command, $source): WorkflowGraphUpdateResult {
+            abort_if($workflowVersion->is_published, 422, 'Cannot modify a published revision.');
 
-        $workflowVersion->update([
-            'graph_json' => $command->graphJson,
-            'lock_version' => $workflowVersion->lock_version + 1,
-        ]);
+            $updated = WorkflowVersion::query()
+                ->whereKey($workflowVersion->id)
+                ->where('lock_version', $command->lockVersion)
+                ->where('is_published', false)
+                ->update([
+                    'graph_json' => $command->graphJson,
+                    'lock_version' => DB::raw('lock_version + 1'),
+                ]);
 
-        AuditLogger::log($actor, $workflowVersion, 'updated', 'Workflow graph updated', source: $source);
+            abort_if($updated !== 1, 409, 'Revision conflict. Reload and retry.');
 
-        return new WorkflowGraphUpdateResult(
-            workflowVersionId: $workflowVersion->id,
-            lockVersion: $workflowVersion->lock_version,
-        );
+            $workflowVersion->refresh();
+
+            AuditLogger::log($actor, $workflowVersion, 'updated', 'Workflow graph updated', source: $source);
+
+            return new WorkflowGraphUpdateResult(
+                workflowVersionId: $workflowVersion->id,
+                lockVersion: $workflowVersion->lock_version,
+            );
+        });
     }
 
     public function publish(User $actor, WorkflowVersion $workflowVersion): WorkflowVersion

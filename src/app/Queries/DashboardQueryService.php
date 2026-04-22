@@ -20,13 +20,13 @@ final class DashboardQueryService
         $projects = Project::query()
             ->when(
                 ! $isAdmin,
-                fn($query) => $query->whereHas(
+                fn ($query) => $query->whereHas(
                     'members',
-                    fn($q) => $q->where('user_id', $user->id)
+                    fn ($q) => $q->where('user_id', $user->id)
                 )
             )
             ->with([
-                'workflows' => fn($query) => $query->with(['latestVersion', 'publishedVersion'])->orderBy('name'),
+                'workflows' => fn ($query) => $query->with(['latestVersion', 'publishedVersion'])->orderBy('name'),
             ])
             ->withCount('workflows')
             ->orderBy('name')
@@ -38,7 +38,7 @@ final class DashboardQueryService
             'projects' => $projects->count(),
             'workflows' => Workflow::query()->whereIn('project_id', $projectIds)->count(),
             'draft_versions' => WorkflowVersion::query()
-                ->whereHas('workflow', fn($q) => $q->whereIn('project_id', $projectIds))
+                ->whereHas('workflow', fn ($q) => $q->whereIn('project_id', $projectIds))
                 ->where('is_published', false)
                 ->count(),
             'published_workflows' => Workflow::query()
@@ -72,7 +72,7 @@ final class DashboardQueryService
                     default => $draftCount . ' draft',
                 },
                 'current_user_role' => $currentUserRole,
-                'workflows' => $project->workflows->map(fn(Workflow $workflow): array => [
+                'workflows' => $project->workflows->map(fn (Workflow $workflow): array => [
                     'id' => $workflow->id,
                     'name' => $workflow->name,
                     'status' => $workflow->status,

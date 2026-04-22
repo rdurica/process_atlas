@@ -17,7 +17,7 @@ class McpController extends Controller
 
         $payload = $request->json()->all();
         $response = $mcpServer->handle(
-            McpRequest::fromArray(is_array($payload) ? $payload : []),
+            McpRequest::fromArray($payload),
             $request->user(),
         );
 

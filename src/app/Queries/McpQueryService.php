@@ -11,9 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 final class McpQueryService
 {
-    public function __construct(private readonly ProjectQueryService $projects)
-    {
-    }
+    public function __construct(private readonly ProjectQueryService $projects) {}
 
     /**
      * @return array<int, array{id: int, name: string, description: ?string}>
@@ -90,7 +88,7 @@ final class McpQueryService
     }
 
     /**
-     * @param array<int, int> $projectIds
+     * @param  array<int, int>  $projectIds
      * @return array<int, Workflow>
      */
     public function workflowsForResources(array $projectIds): array
@@ -104,7 +102,7 @@ final class McpQueryService
     }
 
     /**
-     * @param array<int, int> $workflowIds
+     * @param  array<int, int>  $workflowIds
      * @return array<int, WorkflowVersion>
      */
     public function revisionsForResources(array $workflowIds): array
@@ -118,7 +116,7 @@ final class McpQueryService
     }
 
     /**
-     * @param array<int, int> $revisionIds
+     * @param  array<int, int>  $revisionIds
      * @return array<int, Screen>
      */
     public function screensForResources(array $revisionIds): array

@@ -10,11 +10,10 @@ final readonly class McpRequest
         public bool $hasId,
         public string $method,
         public McpParams $params,
-    ) {
-    }
+    ) {}
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      */
     public static function fromArray(array $payload): self
     {

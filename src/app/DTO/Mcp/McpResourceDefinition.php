@@ -9,8 +9,7 @@ final readonly class McpResourceDefinition
         public string $name,
         public string $description,
         public string $mimeType,
-    ) {
-    }
+    ) {}
 
     /**
      * @return array{uri: string, name: string, description: string, mimeType: string}

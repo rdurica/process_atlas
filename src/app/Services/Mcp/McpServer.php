@@ -12,9 +12,7 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 final class McpServer
 {
-    public function __construct(private readonly McpMethodRegistry $registry)
-    {
-    }
+    public function __construct(private readonly McpMethodRegistry $registry) {}
 
     public function handle(McpRequest $request, User $actor): ?McpResponse
     {

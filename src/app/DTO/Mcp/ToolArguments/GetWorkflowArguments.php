@@ -6,9 +6,7 @@ use App\DTO\Mcp\McpParams;
 
 final readonly class GetWorkflowArguments
 {
-    public function __construct(public int $workflowId)
-    {
-    }
+    public function __construct(public int $workflowId) {}
 
     public static function fromParams(McpParams $params): self
     {

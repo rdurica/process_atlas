@@ -7,8 +7,7 @@ final readonly class McpToolCallRequest
     public function __construct(
         public string $name,
         public McpParams $arguments,
-    ) {
-    }
+    ) {}
 
     public static function fromParams(McpParams $params): self
     {

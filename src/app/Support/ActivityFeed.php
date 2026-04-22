@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Models\Project;
 use App\Models\Screen;
 use App\Models\ScreenCustomField;
+use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowVersion;
 use Illuminate\Support\Collection;
@@ -25,6 +26,7 @@ final class ActivityFeed
             ->limit($limit)
             ->get();
 
+        /** @var Collection<int, Activity> $activities */
         return $this->formatActivities($activities);
     }
 
@@ -71,25 +73,30 @@ final class ActivityFeed
             ->limit($limit)
             ->get();
 
+        /** @var Collection<int, Activity> $activities */
         return $this->formatActivities($activities);
     }
 
     /**
-     * @param Collection<int, Activity> $activities
+     * @param  Collection<int, Activity>  $activities
      * @return list<array<string, mixed>>
      */
     private function formatActivities(Collection $activities): array
     {
         return $activities
-            ->map(fn (Activity $activity): array => [
-                'id' => $activity->id,
-                'event' => Str::headline((string) ($activity->event ?: 'updated')),
-                'description' => $activity->description,
-                'created_at' => $activity->created_at?->toIso8601String(),
-                'causer_name' => $activity->causer?->name ?? 'System',
-                'subject_label' => $this->resolveSubjectLabel($activity),
-                'subject_type' => class_basename((string) $activity->subject_type),
-            ])
+            ->map(function (Activity $activity): array {
+                $causer = $activity->causer;
+
+                return [
+                    'id' => $activity->id,
+                    'event' => Str::headline((string) ($activity->event ?: 'updated')),
+                    'description' => $activity->description,
+                    'created_at' => $activity->created_at?->toIso8601String(),
+                    'causer_name' => $causer instanceof User ? $causer->name : 'System',
+                    'subject_label' => $this->resolveSubjectLabel($activity),
+                    'subject_type' => class_basename((string) $activity->subject_type),
+                ];
+            })
             ->values()
             ->all();
     }
@@ -99,11 +106,15 @@ final class ActivityFeed
         $subject = $activity->subject;
 
         return match ($activity->subject_type) {
-            Project::class => $subject?->name ?? 'Project',
-            Workflow::class => $subject?->name ?? 'Workflow',
-            WorkflowVersion::class => $subject ? 'rev. '.$subject->version_number : 'Workflow revision',
-            Screen::class => $subject?->title ?: ($subject?->node_id ?? 'Screen'),
-            ScreenCustomField::class => $subject?->key ?? 'Custom field',
+            Project::class => $subject instanceof Project ? $subject->name : 'Project',
+            Workflow::class => $subject instanceof Workflow ? $subject->name : 'Workflow',
+            WorkflowVersion::class => $subject instanceof WorkflowVersion
+                ? 'rev. ' . $subject->version_number
+                : 'Workflow revision',
+            Screen::class => $subject instanceof Screen
+                ? ($subject->title ?: $subject->node_id)
+                : 'Screen',
+            ScreenCustomField::class => $subject instanceof ScreenCustomField ? $subject->key : 'Custom field',
             default => 'Activity',
         };
     }

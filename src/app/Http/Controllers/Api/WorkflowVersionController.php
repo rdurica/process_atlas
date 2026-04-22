@@ -19,8 +19,7 @@ class WorkflowVersionController extends Controller
         private readonly WorkflowVersionQueryService $versions,
         private readonly WorkflowQueryService $workflows,
         private readonly WorkflowVersionActionService $actions,
-    ) {
-    }
+    ) {}
 
     public function show(Request $request, WorkflowVersion $workflowVersion): JsonResponse
     {

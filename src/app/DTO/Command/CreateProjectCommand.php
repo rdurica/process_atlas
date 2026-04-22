@@ -7,11 +7,10 @@ final readonly class CreateProjectCommand
     public function __construct(
         public string $name,
         public ?string $description,
-    ) {
-    }
+    ) {}
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      */
     public static function fromArray(array $payload): self
     {

@@ -13,8 +13,7 @@ class DashboardController extends Controller
     public function __construct(
         private readonly DashboardQueryService $dashboard,
         private readonly ActivityFeed $activity,
-    ) {
-    }
+    ) {}
 
     public function __invoke(Request $request): Response
     {

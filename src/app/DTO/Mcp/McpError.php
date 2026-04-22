@@ -7,8 +7,7 @@ final readonly class McpError
     public function __construct(
         public int $code,
         public string $message,
-    ) {
-    }
+    ) {}
 
     /**
      * @return array{code: int, message: string}

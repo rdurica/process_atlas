@@ -96,8 +96,7 @@ export default function Welcome({ auth }: PageProps) {
                     </span>
 
                     <h1 className="mt-6 text-5xl font-bold leading-[1.1] tracking-tight text-[#16316a] md:text-7xl">
-                        Map your{' '}
-                        <span className="text-[#0059ff]">business processes.</span>
+                        Map your <span className="text-[#0059ff]">business processes.</span>
                         <br />
                         Every step,{' '}
                         <span className="relative whitespace-nowrap">
@@ -120,9 +119,9 @@ export default function Welcome({ auth }: PageProps) {
                     </h1>
 
                     <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-[#4f5f82]">
-                        Process Atlas lets your team design, revise, and publish visual
-                        workflow diagrams — with role-based access, one-click publishing,
-                        and AI-assisted documentation built in.
+                        Process Atlas lets your team design, revise, and publish visual workflow
+                        diagrams — with role-based access, one-click publishing, and AI-assisted
+                        documentation built in.
                     </p>
 
                     <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
@@ -168,8 +167,8 @@ export default function Welcome({ auth }: PageProps) {
                             Built for process-driven teams
                         </h2>
                         <p className="mx-auto mt-4 max-w-xl text-[#4f5f82]">
-                            Everything you need to design, maintain, and share your
-                            organization's operational knowledge — in one place.
+                            Everything you need to design, maintain, and share your organization's
+                            operational knowledge — in one place.
                         </p>
                     </div>
 
@@ -177,7 +176,15 @@ export default function Welcome({ auth }: PageProps) {
                         {/* Visual Workflow Designer */}
                         <div className="panel rounded-2xl p-6">
                             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#eaf1ff]">
-                                <svg className="h-5 w-5 text-[#0059ff]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                <svg
+                                    className="h-5 w-5 text-[#0059ff]"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="1.8"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                >
                                     <circle cx="5" cy="5" r="2" />
                                     <circle cx="19" cy="5" r="2" />
                                     <circle cx="12" cy="19" r="2" />
@@ -186,17 +193,27 @@ export default function Welcome({ auth }: PageProps) {
                                     <line x1="19" y1="7" x2="12" y2="17" />
                                 </svg>
                             </div>
-                            <h3 className="mt-5 text-base font-bold text-[#16316a]">Visual Workflow Designer</h3>
+                            <h3 className="mt-5 text-base font-bold text-[#16316a]">
+                                Visual Workflow Designer
+                            </h3>
                             <p className="mt-2 text-sm leading-relaxed text-[#4f5f82]">
-                                Drag-and-drop node-graph editor. Connect screens, decisions,
-                                and actions into clear, readable process maps.
+                                Drag-and-drop node-graph editor. Connect screens, decisions, and
+                                actions into clear, readable process maps.
                             </p>
                         </div>
 
                         {/* Revision Control */}
                         <div className="panel rounded-2xl p-6">
                             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#eaf1ff]">
-                                <svg className="h-5 w-5 text-[#0059ff]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                <svg
+                                    className="h-5 w-5 text-[#0059ff]"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="1.8"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                >
                                     <circle cx="6" cy="6" r="2" />
                                     <circle cx="18" cy="6" r="2" />
                                     <circle cx="12" cy="18" r="2" />
@@ -205,7 +222,9 @@ export default function Welcome({ auth }: PageProps) {
                                     <line x1="8" y1="6" x2="16" y2="6" />
                                 </svg>
                             </div>
-                            <h3 className="mt-5 text-base font-bold text-[#16316a]">Revision Control & Publishing</h3>
+                            <h3 className="mt-5 text-base font-bold text-[#16316a]">
+                                Revision Control & Publishing
+                            </h3>
                             <p className="mt-2 text-sm leading-relaxed text-[#4f5f82]">
                                 Every change is revision-tracked. Publish with confidence and roll
                                 back to any prior state in one click.
@@ -215,31 +234,51 @@ export default function Welcome({ auth }: PageProps) {
                         {/* Role-based Collaboration */}
                         <div className="panel rounded-2xl p-6">
                             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#eaf1ff]">
-                                <svg className="h-5 w-5 text-[#0059ff]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                <svg
+                                    className="h-5 w-5 text-[#0059ff]"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="1.8"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                >
                                     <circle cx="9" cy="7" r="3" />
                                     <path d="M3 20c0-3.3 2.7-6 6-6" />
                                     <circle cx="17" cy="10" r="2.5" />
                                     <path d="M14 20c0-2.8 1.3-5 3-5s3 2.2 3 5" />
                                 </svg>
                             </div>
-                            <h3 className="mt-5 text-base font-bold text-[#16316a]">Role-based Collaboration</h3>
+                            <h3 className="mt-5 text-base font-bold text-[#16316a]">
+                                Role-based Collaboration
+                            </h3>
                             <p className="mt-2 text-sm leading-relaxed text-[#4f5f82]">
-                                Fine-grained permissions for Admins, Editors, and Viewers.
-                                Everyone sees exactly what they should.
+                                Fine-grained permissions for Admins, Editors, and Viewers. Everyone
+                                sees exactly what they should.
                             </p>
                         </div>
 
                         {/* AI-Powered */}
                         <div className="panel rounded-2xl p-6">
                             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#eaf1ff]">
-                                <svg className="h-5 w-5 text-[#0059ff]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                <svg
+                                    className="h-5 w-5 text-[#0059ff]"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="1.8"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                >
                                     <path d="M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z" />
                                 </svg>
                             </div>
-                            <h3 className="mt-5 text-base font-bold text-[#16316a]">AI-Powered (MCP)</h3>
+                            <h3 className="mt-5 text-base font-bold text-[#16316a]">
+                                AI-Powered (MCP)
+                            </h3>
                             <p className="mt-2 text-sm leading-relaxed text-[#4f5f82]">
-                                Model Context Protocol integration lets AI agents read, update,
-                                and document your workflows programmatically.
+                                Model Context Protocol integration lets AI agents read, update, and
+                                document your workflows programmatically.
                             </p>
                         </div>
                     </div>
@@ -266,16 +305,26 @@ export default function Welcome({ auth }: PageProps) {
                                     01
                                 </span>
                                 <div className="mt-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[#0059ff]">
-                                    <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <svg
+                                        className="h-5 w-5 text-white"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    >
                                         <rect x="3" y="3" width="18" height="18" rx="3" />
                                         <line x1="12" y1="8" x2="12" y2="16" />
                                         <line x1="8" y1="12" x2="16" y2="12" />
                                     </svg>
                                 </div>
-                                <h3 className="mt-5 text-lg font-bold text-[#16316a]">Create a Project</h3>
+                                <h3 className="mt-5 text-lg font-bold text-[#16316a]">
+                                    Create a Project
+                                </h3>
                                 <p className="mt-2 text-sm leading-relaxed text-[#4f5f82]">
-                                    Organize your work by department, product, or domain.
-                                    Projects keep related workflows grouped and discoverable.
+                                    Organize your work by department, product, or domain. Projects
+                                    keep related workflows grouped and discoverable.
                                 </p>
                             </div>
 
@@ -285,7 +334,15 @@ export default function Welcome({ auth }: PageProps) {
                                     02
                                 </span>
                                 <div className="mt-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[#0059ff]">
-                                    <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <svg
+                                        className="h-5 w-5 text-white"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    >
                                         <circle cx="8" cy="8" r="2" />
                                         <circle cx="16" cy="16" r="2" />
                                         <circle cx="16" cy="8" r="2" />
@@ -294,10 +351,12 @@ export default function Welcome({ auth }: PageProps) {
                                         <line x1="9.4" y1="9.4" x2="14.6" y2="14.6" />
                                     </svg>
                                 </div>
-                                <h3 className="mt-5 text-lg font-bold text-[#16316a]">Design Workflows</h3>
+                                <h3 className="mt-5 text-lg font-bold text-[#16316a]">
+                                    Design Workflows
+                                </h3>
                                 <p className="mt-2 text-sm leading-relaxed text-[#4f5f82]">
-                                    Use the visual node editor to connect process screens,
-                                    decision points, and handoffs into a clear diagram.
+                                    Use the visual node editor to connect process screens, decision
+                                    points, and handoffs into a clear diagram.
                                 </p>
                             </div>
 
@@ -307,16 +366,26 @@ export default function Welcome({ auth }: PageProps) {
                                     03
                                 </span>
                                 <div className="mt-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[#0059ff]">
-                                    <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <svg
+                                        className="h-5 w-5 text-white"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    >
                                         <path d="M4 12v6a2 2 0 002 2h12a2 2 0 002-2v-6" />
                                         <polyline points="16 6 12 2 8 6" />
                                         <line x1="12" y1="2" x2="12" y2="15" />
                                     </svg>
                                 </div>
-                                <h3 className="mt-5 text-lg font-bold text-[#16316a]">Publish & Share</h3>
+                                <h3 className="mt-5 text-lg font-bold text-[#16316a]">
+                                    Publish & Share
+                                </h3>
                                 <p className="mt-2 text-sm leading-relaxed text-[#4f5f82]">
-                                    Publish a revision snapshot so your team always reads the
-                                    latest approved process — and roll back instantly if needed.
+                                    Publish a revision snapshot so your team always reads the latest
+                                    approved process — and roll back instantly if needed.
                                 </p>
                             </div>
                         </div>
@@ -352,15 +421,24 @@ export default function Welcome({ auth }: PageProps) {
 
                     <nav className="flex items-center gap-6">
                         {isAuthed ? (
-                            <Link href={route('dashboard')} className="text-xs text-[#4f5f82] transition hover:text-[#16316a]">
+                            <Link
+                                href={route('dashboard')}
+                                className="text-xs text-[#4f5f82] transition hover:text-[#16316a]"
+                            >
                                 Dashboard
                             </Link>
                         ) : (
                             <>
-                                <Link href={route('login')} className="text-xs text-[#4f5f82] transition hover:text-[#16316a]">
+                                <Link
+                                    href={route('login')}
+                                    className="text-xs text-[#4f5f82] transition hover:text-[#16316a]"
+                                >
                                     Log in
                                 </Link>
-                                <Link href={route('register')} className="text-xs text-[#4f5f82] transition hover:text-[#16316a]">
+                                <Link
+                                    href={route('register')}
+                                    className="text-xs text-[#4f5f82] transition hover:text-[#16316a]"
+                                >
                                     Register
                                 </Link>
                             </>

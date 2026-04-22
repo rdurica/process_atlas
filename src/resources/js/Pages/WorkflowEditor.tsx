@@ -1,7 +1,6 @@
 import Modal from '@/Components/Modal';
 import StatusBadge from '@/Components/StatusBadge';
 import type {
-    ActivityItem,
     Screen,
     ScreenCustomField,
     WorkflowData,
@@ -76,7 +75,6 @@ type WorkflowNodeData =
     | ActionNodeData
     | StartNodeData
     | EndNodeData;
-type WorkflowNode = Node<WorkflowNodeData>;
 const conditionOutputHandles = ['out-1', 'out-2', 'out-3', 'out-4', 'out-5'];
 
 function ScreenNode({ data }: NodeProps<Node<ScreenNodeData>>) {
@@ -120,9 +118,7 @@ function FlashNode({ data }: NodeProps<Node<FlashNodeData>>) {
             <Handle type="target" position={Position.Left} />
             <p className="rf-node-kicker">{type}</p>
             <p className="rf-node-title">{data.text ?? 'Flash'}</p>
-            {data.description && (
-                <p className="rf-node-body">{data.description}</p>
-            )}
+            {data.description && <p className="rf-node-body">{data.description}</p>}
             <Handle type="source" position={Position.Right} />
         </div>
     );
@@ -154,9 +150,7 @@ function ActionNode({ data }: NodeProps<Node<ActionNodeData>>) {
             <Handle type="target" position={Position.Left} />
             <p className="rf-node-kicker">action</p>
             <p className="rf-node-title">{data.title ?? 'Action'}</p>
-            {data.description && (
-                <p className="rf-node-body">{data.description}</p>
-            )}
+            {data.description && <p className="rf-node-body">{data.description}</p>}
             <Handle type="source" position={Position.Right} />
         </div>
     );
@@ -166,7 +160,13 @@ function StartNode({ data }: NodeProps<Node<StartNodeData>>) {
     return (
         <div className="rf-terminal-node rf-start-node">
             <span className="rf-terminal-node-icon" aria-hidden="true">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="12" height="12">
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    width="12"
+                    height="12"
+                >
                     <path d="M6.3 2.84A1.5 1.5 0 004 4.11v11.78a1.5 1.5 0 002.3 1.27l9.344-5.891a1.5 1.5 0 000-2.538L6.3 2.84z" />
                 </svg>
             </span>
@@ -182,7 +182,13 @@ function EndNode({ data }: NodeProps<Node<EndNodeData>>) {
             <Handle type="target" position={Position.Left} />
             <div className="rf-terminal-node-row">
                 <span className="rf-terminal-node-icon" aria-hidden="true">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="12" height="12">
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        width="12"
+                        height="12"
+                    >
                         <rect x="4" y="4" width="12" height="12" rx="2" />
                     </svg>
                 </span>
@@ -206,7 +212,7 @@ const nodeTypes = {
 };
 
 function buildInitialNodes(nodes: Node[] | undefined, screens: Screen[] = []): Node[] {
-    const screenByNodeId = new Map(screens.map((screen) => [screen.node_id, screen]));
+    const screenByNodeId = new Map(screens.map(screen => [screen.node_id, screen]));
 
     if (!nodes || nodes.length === 0) {
         return [
@@ -219,7 +225,7 @@ function buildInitialNodes(nodes: Node[] | undefined, screens: Screen[] = []): N
         ];
     }
 
-    return nodes.map((node) => {
+    return nodes.map(node => {
         const nodeType = (node.type ?? 'screen') as WorkflowNodeKind;
         const screen = nodeType === 'screen' ? screenByNodeId.get(node.id) : null;
 
@@ -241,12 +247,14 @@ function buildInitialNodes(nodes: Node[] | undefined, screens: Screen[] = []): N
 }
 
 function resolveApiError(error: unknown, fallback: string): string {
-    const response = (error as {
-        response?: {
-            status?: number;
-            data?: { message?: string; errors?: Record<string, string[]> };
-        };
-    })?.response;
+    const response = (
+        error as {
+            response?: {
+                status?: number;
+                data?: { message?: string; errors?: Record<string, string[]> };
+            };
+        }
+    )?.response;
 
     if (!response) {
         return fallback;
@@ -390,32 +398,27 @@ export default function WorkflowEditor({
     const canEditInProject = currentUserRole === 'process_owner' || currentUserRole === 'editor';
     const canPublishWorkflows = currentUserRole === 'process_owner';
     const [previewVersion, setPreviewVersion] = useState<WorkflowVersionSummary | null>(null);
-    const canEditWorkflows = canEditInProject && latestVersion?.is_published !== true && previewVersion === null;
+    const canEditWorkflows =
+        canEditInProject && latestVersion?.is_published !== true && previewVersion === null;
     const initialNodes = useMemo(
-        () =>
-            buildInitialNodes(
-                latestVersion?.graph_json?.nodes,
-                latestVersion?.screens ?? [],
-            ),
-        [latestVersion?.graph_json?.nodes, latestVersion?.screens],
+        () => buildInitialNodes(latestVersion?.graph_json?.nodes, latestVersion?.screens ?? []),
+        [latestVersion?.graph_json?.nodes, latestVersion?.screens]
     );
 
     const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-    const initialEdges = (latestVersion?.graph_json?.edges ?? []).map((edge) => ({
+    const initialEdges = (latestVersion?.graph_json?.edges ?? []).map(edge => ({
         ...edge,
         markerEnd: { type: MarkerType.ArrowClosed, color: '#0f5ef7', width: 10, height: 10 },
     }));
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
     const [screens, setScreens] = useState<Screen[]>(latestVersion?.screens ?? []);
-    const [lockVersion, setLockVersion] = useState<number>(
-        latestVersion?.lock_version ?? 0,
-    );
+    const [lockVersion, setLockVersion] = useState<number>(latestVersion?.lock_version ?? 0);
     const [selectedNodeId, setSelectedNodeId] = useState<string | null>(
-        initialNodes[0]?.id ?? null,
+        initialNodes[0]?.id ?? null
     );
     const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
     const [rollbackVersionId, setRollbackVersionId] = useState<number | null>(
-        workflow.versions.find((version) => version.id !== latestVersion?.id)?.id ?? null,
+        workflow.versions.find(version => version.id !== latestVersion?.id)?.id ?? null
     );
     const [title, setTitle] = useState('');
     const [subtitle, setSubtitle] = useState('');
@@ -432,53 +435,47 @@ export default function WorkflowEditor({
     const [actionNotice, setActionNotice] = useState<string | null>(null);
     const [infoPanelOpen, setInfoPanelOpen] = useState(false);
     const [edgeDraftLabel, setEdgeDraftLabel] = useState('');
-    const [fieldEditorMode, setFieldEditorMode] =
-        useState<FieldEditorMode>('hidden');
+    const [fieldEditorMode, setFieldEditorMode] = useState<FieldEditorMode>('hidden');
     const [editingFieldId, setEditingFieldId] = useState<number | null>(null);
     const [newCustomKey, setNewCustomKey] = useState('');
     const [newCustomValue, setNewCustomValue] = useState('');
-    const [newCustomFieldType, setNewCustomFieldType] = useState<
-        ScreenCustomField['field_type']
-    >('text');
+    const [newCustomFieldType, setNewCustomFieldType] =
+        useState<ScreenCustomField['field_type']>('text');
     const graphInitialized = useRef(false);
 
     const versions = useMemo(
         () => [...workflow.versions].sort((a, b) => b.version_number - a.version_number),
-        [workflow.versions],
+        [workflow.versions]
     );
 
     const selectedScreen = useMemo(
-        () => screens.find((screen) => screen.node_id === selectedNodeId) ?? null,
-        [screens, selectedNodeId],
+        () => screens.find(screen => screen.node_id === selectedNodeId) ?? null,
+        [screens, selectedNodeId]
     );
 
     const selectedNode = useMemo(
-        () => nodes.find((node) => node.id === selectedNodeId) ?? null,
-        [nodes, selectedNodeId],
+        () => nodes.find(node => node.id === selectedNodeId) ?? null,
+        [nodes, selectedNodeId]
     );
 
-    const selectedNodeKind = isWorkflowNodeKind(selectedNode?.type)
-        ? selectedNode.type
-        : 'screen';
+    const selectedNodeKind = isWorkflowNodeKind(selectedNode?.type) ? selectedNode.type : 'screen';
     const selectedNodeInspectorTabs = selectedNode
         ? inspectorTabsForNodeKind(selectedNodeKind)
         : [];
 
     const selectedEdge = useMemo(
-        () => edges.find((edge) => edge.id === selectedEdgeId) ?? null,
-        [edges, selectedEdgeId],
+        () => edges.find(edge => edge.id === selectedEdgeId) ?? null,
+        [edges, selectedEdgeId]
     );
 
     const selectedEdgeSourceNode = useMemo(
-        () => nodes.find((node) => node.id === selectedEdge?.source) ?? null,
-        [nodes, selectedEdge?.source],
+        () => nodes.find(node => node.id === selectedEdge?.source) ?? null,
+        [nodes, selectedEdge?.source]
     );
 
     const editingField = useMemo(
-        () =>
-            selectedScreen?.custom_fields.find((field) => field.id === editingFieldId) ??
-            null,
-        [editingFieldId, selectedScreen],
+        () => selectedScreen?.custom_fields.find(field => field.id === editingFieldId) ?? null,
+        [editingFieldId, selectedScreen]
     );
 
     useEffect(() => {
@@ -524,10 +521,15 @@ export default function WorkflowEditor({
         setPreviewVersion(null);
         setNodes(buildInitialNodes(latestVersion.graph_json?.nodes, latestVersion.screens ?? []));
         setEdges(
-            (latestVersion.graph_json?.edges ?? []).map((edge) => ({
+            (latestVersion.graph_json?.edges ?? []).map(edge => ({
                 ...edge,
-                markerEnd: { type: MarkerType.ArrowClosed, color: '#0f5ef7', width: 10, height: 10 },
-            })),
+                markerEnd: {
+                    type: MarkerType.ArrowClosed,
+                    color: '#0f5ef7',
+                    width: 10,
+                    height: 10,
+                },
+            }))
         );
         setScreens(latestVersion.screens ?? []);
         setLockVersion(latestVersion.lock_version ?? 0);
@@ -565,10 +567,12 @@ export default function WorkflowEditor({
     };
 
     const setNodeSelected = (nodeId: string, nodeKind?: WorkflowNodeKind) => {
-        const resolvedNodeKind = nodeKind ?? (() => {
-            const nextNode = nodes.find((node) => node.id === nodeId);
-            return isWorkflowNodeKind(nextNode?.type) ? nextNode.type : 'screen';
-        })();
+        const resolvedNodeKind =
+            nodeKind ??
+            (() => {
+                const nextNode = nodes.find(node => node.id === nodeId);
+                return isWorkflowNodeKind(nextNode?.type) ? nextNode.type : 'screen';
+            })();
 
         setSelectedNodeId(nodeId);
         setSelectedEdgeId(null);
@@ -599,8 +603,8 @@ export default function WorkflowEditor({
             return;
         }
 
-        setNodes((currentNodes) =>
-            currentNodes.map((node) =>
+        setNodes(currentNodes =>
+            currentNodes.map(node =>
                 node.id === selectedNode.id
                     ? {
                           ...node,
@@ -609,8 +613,8 @@ export default function WorkflowEditor({
                               ...patch,
                           },
                       }
-                    : node,
-            ),
+                    : node
+            )
         );
     };
 
@@ -621,15 +625,15 @@ export default function WorkflowEditor({
             return;
         }
 
-        setEdges((currentEdges) =>
-            currentEdges.map((edge) =>
+        setEdges(currentEdges =>
+            currentEdges.map(edge =>
                 edge.id === selectedEdge.id
                     ? {
                           ...edge,
                           label: edgeDraftLabel || undefined,
                       }
-                    : edge,
-            ),
+                    : edge
+            )
         );
 
         setActionNotice('Connection label updated.');
@@ -640,9 +644,7 @@ export default function WorkflowEditor({
             return;
         }
 
-        setEdges((currentEdges) =>
-            currentEdges.filter((edge) => edge.id !== selectedEdge.id),
-        );
+        setEdges(currentEdges => currentEdges.filter(edge => edge.id !== selectedEdge.id));
         setSelectedEdgeId(null);
         setActionNotice('Connection deleted.');
     };
@@ -662,10 +664,10 @@ export default function WorkflowEditor({
     };
 
     const onConnect: OnConnect = (connection: Connection) => {
-        const sourceNode = nodes.find((node) => node.id === connection.source);
+        const sourceNode = nodes.find(node => node.id === connection.source);
         const isConditionSource = isConditionNodeKind(sourceNode?.type);
 
-        setEdges((currentEdges) => {
+        setEdges(currentEdges => {
             return addEdge(
                 {
                     ...connection,
@@ -674,46 +676,26 @@ export default function WorkflowEditor({
                         : undefined,
                     animated: false,
                     style: { strokeWidth: 2, stroke: '#0f5ef7' },
-                    markerEnd: { type: MarkerType.ArrowClosed, color: '#0f5ef7', width: 10, height: 10 },
+                    markerEnd: {
+                        type: MarkerType.ArrowClosed,
+                        color: '#0f5ef7',
+                        width: 10,
+                        height: 10,
+                    },
                 },
-                currentEdges,
+                currentEdges
             );
         });
     };
 
-    const addNode = () => {
-        const nextId = `screen-${Date.now()}`;
-
-        setNodes((currentNodes) => [
-            ...currentNodes,
-            {
-                id: nextId,
-                position: {
-                    x: Math.max(120, currentNodes.length * 110),
-                    y: Math.max(120, currentNodes.length * 90),
-                },
-                type: 'screen',
-                data: {
-                    label: `Screen ${currentNodes.length + 1}`,
-                    subtitle: '',
-                    security_rule: null,
-                },
-            },
-        ]);
-
-        setNodeSelected(nextId, 'screen');
-    };
-
     const addWorkflowNode = (
         nodeKind: Exclude<WorkflowNodeKind, 'screen' | 'if'>,
-        position?: { x: number; y: number },
+        position?: { x: number; y: number }
     ) => {
         const nextId = `${nodeKind}-${Date.now()}`;
         const labelIndex =
             nodes.filter(
-                (node) =>
-                    node.type === nodeKind ||
-                    (nodeKind === 'condition' && node.type === 'if'),
+                node => node.type === nodeKind || (nodeKind === 'condition' && node.type === 'if')
             ).length + 1;
         const data =
             nodeKind === 'flash'
@@ -736,7 +718,7 @@ export default function WorkflowEditor({
                             security_rule: null,
                         };
 
-        setNodes((currentNodes) => [
+        setNodes(currentNodes => [
             ...currentNodes,
             {
                 id: nextId,
@@ -752,13 +734,10 @@ export default function WorkflowEditor({
         setNodeSelected(nextId, nodeKind);
     };
 
-    const handleDropNode = (
-        nodeKind: WorkflowNodeKind,
-        position: { x: number; y: number },
-    ) => {
+    const handleDropNode = (nodeKind: WorkflowNodeKind, position: { x: number; y: number }) => {
         if (nodeKind === 'screen') {
             const nextId = `screen-${Date.now()}`;
-            setNodes((currentNodes) => [
+            setNodes(currentNodes => [
                 ...currentNodes,
                 {
                     id: nextId,
@@ -801,16 +780,13 @@ export default function WorkflowEditor({
                         edges,
                     },
                     lock_version: lockVersion,
-                },
+                }
             );
 
             setLockVersion(response.data.data.lock_version);
             markGraphSaved('Canvas state saved to the current draft.');
         } catch (error) {
-            const message = resolveApiError(
-                error,
-                'Graph save failed. Refresh and retry.',
-            );
+            const message = resolveApiError(error, 'Graph save failed. Refresh and retry.');
 
             if ((error as { response?: { status?: number } })?.response?.status === 409) {
                 setGraphState('conflict');
@@ -824,26 +800,27 @@ export default function WorkflowEditor({
     };
 
     const syncScreenCollection = (updatedScreen: Screen) => {
-        setScreens((current) => {
-            const withoutUpdated = current.filter((screen) => screen.id !== updatedScreen.id);
+        setScreens(current => {
+            const withoutUpdated = current.filter(screen => screen.id !== updatedScreen.id);
 
             return [...withoutUpdated, updatedScreen];
         });
 
-        setNodes((currentNodes) =>
-            currentNodes.map((node) =>
+        setNodes(currentNodes =>
+            currentNodes.map(node =>
                 node.id === updatedScreen.node_id
                     ? {
                           ...node,
                           data: {
                               ...node.data,
-                              label: updatedScreen.title || node.data?.label || updatedScreen.node_id,
+                              label:
+                                  updatedScreen.title || node.data?.label || updatedScreen.node_id,
                               subtitle: updatedScreen.subtitle ?? '',
                               image_url: updatedScreen.image_url ?? null,
                           },
                       }
-                    : node,
-            ),
+                    : node
+            )
         );
     };
 
@@ -887,20 +864,16 @@ export default function WorkflowEditor({
             await saveScreenData();
             setActionNotice('Screen metadata saved.');
         } catch (error) {
-            setActionError(
-                resolveApiError(error, 'Screen metadata could not be saved.'),
-            );
+            setActionError(resolveApiError(error, 'Screen metadata could not be saved.'));
         } finally {
             setIsSavingScreen(false);
         }
     };
 
     const removeWorkflowNode = (nodeId: string) => {
-        setNodes((currentNodes) => currentNodes.filter((node) => node.id !== nodeId));
-        setEdges((currentEdges) =>
-            currentEdges.filter(
-                (edge) => edge.source !== nodeId && edge.target !== nodeId,
-            ),
+        setNodes(currentNodes => currentNodes.filter(node => node.id !== nodeId));
+        setEdges(currentEdges =>
+            currentEdges.filter(edge => edge.source !== nodeId && edge.target !== nodeId)
         );
         setSelectedNodeId(null);
         setSelectedEdgeId(null);
@@ -924,26 +897,26 @@ export default function WorkflowEditor({
                     key: newCustomKey,
                     value: newCustomValue || null,
                     field_type: newCustomFieldType,
-                },
+                }
             );
 
             const field = response.data.data as ScreenCustomField;
 
-            setScreens((current) =>
-                current.map((item) => {
+            setScreens(current =>
+                current.map(item => {
                     if (item.id !== screen.id) {
                         return item;
                     }
 
                     const withoutCurrent = item.custom_fields.filter(
-                        (customField) => customField.id !== field.id,
+                        customField => customField.id !== field.id
                     );
 
                     return {
                         ...item,
                         custom_fields: [...withoutCurrent, field],
                     };
-                }),
+                })
             );
 
             setNewCustomKey('');
@@ -952,9 +925,7 @@ export default function WorkflowEditor({
             setActionNotice('Custom field saved.');
             closeFieldEditor();
         } catch (error) {
-            setActionError(
-                resolveApiError(error, 'The custom field could not be saved.'),
-            );
+            setActionError(resolveApiError(error, 'The custom field could not be saved.'));
         }
     };
 
@@ -978,7 +949,7 @@ export default function WorkflowEditor({
                         value: newCustomValue || null,
                         field_type: newCustomFieldType,
                         sort_order: editingField.sort_order,
-                    },
+                    }
                 );
 
                 const updated = response.data.data as ScreenCustomField;
@@ -987,22 +958,20 @@ export default function WorkflowEditor({
                     await window.axios.delete(`/api/v1/custom-fields/${editingField.id}`);
                 }
 
-                setScreens((current) =>
-                    current.map((screen) => ({
+                setScreens(current =>
+                    current.map(screen => ({
                         ...screen,
                         custom_fields: screen.custom_fields
-                            .filter((item) => item.id !== editingField.id)
-                            .filter((item) => item.id !== updated.id)
+                            .filter(item => item.id !== editingField.id)
+                            .filter(item => item.id !== updated.id)
                             .concat(updated),
-                    })),
+                    }))
                 );
 
                 setActionNotice('Custom field saved.');
                 closeFieldEditor();
             } catch (error) {
-                setActionError(
-                    resolveApiError(error, 'The custom field could not be updated.'),
-                );
+                setActionError(resolveApiError(error, 'The custom field could not be updated.'));
             }
 
             return;
@@ -1015,20 +984,16 @@ export default function WorkflowEditor({
         try {
             await window.axios.delete(`/api/v1/custom-fields/${fieldId}`);
 
-            setScreens((current) =>
-                current.map((screen) => ({
+            setScreens(current =>
+                current.map(screen => ({
                     ...screen,
-                    custom_fields: screen.custom_fields.filter(
-                        (item) => item.id !== fieldId,
-                    ),
-                })),
+                    custom_fields: screen.custom_fields.filter(item => item.id !== fieldId),
+                }))
             );
 
             return true;
         } catch (error) {
-            setActionError(
-                resolveApiError(error, 'The custom field could not be removed.'),
-            );
+            setActionError(resolveApiError(error, 'The custom field could not be removed.'));
 
             return false;
         }
@@ -1040,10 +1005,7 @@ export default function WorkflowEditor({
         });
     };
 
-    const runWorkflowAction = async (
-        task: () => Promise<void>,
-        successMessage: string,
-    ) => {
+    const runWorkflowAction = async (task: () => Promise<void>, successMessage: string) => {
         setIsRunningAction(true);
         setActionError(null);
         setActionNotice(null);
@@ -1064,12 +1026,9 @@ export default function WorkflowEditor({
             return;
         }
 
-        await runWorkflowAction(
-            async () => {
-                await window.axios.post(`/api/v1/workflows/${workflow.id}/versions`);
-            },
-            'A new draft revision was created.',
-        );
+        await runWorkflowAction(async () => {
+            await window.axios.post(`/api/v1/workflows/${workflow.id}/versions`);
+        }, 'A new draft revision was created.');
     };
 
     const publishCurrent = async () => {
@@ -1077,14 +1036,9 @@ export default function WorkflowEditor({
             return;
         }
 
-        await runWorkflowAction(
-            async () => {
-                await window.axios.post(
-                    `/api/v1/workflow-versions/${latestVersion.id}/publish`,
-                );
-            },
-            'The current revision was published.',
-        );
+        await runWorkflowAction(async () => {
+            await window.axios.post(`/api/v1/workflow-versions/${latestVersion.id}/publish`);
+        }, 'The current revision was published.');
     };
 
     const handleVersionTimelineClick = async (version: WorkflowVersionSummary) => {
@@ -1093,19 +1047,26 @@ export default function WorkflowEditor({
         if (latestVersion && version.id === latestVersion.id) {
             graphInitialized.current = false;
             setPreviewVersion(null);
-            setNodes(buildInitialNodes(latestVersion.graph_json?.nodes, latestVersion.screens ?? []));
+            setNodes(
+                buildInitialNodes(latestVersion.graph_json?.nodes, latestVersion.screens ?? [])
+            );
             setEdges(
                 (latestVersion.graph_json?.edges ?? []).map((edge: Edge) => ({
                     ...edge,
-                    markerEnd: { type: MarkerType.ArrowClosed, color: '#0f5ef7', width: 10, height: 10 },
-                })),
+                    markerEnd: {
+                        type: MarkerType.ArrowClosed,
+                        color: '#0f5ef7',
+                        width: 10,
+                        height: 10,
+                    },
+                }))
             );
             return;
         }
 
         try {
             const response = await window.axios.get<{ data: WorkflowVersionSummary }>(
-                `/api/v1/workflow-versions/${version.id}`,
+                `/api/v1/workflow-versions/${version.id}`
             );
             const data = response.data.data;
             graphInitialized.current = false;
@@ -1114,8 +1075,13 @@ export default function WorkflowEditor({
             setEdges(
                 (data.graph_json?.edges ?? []).map((edge: Edge) => ({
                     ...edge,
-                    markerEnd: { type: MarkerType.ArrowClosed, color: '#0f5ef7', width: 10, height: 10 },
-                })),
+                    markerEnd: {
+                        type: MarkerType.ArrowClosed,
+                        color: '#0f5ef7',
+                        width: 10,
+                        height: 10,
+                    },
+                }))
             );
         } catch {
             // silently ignore preview fetch errors
@@ -1123,12 +1089,9 @@ export default function WorkflowEditor({
     };
 
     const deleteVersion = async (version: WorkflowVersionSummary) => {
-        await runWorkflowAction(
-            async () => {
-                await window.axios.delete(`/api/v1/workflow-versions/${version.id}`);
-            },
-            `rev. ${version.version_number} was deleted.`,
-        );
+        await runWorkflowAction(async () => {
+            await window.axios.delete(`/api/v1/workflow-versions/${version.id}`);
+        }, `rev. ${version.version_number} was deleted.`);
     };
 
     const rollback = async () => {
@@ -1136,19 +1099,14 @@ export default function WorkflowEditor({
             return;
         }
 
-        await runWorkflowAction(
-            async () => {
-                await window.axios.post(`/api/v1/workflows/${workflow.id}/rollback`, {
-                    to_version_id: rollbackVersionId,
-                });
-            },
-            'A rollback draft was created from the selected revision.',
-        );
+        await runWorkflowAction(async () => {
+            await window.axios.post(`/api/v1/workflows/${workflow.id}/rollback`, {
+                to_version_id: rollbackVersionId,
+            });
+        }, 'A rollback draft was created from the selected revision.');
     };
 
-    const selectedRollbackVersion = versions.find(
-        (version) => version.id === rollbackVersionId,
-    );
+    const selectedRollbackVersion = versions.find(version => version.id === rollbackVersionId);
 
     return (
         <div className="workflow-fullscreen">
@@ -1182,13 +1140,13 @@ export default function WorkflowEditor({
                         onNodeClick={(_, node) =>
                             setNodeSelected(
                                 node.id,
-                                isWorkflowNodeKind(node.type) ? node.type : undefined,
+                                isWorkflowNodeKind(node.type) ? node.type : undefined
                             )
                         }
                         onNodeDoubleClick={(_, node) =>
                             setNodeSelected(
                                 node.id,
-                                isWorkflowNodeKind(node.type) ? node.type : undefined,
+                                isWorkflowNodeKind(node.type) ? node.type : undefined
                             )
                         }
                         onEdgeClick={(_, edge) => setEdgeSelected(edge.id)}
@@ -1201,22 +1159,20 @@ export default function WorkflowEditor({
             </div>
 
             <header className="workflow-topbar">
-                <div className="flex items-center gap-3 min-w-0">
+                <div className="flex min-w-0 items-center gap-3">
                     <Link
-                        href={route('dashboard')}
+                        href={route('projects.show', workflow.project.id)}
                         className="btn-ghost workflow-action-button"
                     >
-                        ← Dashboard
+                        ← {workflow.project.name}
                     </Link>
-                    <h1 className="truncate text-base font-bold text-slate-950 max-w-[14rem]">
+                    <h1 className="max-w-[14rem] truncate text-base font-bold text-slate-950">
                         {workflow.name}
                     </h1>
                     <StatusBadge tone={workflowTone(workflow.status)}>
                         {workflow.status}
                     </StatusBadge>
-                    <StatusBadge tone={graphTone(graphState)}>
-                        {graphLabel(graphState)}
-                    </StatusBadge>
+                    <StatusBadge tone={graphTone(graphState)}>{graphLabel(graphState)}</StatusBadge>
                 </div>
 
                 <div className="workflow-actions">
@@ -1269,10 +1225,7 @@ export default function WorkflowEditor({
                         key={kind}
                         draggable={canEditWorkflows}
                         onDragStart={(e: DragEvent<HTMLDivElement>) => {
-                            e.dataTransfer.setData(
-                                'application/reactflow',
-                                kind,
-                            );
+                            e.dataTransfer.setData('application/reactflow', kind);
                             e.dataTransfer.effectAllowed = 'move';
                         }}
                         aria-disabled={!canEditWorkflows}
@@ -1293,10 +1246,7 @@ export default function WorkflowEditor({
                         key={kind}
                         draggable={canEditWorkflows}
                         onDragStart={(e: DragEvent<HTMLDivElement>) => {
-                            e.dataTransfer.setData(
-                                'application/reactflow',
-                                kind,
-                            );
+                            e.dataTransfer.setData('application/reactflow', kind);
                             e.dataTransfer.effectAllowed = 'move';
                         }}
                         aria-disabled={!canEditWorkflows}
@@ -1351,674 +1301,710 @@ export default function WorkflowEditor({
                         )}
 
                         {selectedEdge ? (
-                        <form
-                            onSubmit={saveSelectedEdgeLabel}
-                            className="workflow-inline-form mt-5"
-                        >
-                            <div className="workflow-text-row workflow-field-row">
-                                <p className="workflow-text-row-title">
-                                    {selectedEdge.source} to {selectedEdge.target}
-                                </p>
-                                <p className="workflow-text-row-meta">
-                                    {isConditionNodeKind(selectedEdgeSourceNode?.type)
-                                        ? 'Condition branch'
-                                        : 'Connection'}
-                                </p>
-                            </div>
+                            <form
+                                onSubmit={saveSelectedEdgeLabel}
+                                className="workflow-inline-form mt-5"
+                            >
+                                <div className="workflow-text-row workflow-field-row">
+                                    <p className="workflow-text-row-title">
+                                        {selectedEdge.source} to {selectedEdge.target}
+                                    </p>
+                                    <p className="workflow-text-row-meta">
+                                        {isConditionNodeKind(selectedEdgeSourceNode?.type)
+                                            ? 'Condition branch'
+                                            : 'Connection'}
+                                    </p>
+                                </div>
 
-                            <label className="block text-sm font-medium text-slate-700">
-                                Label
-                                <input
-                                    value={edgeDraftLabel}
-                                    onChange={(event) =>
-                                        setEdgeDraftLabel(event.target.value)
-                                    }
-                                    disabled={!canEditWorkflows}
-                                    className="input-shell mt-2"
-                                />
-                            </label>
+                                <label className="block text-sm font-medium text-slate-700">
+                                    Label
+                                    <input
+                                        value={edgeDraftLabel}
+                                        onChange={event => setEdgeDraftLabel(event.target.value)}
+                                        disabled={!canEditWorkflows}
+                                        className="input-shell mt-2"
+                                    />
+                                </label>
 
-                            <div className="workflow-inline-actions">
-                                <button
-                                    type="button"
-                                    onClick={removeSelectedEdge}
-                                    disabled={!canEditWorkflows}
-                                    className="btn-danger workflow-action-button"
-                                >
-                                    Delete
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={!canEditWorkflows}
-                                    className="btn-primary workflow-action-button"
-                                >
-                                    Save Label
-                                </button>
-                            </div>
-                        </form>
-                    ) : selectedNode && selectedNodeKind !== 'screen' ? (
-                        <div className="workflow-inline-form mt-5">
-                            {selectedNodeKind === 'flash' && (
-                                <>
-                                    <div
-                                        className={`workflow-text-row workflow-flash-row-${
-                                            (selectedNode.data.type as FlashType | undefined) ??
-                                            'info'
-                                        }`}
+                                <div className="workflow-inline-actions">
+                                    <button
+                                        type="button"
+                                        onClick={removeSelectedEdge}
+                                        disabled={!canEditWorkflows}
+                                        className="btn-danger workflow-action-button"
                                     >
-                                        <p className="workflow-text-row-title">
-                                            {(selectedNode.data.text as string | undefined) ??
-                                                'Flash'}
-                                        </p>
-                                        <p className="workflow-text-row-meta">
-                                            {(selectedNode.data.type as FlashType | undefined) ??
-                                                'info'}
-                                        </p>
-                                    </div>
-
-                                    <label className="block text-sm font-medium text-slate-700">
-                                        Severity
-                                        <select
-                                            value={
-                                                (selectedNode.data.type as FlashType | undefined) ??
-                                                'info'
-                                            }
-                                            onChange={(event) =>
-                                                updateSelectedNodeData({
-                                                    type: event.target.value as FlashType,
-                                                })
-                                            }
-                                            disabled={!canEditWorkflows}
-                                            className="select-shell mt-2"
-                                        >
-                                            <option value="error">Error</option>
-                                            <option value="warning">Warning</option>
-                                            <option value="info">Info</option>
-                                            <option value="success">Success</option>
-                                        </select>
-                                    </label>
-
-                                    <label className="block text-sm font-medium text-slate-700">
-                                        Text
-                                        <textarea
-                                            value={
-                                                (selectedNode.data.text as string | undefined) ??
-                                                ''
-                                            }
-                                            onChange={(event) =>
-                                                updateSelectedNodeData({
-                                                    text: event.target.value,
-                                                })
-                                            }
-                                            disabled={!canEditWorkflows}
-                                            className="textarea-shell mt-2"
-                                        />
-                                    </label>
-
-                                    <label className="block text-sm font-medium text-slate-700">
-                                        Description
-                                        <textarea
-                                            value={
-                                                (selectedNode.data.description as
-                                                    | string
-                                                    | undefined) ?? ''
-                                            }
-                                            onChange={(event) =>
-                                                updateSelectedNodeData({
-                                                    description: event.target.value,
-                                                })
-                                            }
-                                            disabled={!canEditWorkflows}
-                                            className="textarea-shell textarea-shell-compact mt-2"
-                                        />
-                                    </label>
-                                </>
-                            )}
-
-                            {isConditionNodeKind(selectedNodeKind) && (
-                                <>
-                                    <label className="block text-sm font-medium text-slate-700">
-                                        Condition
-                                        <textarea
-                                            value={
-                                                (selectedNode.data.condition as
-                                                    | string
-                                                    | undefined) ?? ''
-                                            }
-                                            onChange={(event) =>
-                                                updateSelectedNodeData({
-                                                    condition: event.target.value,
-                                                })
-                                            }
-                                            disabled={!canEditWorkflows}
-                                            className="textarea-shell mt-2"
-                                        />
-                                    </label>
-
-                                    <div className="empty-state">
-                                        Select an outgoing connection on the canvas to edit its
-                                        label.
-                                    </div>
-                                </>
-                            )}
-
-                            {selectedNodeKind === 'action' && (
-                                <>
-                                    {inspectorTab === 'general' && (
-                                        <>
-                                            <label className="block text-sm font-medium text-slate-700">
-                                                Title
-                                                <textarea
-                                                    value={
-                                                        (selectedNode.data.title as string | undefined) ??
-                                                        ''
-                                                    }
-                                                    onChange={(event) =>
-                                                        updateSelectedNodeData({
-                                                            title: event.target.value,
-                                                        })
-                                                    }
-                                                    disabled={!canEditWorkflows}
-                                                    className="textarea-shell mt-2"
-                                                />
-                                            </label>
-
-                                            <label className="block text-sm font-medium text-slate-700">
-                                                Description
-                                                <textarea
-                                                    value={
-                                                        (selectedNode.data.description as
-                                                            | string
-                                                            | undefined) ?? ''
-                                                    }
-                                                    onChange={(event) =>
-                                                        updateSelectedNodeData({
-                                                            description: event.target.value,
-                                                        })
-                                                    }
-                                                    disabled={!canEditWorkflows}
-                                                    className="textarea-shell textarea-shell-compact mt-2"
-                                                />
-                                            </label>
-                                        </>
-                                    )}
-
-                                    {inspectorTab === 'security' && (
-                                        <div className="workflow-security-form">
-                                            <label className="workflow-security-label block text-sm font-medium text-slate-700">
-                                                Security rule (additional)
-                                                <textarea
-                                                    value={
-                                                        (selectedNode.data.security_rule as
-                                                            | string
-                                                            | undefined
-                                                            | null) ?? ''
-                                                    }
-                                                    onChange={(event) =>
-                                                        updateSelectedNodeData({
-                                                            security_rule: event.target.value.length > 0
-                                                                ? event.target.value
-                                                                : null,
-                                                        })
-                                                    }
-                                                    disabled={!canEditWorkflows}
-                                                    className="textarea-shell textarea-shell-security mt-2"
-                                                />
-                                            </label>
-                                        </div>
-                                    )}
-                                </>
-                            )}
-
-                            {selectedNodeKind === 'start' && (
-                                <>
-                                    {inspectorTab === 'general' && (
-                                        <div className="empty-state">
-                                            Entry point of the workflow — no configuration needed.
-                                        </div>
-                                    )}
-
-                                    {inspectorTab === 'security' && (
-                                        <div className="workflow-security-form">
-                                            <label className="workflow-security-label block text-sm font-medium text-slate-700">
-                                                Security rule (additional)
-                                                <textarea
-                                                    value={
-                                                        (selectedNode.data.security_rule as
-                                                            | string
-                                                            | undefined
-                                                            | null) ?? ''
-                                                    }
-                                                    onChange={(event) =>
-                                                        updateSelectedNodeData({
-                                                            security_rule: event.target.value.length > 0
-                                                                ? event.target.value
-                                                                : null,
-                                                        })
-                                                    }
-                                                    disabled={!canEditWorkflows}
-                                                    className="textarea-shell textarea-shell-security mt-2"
-                                                />
-                                            </label>
-                                        </div>
-                                    )}
-                                </>
-                            )}
-
-                            {selectedNodeKind === 'end' && (
-                                <>
-                                    <label className="block text-sm font-medium text-slate-700">
-                                        Label
-                                        <input
-                                            value={
-                                                (selectedNode.data.label as string | undefined) ??
-                                                ''
-                                            }
-                                            onChange={(event) =>
-                                                updateSelectedNodeData({
-                                                    label: event.target.value,
-                                                })
-                                            }
-                                            disabled={!canEditWorkflows}
-                                            className="input-shell mt-2"
-                                        />
-                                    </label>
-
-                                    <label className="block text-sm font-medium text-slate-700">
-                                        Chain to workflow
-                                        <select
-                                            value={String(
-                                                (selectedNode.data.linked_workflow_id as
-                                                    | number
-                                                    | null
-                                                    | undefined) ?? '',
-                                            )}
-                                            onChange={(event) => {
-                                                const id = event.target.value
-                                                    ? Number(event.target.value)
-                                                    : null;
-                                                const name =
-                                                    projectWorkflows.find((w) => w.id === id)
-                                                        ?.name ?? null;
-                                                updateSelectedNodeData({
-                                                    linked_workflow_id: id,
-                                                    linked_workflow_name: name,
-                                                });
-                                            }}
-                                            disabled={!canEditWorkflows}
-                                            className="select-shell mt-2"
-                                        >
-                                            <option value="">— None —</option>
-                                            {projectWorkflows
-                                                .filter((w) => w.id !== workflow.id)
-                                                .map((w) => (
-                                                    <option key={w.id} value={w.id}>
-                                                        {w.name}
-                                                        {w.status === 'published' ? ' ✓' : ''}
-                                                    </option>
-                                                ))}
-                                        </select>
-                                    </label>
-                                </>
-                            )}
-
-                            <div className="workflow-inline-actions">
-                                <button
-                                    type="button"
-                                    onClick={() => removeWorkflowNode(selectedNode.id)}
-                                    disabled={!canEditWorkflows}
-                                    className="btn-danger workflow-wide-button"
-                                >
-                                    Delete Node
-                                </button>
-                            </div>
-                        </div>
-                    ) : selectedNode ? (
-                        <div className="mt-5 space-y-5">
-                            {inspectorTab === 'screen' && (
-                                <form onSubmit={upsertScreen} className="space-y-4">
-                                    <div className="screen-phone-mockup">
-                                        <div className="screen-phone-frame">
-                                            <div className="screen-phone-notch" />
-                                            <div className="screen-phone-display">
-                                                {imageFile ? (
-                                                    <>
-                                                        <img
-                                                            src={URL.createObjectURL(imageFile)}
-                                                            alt="Screen preview"
-                                                            className="screen-phone-image-fill"
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            className="screen-phone-zoom-btn"
-                                                            onClick={() =>
-                                                                setPreviewImageUrl(
-                                                                    URL.createObjectURL(imageFile),
-                                                                )
-                                                            }
-                                                            title="Preview full image"
-                                                        >
-                                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6" />
-                                                            </svg>
-                                                        </button>
-                                                    </>
-                                                ) : selectedScreen?.image_url ? (
-                                                    <>
-                                                        <img
-                                                            src={selectedScreen.image_url}
-                                                            alt="Screen preview"
-                                                            className="screen-phone-image-fill"
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            className="screen-phone-zoom-btn"
-                                                            onClick={() =>
-                                                                setPreviewImageUrl(
-                                                                    selectedScreen.image_url!,
-                                                                )
-                                                            }
-                                                            title="Preview full image"
-                                                        >
-                                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6" />
-                                                            </svg>
-                                                        </button>
-                                                    </>
-                                                ) : (
-                                                    <div className="screen-phone-placeholder">
-                                                        <svg
-                                                            className="screen-phone-placeholder-icon"
-                                                            xmlns="http://www.w3.org/2000/svg"
-                                                            fill="none"
-                                                            viewBox="0 0 24 24"
-                                                            stroke="currentColor"
-                                                            strokeWidth={1.5}
-                                                        >
-                                                            <path
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                                d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 21h18M3.75 3h16.5A.75.75 0 0121 3.75v13.5a.75.75 0 01-.75.75H3.75A.75.75 0 013 17.25V3.75A.75.75 0 013.75 3z"
-                                                            />
-                                                        </svg>
-                                                        No image
-                                                    </div>
-                                                )}
-                                                {(title || subtitle) && (
-                                                    <div className="screen-phone-meta-overlay">
-                                                        {title && (
-                                                            <p className="screen-phone-meta-title">
-                                                                {title}
-                                                            </p>
-                                                        )}
-                                                        {subtitle && (
-                                                            <p className="screen-phone-meta-subtitle">
-                                                                {subtitle}
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="screen-image-upload-area">
-                                        <label className="screen-image-upload-label">
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                strokeWidth={2}
-                                                stroke="currentColor"
-                                                style={{ width: '0.9rem', height: '0.9rem', flexShrink: 0 }}
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
-                                                />
-                                            </svg>
-                                            {imageFile ? 'Change image' : 'Upload screen image'}
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                disabled={!canEditWorkflows}
-                                                style={{ display: 'none' }}
-                                                onChange={(e) => {
-                                                    const file = e.target.files?.[0] ?? null;
-                                                    setImageFile(file);
-                                                }}
-                                            />
-                                        </label>
-                                        {imageFile && (
-                                            <span className="screen-image-selected-name">
-                                                {imageFile.name}
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    <label className="block text-sm font-medium text-slate-700">
-                                        Title
-                                        <input
-                                            value={title}
-                                            onChange={(event) => setTitle(event.target.value)}
-                                            className="input-shell mt-2"
-                                        />
-                                    </label>
-
-                                    <label className="block text-sm font-medium text-slate-700">
-                                        Subtitle
-                                        <input
-                                            value={subtitle}
-                                            onChange={(event) => setSubtitle(event.target.value)}
-                                            className="input-shell mt-2"
-                                        />
-                                    </label>
-
-                                    <label className="block text-sm font-medium text-slate-700">
-                                        Description
-                                        <textarea
-                                            value={description}
-                                            onChange={(event) =>
-                                                setDescription(event.target.value)
-                                            }
-                                            className="textarea-shell textarea-shell-large mt-2"
-                                        />
-                                    </label>
-
+                                        Delete
+                                    </button>
                                     <button
                                         type="submit"
-                                        disabled={!canEditWorkflows || isSavingScreen}
-                                        className="btn-primary workflow-wide-button"
+                                        disabled={!canEditWorkflows}
+                                        className="btn-primary workflow-action-button"
                                     >
-                                        Save Screen
+                                        Save Label
                                     </button>
-                                </form>
-                            )}
-
-                            {inspectorTab === 'fields' && (
-                                <div className="workflow-compact-list">
-                                    {(selectedScreen?.custom_fields ?? []).length > 0 ? (
-                                        <div className="space-y-2">
-                                            {(selectedScreen?.custom_fields ?? []).map((field) => (
-                                                <button
-                                                    key={field.id}
-                                                    type="button"
-                                                    className={`workflow-text-row workflow-field-row w-full text-left ${
-                                                        editingFieldId === field.id
-                                                            ? 'workflow-field-row-active'
-                                                            : ''
-                                                    }`.trim()}
-                                                    onClick={() => {
-                                                        if (canEditWorkflows) {
-                                                            openEditFieldEditor(field);
-                                                        }
-                                                    }}
-                                                    disabled={!canEditWorkflows}
-                                                >
-                                                    <div className="min-w-0">
-                                                        <p className="workflow-text-row-title">
-                                                            {field.key}
-                                                        </p>
-                                                        <p className="workflow-text-row-meta">
-                                                            {field.value || 'No value'} / {field.field_type}
-                                                        </p>
-                                                    </div>
-                                                </button>
-                                            ))}
+                                </div>
+                            </form>
+                        ) : selectedNode && selectedNodeKind !== 'screen' ? (
+                            <div className="workflow-inline-form mt-5">
+                                {selectedNodeKind === 'flash' && (
+                                    <>
+                                        <div
+                                            className={`workflow-text-row workflow-flash-row-${
+                                                (selectedNode.data.type as FlashType | undefined) ??
+                                                'info'
+                                            }`}
+                                        >
+                                            <p className="workflow-text-row-title">
+                                                {(selectedNode.data.text as string | undefined) ??
+                                                    'Flash'}
+                                            </p>
+                                            <p className="workflow-text-row-meta">
+                                                {(selectedNode.data.type as
+                                                    | FlashType
+                                                    | undefined) ?? 'info'}
+                                            </p>
                                         </div>
-                                    ) : (
+
+                                        <label className="block text-sm font-medium text-slate-700">
+                                            Severity
+                                            <select
+                                                value={
+                                                    (selectedNode.data.type as
+                                                        | FlashType
+                                                        | undefined) ?? 'info'
+                                                }
+                                                onChange={event =>
+                                                    updateSelectedNodeData({
+                                                        type: event.target.value as FlashType,
+                                                    })
+                                                }
+                                                disabled={!canEditWorkflows}
+                                                className="select-shell mt-2"
+                                            >
+                                                <option value="error">Error</option>
+                                                <option value="warning">Warning</option>
+                                                <option value="info">Info</option>
+                                                <option value="success">Success</option>
+                                            </select>
+                                        </label>
+
+                                        <label className="block text-sm font-medium text-slate-700">
+                                            Text
+                                            <textarea
+                                                value={
+                                                    (selectedNode.data.text as
+                                                        | string
+                                                        | undefined) ?? ''
+                                                }
+                                                onChange={event =>
+                                                    updateSelectedNodeData({
+                                                        text: event.target.value,
+                                                    })
+                                                }
+                                                disabled={!canEditWorkflows}
+                                                className="textarea-shell mt-2"
+                                            />
+                                        </label>
+
+                                        <label className="block text-sm font-medium text-slate-700">
+                                            Description
+                                            <textarea
+                                                value={
+                                                    (selectedNode.data.description as
+                                                        | string
+                                                        | undefined) ?? ''
+                                                }
+                                                onChange={event =>
+                                                    updateSelectedNodeData({
+                                                        description: event.target.value,
+                                                    })
+                                                }
+                                                disabled={!canEditWorkflows}
+                                                className="textarea-shell textarea-shell-compact mt-2"
+                                            />
+                                        </label>
+                                    </>
+                                )}
+
+                                {isConditionNodeKind(selectedNodeKind) && (
+                                    <>
+                                        <label className="block text-sm font-medium text-slate-700">
+                                            Condition
+                                            <textarea
+                                                value={
+                                                    (selectedNode.data.condition as
+                                                        | string
+                                                        | undefined) ?? ''
+                                                }
+                                                onChange={event =>
+                                                    updateSelectedNodeData({
+                                                        condition: event.target.value,
+                                                    })
+                                                }
+                                                disabled={!canEditWorkflows}
+                                                className="textarea-shell mt-2"
+                                            />
+                                        </label>
+
                                         <div className="empty-state">
-                                            No custom fields on this screen yet.
+                                            Select an outgoing connection on the canvas to edit its
+                                            label.
                                         </div>
-                                    )}
+                                    </>
+                                )}
 
-                                    {fieldEditorMode === 'hidden' ? (
-                                        <button
-                                            type="button"
-                                            onClick={openCreateFieldEditor}
-                                            disabled={!canEditWorkflows}
-                                            className="btn-secondary workflow-wide-button"
-                                        >
-                                            Add Field
-                                        </button>
-                                    ) : (
-                                        <form
-                                            onSubmit={submitFieldEditor}
-                                            className="workflow-inline-form"
-                                        >
-                                            <div>
-                                                <p className="eyebrow">Custom Field</p>
-                                                <h3 className="mt-1 text-sm font-bold text-slate-950">
-                                                    {fieldEditorMode === 'edit'
-                                                        ? 'Edit Field'
-                                                        : 'Add Field'}
-                                                </h3>
+                                {selectedNodeKind === 'action' && (
+                                    <>
+                                        {inspectorTab === 'general' && (
+                                            <>
+                                                <label className="block text-sm font-medium text-slate-700">
+                                                    Title
+                                                    <textarea
+                                                        value={
+                                                            (selectedNode.data.title as
+                                                                | string
+                                                                | undefined) ?? ''
+                                                        }
+                                                        onChange={event =>
+                                                            updateSelectedNodeData({
+                                                                title: event.target.value,
+                                                            })
+                                                        }
+                                                        disabled={!canEditWorkflows}
+                                                        className="textarea-shell mt-2"
+                                                    />
+                                                </label>
+
+                                                <label className="block text-sm font-medium text-slate-700">
+                                                    Description
+                                                    <textarea
+                                                        value={
+                                                            (selectedNode.data.description as
+                                                                | string
+                                                                | undefined) ?? ''
+                                                        }
+                                                        onChange={event =>
+                                                            updateSelectedNodeData({
+                                                                description: event.target.value,
+                                                            })
+                                                        }
+                                                        disabled={!canEditWorkflows}
+                                                        className="textarea-shell textarea-shell-compact mt-2"
+                                                    />
+                                                </label>
+                                            </>
+                                        )}
+
+                                        {inspectorTab === 'security' && (
+                                            <div className="workflow-security-form">
+                                                <label className="workflow-security-label block text-sm font-medium text-slate-700">
+                                                    Security rule (additional)
+                                                    <textarea
+                                                        value={
+                                                            (selectedNode.data.security_rule as
+                                                                | string
+                                                                | undefined
+                                                                | null) ?? ''
+                                                        }
+                                                        onChange={event =>
+                                                            updateSelectedNodeData({
+                                                                security_rule:
+                                                                    event.target.value.length > 0
+                                                                        ? event.target.value
+                                                                        : null,
+                                                            })
+                                                        }
+                                                        disabled={!canEditWorkflows}
+                                                        className="textarea-shell textarea-shell-security mt-2"
+                                                    />
+                                                </label>
                                             </div>
+                                        )}
+                                    </>
+                                )}
 
-                                            <label className="block text-sm font-medium text-slate-700">
-                                                Field key
-                                                <input
-                                                    value={newCustomKey}
-                                                    onChange={(event) =>
-                                                        setNewCustomKey(event.target.value)
-                                                    }
-                                                    className="input-shell mt-2"
-                                                />
-                                            </label>
+                                {selectedNodeKind === 'start' && (
+                                    <>
+                                        {inspectorTab === 'general' && (
+                                            <div className="empty-state">
+                                                Entry point of the workflow — no configuration
+                                                needed.
+                                            </div>
+                                        )}
 
-                                            <label className="block text-sm font-medium text-slate-700">
-                                                Field type
-                                                <select
-                                                    value={newCustomFieldType}
-                                                    onChange={(event) =>
-                                                        setNewCustomFieldType(
-                                                            event.target
-                                                                .value as ScreenCustomField['field_type'],
-                                                        )
-                                                    }
-                                                    className="select-shell mt-2"
+                                        {inspectorTab === 'security' && (
+                                            <div className="workflow-security-form">
+                                                <label className="workflow-security-label block text-sm font-medium text-slate-700">
+                                                    Security rule (additional)
+                                                    <textarea
+                                                        value={
+                                                            (selectedNode.data.security_rule as
+                                                                | string
+                                                                | undefined
+                                                                | null) ?? ''
+                                                        }
+                                                        onChange={event =>
+                                                            updateSelectedNodeData({
+                                                                security_rule:
+                                                                    event.target.value.length > 0
+                                                                        ? event.target.value
+                                                                        : null,
+                                                            })
+                                                        }
+                                                        disabled={!canEditWorkflows}
+                                                        className="textarea-shell textarea-shell-security mt-2"
+                                                    />
+                                                </label>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+
+                                {selectedNodeKind === 'end' && (
+                                    <>
+                                        <label className="block text-sm font-medium text-slate-700">
+                                            Label
+                                            <input
+                                                value={
+                                                    (selectedNode.data.label as
+                                                        | string
+                                                        | undefined) ?? ''
+                                                }
+                                                onChange={event =>
+                                                    updateSelectedNodeData({
+                                                        label: event.target.value,
+                                                    })
+                                                }
+                                                disabled={!canEditWorkflows}
+                                                className="input-shell mt-2"
+                                            />
+                                        </label>
+
+                                        <label className="block text-sm font-medium text-slate-700">
+                                            Chain to workflow
+                                            <select
+                                                value={String(
+                                                    (selectedNode.data.linked_workflow_id as
+                                                        | number
+                                                        | null
+                                                        | undefined) ?? ''
+                                                )}
+                                                onChange={event => {
+                                                    const id = event.target.value
+                                                        ? Number(event.target.value)
+                                                        : null;
+                                                    const name =
+                                                        projectWorkflows.find(w => w.id === id)
+                                                            ?.name ?? null;
+                                                    updateSelectedNodeData({
+                                                        linked_workflow_id: id,
+                                                        linked_workflow_name: name,
+                                                    });
+                                                }}
+                                                disabled={!canEditWorkflows}
+                                                className="select-shell mt-2"
+                                            >
+                                                <option value="">— None —</option>
+                                                {projectWorkflows
+                                                    .filter(w => w.id !== workflow.id)
+                                                    .map(w => (
+                                                        <option key={w.id} value={w.id}>
+                                                            {w.name}
+                                                            {w.status === 'published' ? ' ✓' : ''}
+                                                        </option>
+                                                    ))}
+                                            </select>
+                                        </label>
+                                    </>
+                                )}
+
+                                <div className="workflow-inline-actions">
+                                    <button
+                                        type="button"
+                                        onClick={() => removeWorkflowNode(selectedNode.id)}
+                                        disabled={!canEditWorkflows}
+                                        className="btn-danger workflow-wide-button"
+                                    >
+                                        Delete Node
+                                    </button>
+                                </div>
+                            </div>
+                        ) : selectedNode ? (
+                            <div className="mt-5 space-y-5">
+                                {inspectorTab === 'screen' && (
+                                    <form onSubmit={upsertScreen} className="space-y-4">
+                                        <div className="screen-phone-mockup">
+                                            <div className="screen-phone-frame">
+                                                <div className="screen-phone-notch" />
+                                                <div className="screen-phone-display">
+                                                    {imageFile ? (
+                                                        <>
+                                                            <img
+                                                                src={URL.createObjectURL(imageFile)}
+                                                                alt="Screen preview"
+                                                                className="screen-phone-image-fill"
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                className="screen-phone-zoom-btn"
+                                                                onClick={() =>
+                                                                    setPreviewImageUrl(
+                                                                        URL.createObjectURL(
+                                                                            imageFile
+                                                                        )
+                                                                    )
+                                                                }
+                                                                title="Preview full image"
+                                                            >
+                                                                <svg
+                                                                    xmlns="http://www.w3.org/2000/svg"
+                                                                    fill="none"
+                                                                    viewBox="0 0 24 24"
+                                                                    strokeWidth={2}
+                                                                    stroke="currentColor"
+                                                                >
+                                                                    <path
+                                                                        strokeLinecap="round"
+                                                                        strokeLinejoin="round"
+                                                                        d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6"
+                                                                    />
+                                                                </svg>
+                                                            </button>
+                                                        </>
+                                                    ) : selectedScreen?.image_url ? (
+                                                        <>
+                                                            <img
+                                                                src={selectedScreen.image_url}
+                                                                alt="Screen preview"
+                                                                className="screen-phone-image-fill"
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                className="screen-phone-zoom-btn"
+                                                                onClick={() =>
+                                                                    setPreviewImageUrl(
+                                                                        selectedScreen.image_url!
+                                                                    )
+                                                                }
+                                                                title="Preview full image"
+                                                            >
+                                                                <svg
+                                                                    xmlns="http://www.w3.org/2000/svg"
+                                                                    fill="none"
+                                                                    viewBox="0 0 24 24"
+                                                                    strokeWidth={2}
+                                                                    stroke="currentColor"
+                                                                >
+                                                                    <path
+                                                                        strokeLinecap="round"
+                                                                        strokeLinejoin="round"
+                                                                        d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6"
+                                                                    />
+                                                                </svg>
+                                                            </button>
+                                                        </>
+                                                    ) : (
+                                                        <div className="screen-phone-placeholder">
+                                                            <svg
+                                                                className="screen-phone-placeholder-icon"
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                fill="none"
+                                                                viewBox="0 0 24 24"
+                                                                stroke="currentColor"
+                                                                strokeWidth={1.5}
+                                                            >
+                                                                <path
+                                                                    strokeLinecap="round"
+                                                                    strokeLinejoin="round"
+                                                                    d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 21h18M3.75 3h16.5A.75.75 0 0121 3.75v13.5a.75.75 0 01-.75.75H3.75A.75.75 0 013 17.25V3.75A.75.75 0 013.75 3z"
+                                                                />
+                                                            </svg>
+                                                            No image
+                                                        </div>
+                                                    )}
+                                                    {(title || subtitle) && (
+                                                        <div className="screen-phone-meta-overlay">
+                                                            {title && (
+                                                                <p className="screen-phone-meta-title">
+                                                                    {title}
+                                                                </p>
+                                                            )}
+                                                            {subtitle && (
+                                                                <p className="screen-phone-meta-subtitle">
+                                                                    {subtitle}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="screen-image-upload-area">
+                                            <label className="screen-image-upload-label">
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    strokeWidth={2}
+                                                    stroke="currentColor"
+                                                    style={{
+                                                        width: '0.9rem',
+                                                        height: '0.9rem',
+                                                        flexShrink: 0,
+                                                    }}
                                                 >
-                                                    <option value="text">Text</option>
-                                                    <option value="number">Number</option>
-                                                    <option value="boolean">Boolean</option>
-                                                    <option value="json">JSON</option>
-                                                </select>
-                                            </label>
-
-                                            <label className="block text-sm font-medium text-slate-700">
-                                                Field value
-                                                <textarea
-                                                    value={newCustomValue}
-                                                    onChange={(event) =>
-                                                        setNewCustomValue(event.target.value)
-                                                    }
-                                                    className="textarea-shell mt-2"
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+                                                    />
+                                                </svg>
+                                                {imageFile ? 'Change image' : 'Upload screen image'}
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    disabled={!canEditWorkflows}
+                                                    style={{ display: 'none' }}
+                                                    onChange={e => {
+                                                        const file = e.target.files?.[0] ?? null;
+                                                        setImageFile(file);
+                                                    }}
                                                 />
                                             </label>
+                                            {imageFile && (
+                                                <span className="screen-image-selected-name">
+                                                    {imageFile.name}
+                                                </span>
+                                            )}
+                                        </div>
 
-                                            <div className="workflow-inline-actions">
-                                                {fieldEditorMode === 'edit' && editingField && (
+                                        <label className="block text-sm font-medium text-slate-700">
+                                            Title
+                                            <input
+                                                value={title}
+                                                onChange={event => setTitle(event.target.value)}
+                                                className="input-shell mt-2"
+                                            />
+                                        </label>
+
+                                        <label className="block text-sm font-medium text-slate-700">
+                                            Subtitle
+                                            <input
+                                                value={subtitle}
+                                                onChange={event => setSubtitle(event.target.value)}
+                                                className="input-shell mt-2"
+                                            />
+                                        </label>
+
+                                        <label className="block text-sm font-medium text-slate-700">
+                                            Description
+                                            <textarea
+                                                value={description}
+                                                onChange={event =>
+                                                    setDescription(event.target.value)
+                                                }
+                                                className="textarea-shell textarea-shell-large mt-2"
+                                            />
+                                        </label>
+
+                                        <button
+                                            type="submit"
+                                            disabled={!canEditWorkflows || isSavingScreen}
+                                            className="btn-primary workflow-wide-button"
+                                        >
+                                            Save Screen
+                                        </button>
+                                    </form>
+                                )}
+
+                                {inspectorTab === 'fields' && (
+                                    <div className="workflow-compact-list">
+                                        {(selectedScreen?.custom_fields ?? []).length > 0 ? (
+                                            <div className="space-y-2">
+                                                {(selectedScreen?.custom_fields ?? []).map(
+                                                    field => (
+                                                        <button
+                                                            key={field.id}
+                                                            type="button"
+                                                            className={`workflow-text-row workflow-field-row w-full text-left ${
+                                                                editingFieldId === field.id
+                                                                    ? 'workflow-field-row-active'
+                                                                    : ''
+                                                            }`.trim()}
+                                                            onClick={() => {
+                                                                if (canEditWorkflows) {
+                                                                    openEditFieldEditor(field);
+                                                                }
+                                                            }}
+                                                            disabled={!canEditWorkflows}
+                                                        >
+                                                            <div className="min-w-0">
+                                                                <p className="workflow-text-row-title">
+                                                                    {field.key}
+                                                                </p>
+                                                                <p className="workflow-text-row-meta">
+                                                                    {field.value || 'No value'} /{' '}
+                                                                    {field.field_type}
+                                                                </p>
+                                                            </div>
+                                                        </button>
+                                                    )
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div className="empty-state">
+                                                No custom fields on this screen yet.
+                                            </div>
+                                        )}
+
+                                        {fieldEditorMode === 'hidden' ? (
+                                            <button
+                                                type="button"
+                                                onClick={openCreateFieldEditor}
+                                                disabled={!canEditWorkflows}
+                                                className="btn-secondary workflow-wide-button"
+                                            >
+                                                Add Field
+                                            </button>
+                                        ) : (
+                                            <form
+                                                onSubmit={submitFieldEditor}
+                                                className="workflow-inline-form"
+                                            >
+                                                <div>
+                                                    <p className="eyebrow">Custom Field</p>
+                                                    <h3 className="mt-1 text-sm font-bold text-slate-950">
+                                                        {fieldEditorMode === 'edit'
+                                                            ? 'Edit Field'
+                                                            : 'Add Field'}
+                                                    </h3>
+                                                </div>
+
+                                                <label className="block text-sm font-medium text-slate-700">
+                                                    Field key
+                                                    <input
+                                                        value={newCustomKey}
+                                                        onChange={event =>
+                                                            setNewCustomKey(event.target.value)
+                                                        }
+                                                        className="input-shell mt-2"
+                                                    />
+                                                </label>
+
+                                                <label className="block text-sm font-medium text-slate-700">
+                                                    Field type
+                                                    <select
+                                                        value={newCustomFieldType}
+                                                        onChange={event =>
+                                                            setNewCustomFieldType(
+                                                                event.target
+                                                                    .value as ScreenCustomField['field_type']
+                                                            )
+                                                        }
+                                                        className="select-shell mt-2"
+                                                    >
+                                                        <option value="text">Text</option>
+                                                        <option value="number">Number</option>
+                                                        <option value="boolean">Boolean</option>
+                                                        <option value="json">JSON</option>
+                                                    </select>
+                                                </label>
+
+                                                <label className="block text-sm font-medium text-slate-700">
+                                                    Field value
+                                                    <textarea
+                                                        value={newCustomValue}
+                                                        onChange={event =>
+                                                            setNewCustomValue(event.target.value)
+                                                        }
+                                                        className="textarea-shell mt-2"
+                                                    />
+                                                </label>
+
+                                                <div className="workflow-inline-actions">
+                                                    {fieldEditorMode === 'edit' && editingField && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={async () => {
+                                                                const removed =
+                                                                    await removeCustomField(
+                                                                        editingField.id
+                                                                    );
+                                                                if (removed) {
+                                                                    setActionNotice(
+                                                                        'Custom field deleted.'
+                                                                    );
+                                                                    closeFieldEditor();
+                                                                }
+                                                            }}
+                                                            disabled={!canEditWorkflows}
+                                                            className="btn-danger workflow-action-button"
+                                                        >
+                                                            Delete
+                                                        </button>
+                                                    )}
                                                     <button
                                                         type="button"
-                                                        onClick={async () => {
-                                                            const removed =
-                                                                await removeCustomField(
-                                                                    editingField.id,
-                                                                );
-                                                            if (removed) {
-                                                                setActionNotice(
-                                                                    'Custom field deleted.',
-                                                                );
-                                                                closeFieldEditor();
-                                                            }
-                                                        }}
-                                                        disabled={!canEditWorkflows}
-                                                        className="btn-danger workflow-action-button"
+                                                        onClick={closeFieldEditor}
+                                                        className="btn-secondary workflow-action-button"
                                                     >
-                                                        Delete
+                                                        Cancel
                                                     </button>
-                                                )}
-                                                <button
-                                                    type="button"
-                                                    onClick={closeFieldEditor}
-                                                    className="btn-secondary workflow-action-button"
-                                                >
-                                                    Cancel
-                                                </button>
-                                                <button
-                                                    type="submit"
-                                                    disabled={
-                                                        !canEditWorkflows ||
-                                                        !newCustomKey.trim()
-                                                    }
-                                                    className="btn-primary workflow-action-button"
-                                                >
-                                                    Save
-                                                </button>
-                                            </div>
-                                        </form>
-                                    )}
-                                </div>
-                            )}
+                                                    <button
+                                                        type="submit"
+                                                        disabled={
+                                                            !canEditWorkflows ||
+                                                            !newCustomKey.trim()
+                                                        }
+                                                        className="btn-primary workflow-action-button"
+                                                    >
+                                                        Save
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        )}
+                                    </div>
+                                )}
 
-                            {inspectorTab === 'security' && (
-                                <div className="workflow-inline-form workflow-security-form">
-                                    <label className="workflow-security-label block text-sm font-medium text-slate-700">
-                                        Security rule (additional)
-                                        <textarea
-                                            value={
-                                                (selectedNode.data.security_rule as
-                                                    | string
-                                                    | undefined
-                                                    | null) ?? ''
-                                            }
-                                            onChange={(event) =>
-                                                updateSelectedNodeData({
-                                                    security_rule: event.target.value.length > 0
-                                                        ? event.target.value
-                                                        : null,
-                                                })
-                                            }
-                                            disabled={!canEditWorkflows}
-                                            className="textarea-shell textarea-shell-security mt-2"
-                                        />
-                                    </label>
-                                </div>
-                            )}
+                                {inspectorTab === 'security' && (
+                                    <div className="workflow-inline-form workflow-security-form">
+                                        <label className="workflow-security-label block text-sm font-medium text-slate-700">
+                                            Security rule (additional)
+                                            <textarea
+                                                value={
+                                                    (selectedNode.data.security_rule as
+                                                        | string
+                                                        | undefined
+                                                        | null) ?? ''
+                                                }
+                                                onChange={event =>
+                                                    updateSelectedNodeData({
+                                                        security_rule:
+                                                            event.target.value.length > 0
+                                                                ? event.target.value
+                                                                : null,
+                                                    })
+                                                }
+                                                disabled={!canEditWorkflows}
+                                                className="textarea-shell textarea-shell-security mt-2"
+                                            />
+                                        </label>
+                                    </div>
+                                )}
 
-                            <div className="workflow-inline-actions">
-                                <button
-                                    type="button"
-                                    onClick={() => removeWorkflowNode(selectedNode.id)}
-                                    disabled={!canEditWorkflows}
-                                    className="btn-danger workflow-wide-button"
-                                >
-                                    Delete Node
-                                </button>
+                                <div className="workflow-inline-actions">
+                                    <button
+                                        type="button"
+                                        onClick={() => removeWorkflowNode(selectedNode.id)}
+                                        disabled={!canEditWorkflows}
+                                        className="btn-danger workflow-wide-button"
+                                    >
+                                        Delete Node
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    ) : null}
+                        ) : null}
                     </section>
                 </aside>
             )}
@@ -2061,15 +2047,11 @@ export default function WorkflowEditor({
                     </div>
                     <div className="workflow-metric">
                         <p className="eyebrow">Screens</p>
-                        <p className="mt-2 text-xl font-bold text-slate-950">
-                            {nodes.length}
-                        </p>
+                        <p className="mt-2 text-xl font-bold text-slate-950">{nodes.length}</p>
                     </div>
                     <div className="workflow-metric">
                         <p className="eyebrow">Links</p>
-                        <p className="mt-2 text-xl font-bold text-slate-950">
-                            {edges.length}
-                        </p>
+                        <p className="mt-2 text-xl font-bold text-slate-950">{edges.length}</p>
                     </div>
                 </div>
 
@@ -2092,7 +2074,7 @@ export default function WorkflowEditor({
                         )}
                     </div>
                     <div className="mt-4 space-y-3">
-                        {versions.map((version) => {
+                        {versions.map(version => {
                             const isSelected = rollbackVersionId === version.id;
                             const isCurrent = latestVersion?.id === version.id;
 
@@ -2116,38 +2098,37 @@ export default function WorkflowEditor({
                                         </div>
                                         <div className="flex flex-wrap items-start justify-end gap-2">
                                             {isCurrent && (
-                                                <StatusBadge tone="brand">
-                                                    Current
-                                                </StatusBadge>
+                                                <StatusBadge tone="brand">Current</StatusBadge>
                                             )}
                                             {version.is_published && (
-                                                <StatusBadge tone="success">
-                                                    Published
-                                                </StatusBadge>
+                                                <StatusBadge tone="success">Published</StatusBadge>
                                             )}
                                             {version.rollback_from_version_id && (
                                                 <StatusBadge tone="warning">
-                                                    Rollback from rev. {
-                                                        workflow.versions.find(
-                                                            (v) => v.id === version.rollback_from_version_id,
-                                                        )?.version_number ?? '?'
-                                                    }
+                                                    Rollback from rev.{' '}
+                                                    {workflow.versions.find(
+                                                        v =>
+                                                            v.id ===
+                                                            version.rollback_from_version_id
+                                                    )?.version_number ?? '?'}
                                                 </StatusBadge>
                                             )}
-                                            {!version.is_published && canPublishWorkflows && versions.length > 1 && (
-                                                <button
-                                                    type="button"
-                                                    disabled={isRunningAction}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        void deleteVersion(version);
-                                                    }}
-                                                    className="text-xs text-slate-400 hover:text-red-600 disabled:opacity-40"
-                                                    title="Delete revision"
-                                                >
-                                                    Delete
-                                                </button>
-                                            )}
+                                            {!version.is_published &&
+                                                canPublishWorkflows &&
+                                                versions.length > 1 && (
+                                                    <button
+                                                        type="button"
+                                                        disabled={isRunningAction}
+                                                        onClick={e => {
+                                                            e.stopPropagation();
+                                                            void deleteVersion(version);
+                                                        }}
+                                                        className="text-xs text-slate-400 hover:text-red-600 disabled:opacity-40"
+                                                        title="Delete revision"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                )}
                                         </div>
                                     </div>
                                     <p className="mt-3 text-xs uppercase tracking-[0.16em] text-slate-400">
@@ -2160,9 +2141,7 @@ export default function WorkflowEditor({
                 </div>
 
                 <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50/80 p-4">
-                    <p className="text-sm font-semibold text-amber-950">
-                        Rollback target
-                    </p>
+                    <p className="text-sm font-semibold text-amber-950">Rollback target</p>
                     <p className="mt-2 text-sm text-amber-800">
                         {selectedRollbackVersion
                             ? `Create a new draft from revision ${selectedRollbackVersion.version_number}.`
@@ -2178,7 +2157,6 @@ export default function WorkflowEditor({
                         </button>
                     )}
                 </div>
-
             </aside>
 
             {(actionError || actionNotice) && (
@@ -2205,8 +2183,19 @@ export default function WorkflowEditor({
                                 className="screen-preview-modal-close"
                                 onClick={() => setPreviewImageUrl(null)}
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '1rem', height: '1rem' }}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth={2}
+                                    stroke="currentColor"
+                                    style={{ width: '1rem', height: '1rem' }}
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M6 18L18 6M6 6l12 12"
+                                    />
                                 </svg>
                                 Close
                             </button>
