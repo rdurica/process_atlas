@@ -81,6 +81,15 @@ npm run format:check # Prettier
   - Backend: pint --test → phpstan
 - `ci.yaml` is currently **disabled** (all test jobs have `if: false`); only Docker linting runs
 
+## Security & Production
+
+- **API rate limiting**: 60 req/min pro autentizované API, 30 req/min pro MCP endpoint. Konfigurováno v `AppServiceProvider::boot()` a aplikováno přes `throttle:api` / `throttle:mcp` middleware.
+- **Produkční `.env`**: Použij `src/.env.production.example` jako základ pro produkční deploy. Obsahuje bezpečná nastavení (`APP_DEBUG=false`, `SESSION_ENCRYPT=true`, `SESSION_SECURE_COOKIE=true`).
+- **HTTP bezpečnostní hlavičky**: Nginx konfigurace v `build/dev/nginx/default.conf` přidává CSP, Referrer-Policy, Permissions-Policy, HSTS, X-Frame-Options a X-Content-Type-Options.
+- **CORS**: Explicitně konfigurováno v `config/cors.php` s `supports_credentials=true`.
+- **File upload**: Obrázky screenů jsou validovány přes `mimes:jpg,jpeg,png,webp` a po uploadu kontrolovány funkcí `getimagesize()`.
+- **API error handling**: V `bootstrap/app.php` je nastaveno, aby API endpointy nikdy nevracely stack trace (generic JSON response při `APP_DEBUG=false`).
+
 ## Important Gotchas
 
 - `make init` moves `build/dev/.github` to `.github` — do not edit the former directly

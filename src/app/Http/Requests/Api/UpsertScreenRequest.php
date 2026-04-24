@@ -24,7 +24,7 @@ class UpsertScreenRequest extends FormRequest
             'title' => ['nullable', 'string', 'max:255'],
             'subtitle' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'image' => ['nullable', 'file', 'image', 'max:4096'],
+            'image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
         ];
     }
 

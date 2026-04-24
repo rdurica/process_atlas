@@ -19,7 +19,14 @@ final class ScreenImageService
     public function storeResized(UploadedFile $image, int $maxWidth = 1080): string
     {
         $imagePath = $image->store('screens', 'public');
-        $this->resize(Storage::disk('public')->path($imagePath), $maxWidth);
+        $fullPath = Storage::disk('public')->path($imagePath);
+
+        if (getimagesize($fullPath) === false) {
+            Storage::disk('public')->delete($imagePath);
+            throw new \InvalidArgumentException('Uploaded file is not a valid image.');
+        }
+
+        $this->resize($fullPath, $maxWidth);
 
         return $imagePath;
     }
