@@ -1,14 +1,23 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { PageProps } from '@/types';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import DeleteUserForm from './Partials/DeleteUserForm';
+import McpTokenManager from './Partials/McpTokenManager';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm';
 
 export default function Edit({
     mustVerifyEmail,
     status,
-}: PageProps<{ mustVerifyEmail: boolean; status?: string }>) {
+    hasMcpToken,
+    mcpToken,
+}: PageProps<{
+    mustVerifyEmail: boolean;
+    status?: string;
+    hasMcpToken?: boolean;
+    mcpToken?: string;
+}>) {
+    const user = usePage().props.auth.user;
     return (
         <AuthenticatedLayout
             header={<h2 className="text-xl font-semibold leading-tight text-gray-800">Profile</h2>}
@@ -24,6 +33,16 @@ export default function Edit({
                             className="max-w-xl"
                         />
                     </div>
+
+                    {user?.permissions.includes('mcp.use') && (
+                        <div className="bg-white p-4 shadow sm:rounded-lg sm:p-8">
+                            <McpTokenManager
+                                hasToken={!!hasMcpToken}
+                                token={mcpToken}
+                                className="max-w-xl"
+                            />
+                        </div>
+                    )}
 
                     <div className="bg-white p-4 shadow sm:rounded-lg sm:p-8">
                         <UpdatePasswordForm className="max-w-xl" />

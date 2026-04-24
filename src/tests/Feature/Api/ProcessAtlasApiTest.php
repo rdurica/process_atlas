@@ -227,7 +227,7 @@ it('keeps screen image metadata when creating a draft revision', function (): vo
 
 it('handles standard mcp initialize requests over api endpoint', function (): void {
     $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
-    $token = $owner->createToken('mcp-test')->plainTextToken;
+    $token = $owner->createToken('mcp-test', ['mcp:use'])->plainTextToken;
 
     $response = $this->withHeader('Authorization', "Bearer {$token}")
         ->postJson('/api/mcp', [
@@ -274,7 +274,7 @@ it('lists and reads mcp resources over api endpoint', function (): void {
     ])->assertCreated();
     $workflowId = (int) $workflowResponse->json('data.id');
 
-    $token = $owner->createToken('mcp-test-resources')->plainTextToken;
+    $token = $owner->createToken('mcp-test-resources', ['mcp:use'])->plainTextToken;
 
     $resourcesResponse = $this->withHeader('Authorization', "Bearer {$token}")
         ->postJson('/api/mcp', [
@@ -322,7 +322,7 @@ it('calls mcp tools and reports revision conflicts', function (): void {
     $workflowShow = $this->getJson("/api/v1/workflows/{$workflowId}")->assertOk();
     $revisionId = (int) $workflowShow->json('data.latest_version.id');
 
-    $token = $owner->createToken('mcp-test-tools')->plainTextToken;
+    $token = $owner->createToken('mcp-test-tools', ['mcp:use'])->plainTextToken;
 
     $this->withHeader('Authorization', "Bearer {$token}")
         ->postJson('/api/mcp', [
@@ -369,7 +369,7 @@ it('calls mcp tools and reports revision conflicts', function (): void {
 
 it('forbids mcp access without mcp.use permission', function (): void {
     $viewer = User::query()->where('email', 'viewer@example.com')->firstOrFail();
-    $token = $viewer->createToken('mcp-test-forbidden')->plainTextToken;
+    $token = $viewer->createToken('mcp-test-forbidden', ['mcp:use'])->plainTextToken;
 
     $this->withHeader('Authorization', "Bearer {$token}")
         ->postJson('/api/mcp', [

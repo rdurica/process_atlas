@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Mcp\McpServer;
 use App\Support\PermissionList;
 use Illuminate\Console\Command;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class McpServeStdioCommand extends Command
 {
@@ -30,19 +31,9 @@ class McpServeStdioCommand extends Command
      */
     public function handle(McpServer $mcpServer): int
     {
-        $userId = (int) ($this->option('user') ?? config('services.mcp.user_id', 0));
+        $actor = $this->resolveActor();
 
-        if ($userId <= 0) {
-            $this->error('Provide --user=<id> or MCP_USER_ID environment variable.');
-
-            return self::FAILURE;
-        }
-
-        $actor = User::query()->find($userId);
-
-        if (! $actor) {
-            $this->error('Actor user not found.');
-
+        if (! $actor instanceof User) {
             return self::FAILURE;
         }
 
@@ -67,6 +58,37 @@ class McpServeStdioCommand extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    private function resolveActor(): ?User
+    {
+        $token = (string) config('services.mcp.token', '');
+
+        if ($token !== '') {
+            $accessToken = PersonalAccessToken::findToken($token);
+
+            if ($accessToken && $accessToken->tokenable instanceof User) {
+                return $accessToken->tokenable;
+            }
+        }
+
+        $userId = (int) ($this->option('user') ?? config('services.mcp.user_id', 0));
+
+        if ($userId <= 0) {
+            $this->error('Provide --user=<id>, MCP_USER_ID environment variable, or MCP_TOKEN.');
+
+            return null;
+        }
+
+        $actor = User::query()->find($userId);
+
+        if (! $actor) {
+            $this->error('Actor user not found.');
+
+            return null;
+        }
+
+        return $actor;
     }
 
     private function readFrameBody(): ?string

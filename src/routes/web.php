@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Profile\McpTokenController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\WorkflowEditorController;
@@ -20,6 +21,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::middleware('can:mcp.use')->group(function () {
+        Route::post('/profile/mcp-token', [McpTokenController::class, 'store'])->name('profile.mcp-token.store');
+        Route::delete('/profile/mcp-token', [McpTokenController::class, 'destroy'])->name('profile.mcp-token.destroy');
+    });
 });
 
 require __DIR__ . '/auth.php';

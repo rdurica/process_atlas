@@ -21,6 +21,8 @@ class ProfileController extends Controller
         return Inertia::render('Profile/Edit', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => session('status'),
+            'hasMcpToken' => $request->user()->tokens()->where('name', 'mcp')->exists(),
+            'mcpToken' => session('mcp_token'),
         ]);
     }
 

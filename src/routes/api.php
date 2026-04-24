@@ -44,4 +44,4 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function (): void {
     Route::delete('/custom-fields/{screenCustomField}', [ScreenCustomFieldController::class, 'destroy']);
 });
 
-Route::middleware(['auth:sanctum'])->post('/mcp', McpController::class);
+Route::middleware(['auth:sanctum', 'ability:mcp:use'])->post('/mcp', McpController::class);

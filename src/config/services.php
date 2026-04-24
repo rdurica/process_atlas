@@ -24,6 +24,7 @@ return [
 
     'mcp' => [
         'user_id' => env('MCP_USER_ID', 0),
+        'token' => env('MCP_TOKEN'),
     ],
 
     'ses' => [
