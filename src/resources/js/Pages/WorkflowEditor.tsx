@@ -19,6 +19,7 @@ import {
     Node,
     NodeProps,
     OnConnect,
+    OnNodesChange,
     Position,
     ReactFlow,
     ReactFlowProvider,
@@ -27,7 +28,9 @@ import {
     useReactFlow,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import React, { DragEvent, FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import React, { DragEvent, FormEvent, MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import ContextMenu from '../features/workflow-editor/components/ContextMenu';
+import { useCopyPaste } from '../features/workflow-editor/hooks/useCopyPaste';
 
 type WorkflowEditorProps = {
     workflow: WorkflowData;
@@ -443,6 +446,22 @@ export default function WorkflowEditor({
         useState<ScreenCustomField['field_type']>('text');
     const graphInitialized = useRef(false);
 
+    const {
+        copiedNodes,
+        copyNodes,
+        pasteNodes,
+        deleteNodes,
+        isContextMenuOpen,
+        contextMenuPosition,
+        openContextMenu,
+        closeContextMenu,
+    } = useCopyPaste({ setNodes });
+
+    const selectedNodes = useMemo(
+        () => nodes.filter(node => node.selected),
+        [nodes]
+    );
+
     const versions = useMemo(
         () => [...workflow.versions].sort((a, b) => b.version_number - a.version_number),
         [workflow.versions]
@@ -537,6 +556,48 @@ export default function WorkflowEditor({
         setGraphMessage('No pending canvas changes.');
     }, [latestVersion?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (!canEditWorkflows) return;
+
+            const isCtrlOrCmd = e.ctrlKey || e.metaKey;
+
+            if (isCtrlOrCmd && e.key === 'c' && selectedNodes.length > 0) {
+                e.preventDefault();
+                copyNodes(selectedNodes);
+            }
+
+            if (isCtrlOrCmd && e.key === 'v' && copiedNodes.length > 0) {
+                e.preventDefault();
+                pasteNodes();
+            }
+
+            if ((e.key === 'Delete' || e.key === 'Backspace') && selectedNodes.length > 0) {
+                e.preventDefault();
+                const idsToDelete = selectedNodes.map(n => n.id);
+                deleteNodes(idsToDelete);
+                setSelectedNodeId(null);
+                setSelectedEdgeId(null);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [canEditWorkflows, selectedNodes, copiedNodes, copyNodes, pasteNodes, deleteNodes]);
+
+    useEffect(() => {
+        const handleClickOutside = () => {
+            if (isContextMenuOpen) {
+                closeContextMenu();
+            }
+        };
+
+        if (isContextMenuOpen) {
+            document.addEventListener('click', handleClickOutside);
+            return () => document.removeEventListener('click', handleClickOutside);
+        }
+    }, [isContextMenuOpen, closeContextMenu]);
+
     const resetFieldDraft = () => {
         setEditingFieldId(null);
         setNewCustomKey('');
@@ -597,6 +658,99 @@ export default function WorkflowEditor({
         setActionError(null);
         setActionNotice(null);
     };
+
+    const handlePaneContextMenu = useCallback(
+        (event: MouseEvent) => {
+            event.preventDefault();
+            openContextMenu(event.clientX, event.clientY);
+        },
+        [openContextMenu]
+    );
+
+    const handleAddElementFromContextMenu = useCallback(
+        (kind: WorkflowNodeKind) => {
+            const position = { x: contextMenuPosition.x, y: contextMenuPosition.y };
+            if (kind === 'screen') {
+                const nextId = `screen-${Date.now()}`;
+                setNodes(currentNodes => [
+                    ...currentNodes,
+                    {
+                        id: nextId,
+                        type: 'screen',
+                        position,
+                        data: {
+                            label: `Screen ${currentNodes.length + 1}`,
+                            subtitle: '',
+                            security_rule: null,
+                        },
+                    },
+                ]);
+                setNodeSelected(nextId, 'screen');
+            } else if (
+                kind === 'flash' ||
+                kind === 'condition' ||
+                kind === 'action' ||
+                kind === 'start' ||
+                kind === 'end'
+            ) {
+                const nextId = `${kind}-${Date.now()}`;
+                setNodes(currentNodes => {
+                    const labelIndex =
+                        currentNodes.filter(
+                            node => node.type === kind || (kind === 'condition' && node.type === 'if')
+                        ).length + 1;
+                    const data =
+                        kind === 'flash'
+                            ? {
+                                  type: 'info' as FlashType,
+                                  text: `Flash ${labelIndex}`,
+                                  description: '',
+                              }
+                            : kind === 'condition'
+                              ? {
+                                    condition: `Condition ${labelIndex}`,
+                                }
+                              : kind === 'start'
+                                ? { label: 'Start', security_rule: null }
+                                : kind === 'end'
+                                  ? { label: 'End', linked_workflow_id: null, linked_workflow_name: null }
+                                  : {
+                                        title: `Action ${labelIndex}`,
+                                        description: '',
+                                        security_rule: null,
+                                    };
+                    return [
+                        ...currentNodes,
+                        {
+                            id: nextId,
+                            type: kind,
+                            position,
+                            data,
+                        },
+                    ];
+                });
+                setNodeSelected(nextId, kind);
+            }
+            closeContextMenu();
+        },
+        [contextMenuPosition, setNodes, setNodeSelected, closeContextMenu]
+    );
+
+    const handleCopyFromContextMenu = useCallback(() => {
+        copyNodes(selectedNodes);
+        closeContextMenu();
+    }, [selectedNodes, copyNodes, closeContextMenu]);
+
+    const handlePasteFromContextMenu = useCallback(() => {
+        pasteNodes();
+    }, [pasteNodes]);
+
+    const handleDeleteFromContextMenu = useCallback(() => {
+        const idsToDelete = selectedNodes.map(n => n.id);
+        deleteNodes(idsToDelete);
+        setSelectedNodeId(null);
+        setSelectedEdgeId(null);
+    }, [selectedNodes, deleteNodes]);
 
     const updateSelectedNodeData = (patch: Partial<WorkflowNodeData>) => {
         if (!canEditWorkflows || !selectedNode) {
@@ -1152,6 +1306,7 @@ export default function WorkflowEditor({
                         onEdgeClick={(_, edge) => setEdgeSelected(edge.id)}
                         onEdgeDoubleClick={(_, edge) => setEdgeSelected(edge.id)}
                         onPaneClick={clearCanvasSelection}
+                        onPaneContextMenu={handlePaneContextMenu}
                         onDropNode={handleDropNode}
                         editable={canEditWorkflows}
                     />
@@ -1184,6 +1339,15 @@ export default function WorkflowEditor({
                     >
                         Save
                     </button>
+                    {graphState === 'conflict' && (
+                        <button
+                            type="button"
+                            onClick={reloadWorkflow}
+                            className="btn-warning workflow-action-button"
+                        >
+                            ↻ Reload Draft
+                        </button>
+                    )}
                     {latestVersion?.is_published && canEditInProject && (
                         <button
                             type="button"
@@ -2208,6 +2372,18 @@ export default function WorkflowEditor({
                     </div>
                 )}
             </Modal>
+
+            {isContextMenuOpen && (
+                <ContextMenu
+                    position={contextMenuPosition}
+                    onAddElement={handleAddElementFromContextMenu}
+                    onCopy={handleCopyFromContextMenu}
+                    onPaste={handlePasteFromContextMenu}
+                    onDelete={handleDeleteFromContextMenu}
+                    hasSelection={selectedNodes.length > 0}
+                    onClose={closeContextMenu}
+                />
+            )}
         </div>
     );
 }
@@ -2216,8 +2392,7 @@ type FlowCanvasProps = {
     nodes: Node[];
     edges: Edge[];
     nodeTypes: Record<string, React.ComponentType<NodeProps>>;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onNodesChange: (...args: any[]) => void;
+    onNodesChange: OnNodesChange<Node>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onEdgesChange: (...args: any[]) => void;
     onConnect: OnConnect;
@@ -2226,7 +2401,10 @@ type FlowCanvasProps = {
     onEdgeClick: (event: React.MouseEvent, edge: Edge) => void;
     onEdgeDoubleClick: (event: React.MouseEvent, edge: Edge) => void;
     onPaneClick: () => void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onPaneContextMenu: (event: any) => void;
     onDropNode: (kind: WorkflowNodeKind, position: { x: number; y: number }) => void;
+    onSelectionChange?: (nodes: Node[]) => void;
     editable: boolean;
 };
 
@@ -2242,7 +2420,9 @@ function FlowCanvas({
     onEdgeClick,
     onEdgeDoubleClick,
     onPaneClick,
+    onPaneContextMenu,
     onDropNode,
+    onSelectionChange,
     editable,
 }: FlowCanvasProps) {
     const { screenToFlowPosition } = useReactFlow();
@@ -2273,6 +2453,12 @@ function FlowCanvas({
             onEdgeClick={onEdgeClick}
             onEdgeDoubleClick={editable ? onEdgeDoubleClick : undefined}
             onPaneClick={onPaneClick}
+            onPaneContextMenu={onPaneContextMenu}
+            onSelectionChange={({ nodes: selectedNodes }) => {
+                if (onSelectionChange) {
+                    onSelectionChange(selectedNodes || []);
+                }
+            }}
             onDragOver={editable ? handleDragOver : undefined}
             onDrop={editable ? handleDrop : undefined}
             nodesDraggable={editable}
