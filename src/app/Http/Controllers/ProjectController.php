@@ -25,6 +25,7 @@ class ProjectController extends Controller
         $currentUserRole = $isAdmin ? 'process_owner' : $user->projectRoleIn($project);
 
         $workflows = $project->workflows()
+            ->notArchived()
             ->with(['latestVersion', 'publishedVersion'])
             ->orderBy('name')
             ->get()
@@ -48,7 +49,7 @@ class ProjectController extends Controller
                 'id' => $project->id,
                 'name' => $project->name,
                 'description' => $project->description,
-                'workflows_count' => $project->workflows()->count(),
+                'workflows_count' => $project->workflows()->notArchived()->count(),
                 'current_user_role' => $currentUserRole,
             ],
             'workflows' => $workflows,

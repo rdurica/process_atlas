@@ -11,6 +11,7 @@ use App\Models\Workflow;
 use App\Queries\WorkflowQueryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 class WorkflowController extends Controller
 {
@@ -23,7 +24,9 @@ class WorkflowController extends Controller
     {
         $this->authorize('view', $project);
 
-        return response()->json(['data' => $this->workflows->listForProject($project)]);
+        $includeArchived = $request->boolean('include_archived');
+
+        return response()->json(['data' => $this->workflows->listForProject($project, $includeArchived)]);
     }
 
     public function store(StoreWorkflowRequest $request, Project $project): JsonResponse
@@ -49,5 +52,30 @@ class WorkflowController extends Controller
         return response()->json([
             'data' => $this->actions->update($request->user(), $workflow, $request->toDto()),
         ]);
+    }
+
+    public function archive(Request $request, Workflow $workflow): JsonResponse
+    {
+        $this->authorize('archive', $workflow);
+
+        $this->actions->archive($request->user(), $workflow);
+
+        $workflow->refresh();
+
+        /** @var Carbon|null $archivedAt */
+        $archivedAt = $workflow->archived_at;
+
+        return response()->json(['data' => ['archived_at' => $archivedAt?->toIso8601String()]]);
+    }
+
+    public function unarchive(Request $request, Workflow $workflow): JsonResponse
+    {
+        $this->authorize('archive', $workflow);
+
+        $this->actions->unarchive($request->user(), $workflow);
+
+        $workflow->refresh();
+
+        return response()->json(['data' => ['archived_at' => $workflow->archived_at]]);
     }
 }

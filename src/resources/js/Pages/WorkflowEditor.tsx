@@ -398,11 +398,12 @@ function Editor({
     currentUserRole,
 }: WorkflowEditorProps) {
     const latestVersion = workflow.latest_version;
+    const isArchived = workflow.archived_at != null;
     const canEditInProject = currentUserRole === 'process_owner' || currentUserRole === 'editor';
     const canPublishWorkflows = currentUserRole === 'process_owner';
     const [previewVersion, setPreviewVersion] = useState<WorkflowVersionSummary | null>(null);
     const canEditWorkflows =
-        canEditInProject && latestVersion?.is_published !== true && previewVersion === null;
+        canEditInProject && latestVersion?.is_published !== true && previewVersion === null && !isArchived;
     const initialNodes = useMemo(
         () => buildInitialNodes(latestVersion?.graph_json?.nodes, latestVersion?.screens ?? []),
         [latestVersion?.graph_json?.nodes, latestVersion?.screens]
@@ -1272,6 +1273,13 @@ function Editor({
                             )}
                         </div>
                     )}
+                    {isArchived && (
+                        <div className="pointer-events-auto absolute inset-x-0 top-0 z-10 flex items-center justify-center gap-4 border-b border-slate-200 bg-slate-100 px-5 py-2.5">
+                            <p className="text-sm font-medium text-slate-700">
+                                This workflow is archived and read-only.
+                            </p>
+                        </div>
+                    )}
                     <FlowCanvas
                         nodes={nodes}
                         edges={edges}
@@ -1314,6 +1322,9 @@ function Editor({
                     <StatusBadge tone={workflowTone(workflow.status)}>
                         {workflow.status}
                     </StatusBadge>
+                    {isArchived && (
+                        <StatusBadge tone="neutral">Archived</StatusBadge>
+                    )}
                     <StatusBadge tone={graphTone(graphState)}>{graphLabel(graphState)}</StatusBadge>
                 </div>
 
@@ -1335,7 +1346,7 @@ function Editor({
                             ↻ Reload Draft
                         </button>
                     )}
-                    {latestVersion?.is_published && canEditInProject && (
+                    {latestVersion?.is_published && canEditInProject && !isArchived && (
                         <button
                             type="button"
                             onClick={createDraft}
@@ -1347,7 +1358,7 @@ function Editor({
                     <button
                         type="button"
                         onClick={publishCurrent}
-                        disabled={!canPublishWorkflows || latestVersion?.is_published === true}
+                        disabled={!canPublishWorkflows || latestVersion?.is_published === true || isArchived}
                         className="btn-secondary workflow-action-button"
                     >
                         Publish
@@ -2220,7 +2231,8 @@ function Editor({
                                             )}
                                             {!version.is_published &&
                                                 canPublishWorkflows &&
-                                                versions.length > 1 && (
+                                                versions.length > 1 &&
+                                                !isArchived && (
                                                     <button
                                                         type="button"
                                                         disabled={isRunningAction}
@@ -2252,7 +2264,7 @@ function Editor({
                             ? `Create a new draft from revision ${selectedRollbackVersion.version_number}.`
                             : 'Select a revision from the timeline to prepare rollback.'}
                     </p>
-                    {rollbackVersionId && canPublishWorkflows && (
+                    {rollbackVersionId && canPublishWorkflows && !isArchived && (
                         <button
                             type="button"
                             onClick={rollback}

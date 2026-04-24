@@ -37,4 +37,11 @@ final class WorkflowPolicy
 
         return $this->access->canPublish($user, $workflow->project);
     }
+
+    public function archive(User $user, Workflow $workflow): bool
+    {
+        $workflow->loadMissing('project');
+
+        return $this->access->canPublish($user, $workflow->project);
+    }
 }

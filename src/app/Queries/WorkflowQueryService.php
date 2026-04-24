@@ -13,13 +13,18 @@ final class WorkflowQueryService
     /**
      * @return Collection<int, Workflow>
      */
-    public function listForProject(Project $project): Collection
+    public function listForProject(Project $project, bool $includeArchived = false): Collection
     {
-        return $project
+        $query = $project
             ->workflows()
             ->with(['latestVersion', 'publishedVersion'])
-            ->orderBy('id')
-            ->get();
+            ->orderBy('id');
+
+        if (! $includeArchived) {
+            $query->notArchived();
+        }
+
+        return $query->get();
     }
 
     public function detailForApi(Workflow $workflow): Workflow
@@ -51,6 +56,7 @@ final class WorkflowQueryService
 
         return $workflow->project
             ->workflows()
+            ->notArchived()
             ->select(['id', 'name', 'status'])
             ->orderBy('name')
             ->get();

@@ -21,6 +21,7 @@ export interface WorkflowSummary {
     } | null;
     published_version_id?: number | null;
     updated_at?: string | null;
+    archived_at?: string | null;
 }
 
 export type ProjectRole = 'process_owner' | 'editor' | 'viewer';
@@ -90,6 +91,7 @@ export interface WorkflowData {
     id: number;
     name: string;
     status: 'draft' | 'published';
+    archived_at?: string | null;
     project: {
         id: number;
         name: string;

@@ -17,7 +17,33 @@ class Workflow extends Model
         'status',
         'latest_version_id',
         'published_version_id',
+        'archived_at',
     ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'archived_at' => 'datetime',
+        ];
+    }
+
+    public function scopeArchived($query): void
+    {
+        $query->whereNotNull('archived_at');
+    }
+
+    public function scopeNotArchived($query): void
+    {
+        $query->whereNull('archived_at');
+    }
+
+    public function isArchived(): bool
+    {
+        return $this->archived_at !== null;
+    }
 
     /**
      * @return BelongsTo<Project, $this>

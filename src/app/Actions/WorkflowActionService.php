@@ -43,4 +43,22 @@ final class WorkflowActionService
             return $workflow;
         });
     }
+
+    public function archive(User $actor, Workflow $workflow): void
+    {
+        DB::transaction(function () use ($actor, $workflow): void {
+            $workflow->update(['archived_at' => now()]);
+
+            AuditLogger::log($actor, $workflow, 'archived', 'Workflow archived');
+        });
+    }
+
+    public function unarchive(User $actor, Workflow $workflow): void
+    {
+        DB::transaction(function () use ($actor, $workflow): void {
+            $workflow->update(['archived_at' => null]);
+
+            AuditLogger::log($actor, $workflow, 'unarchived', 'Workflow unarchived');
+        });
+    }
 }

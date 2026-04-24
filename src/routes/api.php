@@ -26,6 +26,8 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function (): void {
 
     Route::get('/workflows/{workflow}', [WorkflowController::class, 'show']);
     Route::patch('/workflows/{workflow}', [WorkflowController::class, 'update']);
+    Route::post('/workflows/{workflow}/archive', [WorkflowController::class, 'archive']);
+    Route::post('/workflows/{workflow}/unarchive', [WorkflowController::class, 'unarchive']);
     Route::post('/workflows/{workflow}/versions', [WorkflowVersionController::class, 'createDraft']);
     Route::post('/workflows/{workflow}/rollback', [WorkflowVersionController::class, 'rollback']);
 

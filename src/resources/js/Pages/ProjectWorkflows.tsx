@@ -3,7 +3,7 @@ import StatusBadge from '@/Components/StatusBadge';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { ProjectRole, WorkflowSummary } from '@/types/processAtlas';
 import { Head, Link, router } from '@inertiajs/react';
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 
 type ProjectWorkflowsProps = {
     project: {
@@ -72,18 +72,55 @@ function canEditInProject(role: ProjectRole | null): boolean {
     return role === 'process_owner' || role === 'editor';
 }
 
+function canArchiveInProject(role: ProjectRole | null): boolean {
+    return role === 'process_owner';
+}
+
 export default function ProjectWorkflows({ project, workflows }: ProjectWorkflowsProps) {
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
     const [query, setQuery] = useState('');
+    const [showArchived, setShowArchived] = useState(false);
+    const [archivedWorkflows, setArchivedWorkflows] = useState<WorkflowSummary[]>([]);
+    const [loadingArchived, setLoadingArchived] = useState(false);
+
     const [workflowModalOpen, setWorkflowModalOpen] = useState(false);
     const [workflowName, setWorkflowName] = useState('');
     const [pendingWorkflow, setPendingWorkflow] = useState(false);
     const [workflowError, setWorkflowError] = useState<string | null>(null);
 
-    const filteredWorkflows = useMemo(() => {
+    const [confirmArchiveId, setConfirmArchiveId] = useState<number | null>(null);
+    const [pendingArchive, setPendingArchive] = useState(false);
+    const [archiveError, setArchiveError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!showArchived) {
+            setArchivedWorkflows([]);
+            return;
+        }
+
+        setLoadingArchived(true);
+        window.axios
+            .get(`/api/v1/projects/${project.id}/workflows?include_archived=1`)
+            .then(response => {
+                const all: WorkflowSummary[] = response.data?.data ?? [];
+                const archived = all.filter((w: WorkflowSummary) => w.archived_at);
+                setArchivedWorkflows(archived);
+            })
+            .catch(() => {
+                setArchivedWorkflows([]);
+            })
+            .finally(() => {
+                setLoadingArchived(false);
+            });
+    }, [showArchived, project.id]);
+
+    const activeWorkflows = useMemo(() => workflows, [workflows]);
+
+    const displayedWorkflows = useMemo(() => {
+        const source = showArchived ? [...activeWorkflows, ...archivedWorkflows] : activeWorkflows;
         const normalizedQuery = query.trim().toLowerCase();
 
-        return workflows.filter(workflow => {
+        return source.filter(workflow => {
             const matchesQuery =
                 normalizedQuery.length === 0 ||
                 workflow.name.toLowerCase().includes(normalizedQuery);
@@ -98,7 +135,7 @@ export default function ProjectWorkflows({ project, workflows }: ProjectWorkflow
 
             return workflow.status === statusFilter;
         });
-    }, [workflows, query, statusFilter]);
+    }, [activeWorkflows, archivedWorkflows, query, statusFilter, showArchived]);
 
     const closeWorkflowModal = () => {
         setWorkflowModalOpen(false);
@@ -132,6 +169,36 @@ export default function ProjectWorkflows({ project, workflows }: ProjectWorkflow
             setWorkflowError(resolveApiError(error, 'The workflow could not be created.'));
         } finally {
             setPendingWorkflow(false);
+        }
+    };
+
+    const archiveWorkflow = async (workflowId: number) => {
+        setPendingArchive(true);
+        setArchiveError(null);
+
+        try {
+            await window.axios.post(`/api/v1/workflows/${workflowId}/archive`);
+            setConfirmArchiveId(null);
+            router.reload({ only: ['workflows', 'project'] });
+        } catch (error) {
+            setArchiveError(resolveApiError(error, 'The workflow could not be archived.'));
+        } finally {
+            setPendingArchive(false);
+        }
+    };
+
+    const unarchiveWorkflow = async (workflowId: number) => {
+        setPendingArchive(true);
+        setArchiveError(null);
+
+        try {
+            await window.axios.post(`/api/v1/workflows/${workflowId}/unarchive`);
+            setArchivedWorkflows(prev => prev.filter(w => w.id !== workflowId));
+            router.reload({ only: ['workflows', 'project'] });
+        } catch (error) {
+            setArchiveError(resolveApiError(error, 'The workflow could not be unarchived.'));
+        } finally {
+            setPendingArchive(false);
         }
     };
 
@@ -201,13 +268,22 @@ export default function ProjectWorkflows({ project, workflows }: ProjectWorkflow
                                     <option value="draft">Draft</option>
                                 </select>
                             </div>
+                            <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+                                <input
+                                    type="checkbox"
+                                    checked={showArchived}
+                                    onChange={event => setShowArchived(event.target.checked)}
+                                    className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                />
+                                Show archived
+                            </label>
                         </div>
                     </div>
 
                     <div className="px-6 pb-6 overflow-x-auto">
-                        {filteredWorkflows.length === 0 ? (
+                        {displayedWorkflows.length === 0 ? (
                             <div className="empty-state py-12">
-                                {workflows.length === 0
+                                {workflows.length === 0 && !showArchived
                                     ? 'This project does not have any workflows yet.'
                                     : 'No workflows match the current filters.'}
                             </div>
@@ -223,49 +299,87 @@ export default function ProjectWorkflows({ project, workflows }: ProjectWorkflow
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
-                                    {filteredWorkflows.map(workflow => (
-                                        <tr key={workflow.id} className="group transition-colors hover:bg-slate-50/80">
-                                            <td className="px-4 py-4">
-                                                <p className="font-semibold text-slate-950">
-                                                    {workflow.name}
-                                                </p>
-                                            </td>
-                                            <td className="px-4 py-4">
-                                                <div className="flex flex-wrap items-center gap-1.5">
-                                                    <StatusBadge tone="brand">
-                                                        {workflow.latest_version
-                                                            ? `rev. ${workflow.latest_version.version_number}`
-                                                            : 'No revision'}
+                                    {displayedWorkflows.map(workflow => {
+                                        const isArchived = !!workflow.archived_at;
+                                        return (
+                                            <tr
+                                                key={workflow.id}
+                                                className={`group transition-colors hover:bg-slate-50/80 ${isArchived ? 'bg-slate-50/40' : ''}`}
+                                            >
+                                                <td className="px-4 py-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <p className={`font-semibold ${isArchived ? 'text-slate-500' : 'text-slate-950'}`}>
+                                                            {workflow.name}
+                                                        </p>
+                                                        {isArchived && (
+                                                            <StatusBadge tone="neutral">Archived</StatusBadge>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-4">
+                                                    <div className="flex flex-wrap items-center gap-1.5">
+                                                        <StatusBadge tone={isArchived ? 'neutral' : 'brand'}>
+                                                            {workflow.latest_version
+                                                                ? `rev. ${workflow.latest_version.version_number}`
+                                                                : 'No revision'}
+                                                        </StatusBadge>
+                                                        {workflow.published_version_id && !isArchived && (
+                                                            <StatusBadge tone="success">Live</StatusBadge>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-4">
+                                                    <StatusBadge tone={isArchived ? 'neutral' : workflowTone(workflow.status)}>
+                                                        {workflow.status}
                                                     </StatusBadge>
-                                                    {workflow.published_version_id && (
-                                                        <StatusBadge tone="success">Live</StatusBadge>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-4">
-                                                <StatusBadge tone={workflowTone(workflow.status)}>
-                                                    {workflow.status}
-                                                </StatusBadge>
-                                            </td>
-                                            <td className="px-4 py-4">
-                                                <p className="text-sm text-slate-500">
-                                                    {formatTimestamp(workflow.updated_at)}
-                                                </p>
-                                            </td>
-                                            <td className="px-4 py-4 text-right">
-                                                <Link
-                                                    href={route('workflows.editor', {
-                                                        workflow: workflow.id,
-                                                    })}
-                                                    className="btn-secondary px-3 py-1.5 text-xs"
-                                                >
-                                                    Open Editor
-                                                </Link>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                                </td>
+                                                <td className="px-4 py-4">
+                                                    <p className="text-sm text-slate-500">
+                                                        {formatTimestamp(workflow.updated_at)}
+                                                    </p>
+                                                </td>
+                                                <td className="px-4 py-4 text-right">
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <Link
+                                                            href={route('workflows.editor', {
+                                                                workflow: workflow.id,
+                                                            })}
+                                                            className="btn-secondary px-3 py-1.5 text-xs"
+                                                        >
+                                                            Open Editor
+                                                        </Link>
+                                                        {canArchiveInProject(project.current_user_role) && (
+                                                            <>
+                                                                {isArchived ? (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => unarchiveWorkflow(workflow.id)}
+                                                                        disabled={pendingArchive}
+                                                                        className="btn-secondary px-3 py-1.5 text-xs"
+                                                                    >
+                                                                        Unarchive
+                                                                    </button>
+                                                                ) : (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setConfirmArchiveId(workflow.id)}
+                                                                        className="btn-secondary px-3 py-1.5 text-xs text-rose-700 hover:border-rose-300 hover:bg-rose-50"
+                                                                    >
+                                                                        Archive
+                                                                    </button>
+                                                                )}
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
+                        )}
+                        {loadingArchived && (
+                            <p className="py-4 text-center text-sm text-slate-500">Loading archived workflows…</p>
                         )}
                     </div>
                 </section>
@@ -313,10 +427,52 @@ export default function ProjectWorkflows({ project, workflows }: ProjectWorkflow
                             disabled={pendingWorkflow}
                             className="btn-primary px-4 py-3 text-sm"
                         >
-                            Create Workflow
+                            Create
                         </button>
                     </div>
                 </form>
+            </Modal>
+
+            {/* Confirm Archive Modal */}
+            <Modal show={confirmArchiveId !== null} onClose={() => setConfirmArchiveId(null)} maxWidth="md">
+                <div className="space-y-5 p-6 sm:p-7">
+                    <div>
+                        <p className="eyebrow">Archive Workflow</p>
+                        <h2 className="panel-title mt-2">Are you sure?</h2>
+                        <p className="mt-3 text-sm text-slate-600">
+                            Archiving will hide this workflow from the default list. It will remain
+                            accessible in read-only mode.
+                        </p>
+                    </div>
+
+                    {archiveError && (
+                        <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                            {archiveError}
+                        </p>
+                    )}
+
+                    <div className="flex justify-end gap-3">
+                        <button
+                            type="button"
+                            onClick={() => setConfirmArchiveId(null)}
+                            className="btn-ghost px-4 py-3 text-sm"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            disabled={pendingArchive}
+                            onClick={() => {
+                                if (confirmArchiveId) {
+                                    archiveWorkflow(confirmArchiveId);
+                                }
+                            }}
+                            className="btn-primary bg-rose-600 px-4 py-3 text-sm hover:bg-rose-700"
+                        >
+                            Archive
+                        </button>
+                    </div>
+                </div>
             </Modal>
         </AuthenticatedLayout>
     );
