@@ -392,7 +392,7 @@ function inspectorTabsForNodeKind(nodeKind: WorkflowNodeKind): [InspectorTab, st
     return [];
 }
 
-export default function WorkflowEditor({
+function Editor({
     workflow,
     projectWorkflows,
     currentUserRole,
@@ -445,6 +445,7 @@ export default function WorkflowEditor({
     const [newCustomFieldType, setNewCustomFieldType] =
         useState<ScreenCustomField['field_type']>('text');
     const graphInitialized = useRef(false);
+    const contextMenuFlowPosition = useRef({ x: 0, y: 0 });
 
     const {
         copiedNodes,
@@ -659,17 +660,21 @@ export default function WorkflowEditor({
         setActionNotice(null);
     };
 
+    const { screenToFlowPosition } = useReactFlow();
+
     const handlePaneContextMenu = useCallback(
         (event: MouseEvent) => {
             event.preventDefault();
+            const flowPosition = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+            contextMenuFlowPosition.current = flowPosition;
             openContextMenu(event.clientX, event.clientY);
         },
-        [openContextMenu]
+        [openContextMenu, screenToFlowPosition]
     );
 
     const handleAddElementFromContextMenu = useCallback(
         (kind: WorkflowNodeKind) => {
-            const position = { x: contextMenuPosition.x, y: contextMenuPosition.y };
+            const position = { x: contextMenuFlowPosition.current.x, y: contextMenuFlowPosition.current.y };
             if (kind === 'screen') {
                 const nextId = `screen-${Date.now()}`;
                 setNodes(currentNodes => [
@@ -733,24 +738,8 @@ export default function WorkflowEditor({
             }
             closeContextMenu();
         },
-        [contextMenuPosition, setNodes, setNodeSelected, closeContextMenu]
+        [setNodes, setNodeSelected, closeContextMenu]
     );
-
-    const handleCopyFromContextMenu = useCallback(() => {
-        copyNodes(selectedNodes);
-        closeContextMenu();
-    }, [selectedNodes, copyNodes, closeContextMenu]);
-
-    const handlePasteFromContextMenu = useCallback(() => {
-        pasteNodes();
-    }, [pasteNodes]);
-
-    const handleDeleteFromContextMenu = useCallback(() => {
-        const idsToDelete = selectedNodes.map(n => n.id);
-        deleteNodes(idsToDelete);
-        setSelectedNodeId(null);
-        setSelectedEdgeId(null);
-    }, [selectedNodes, deleteNodes]);
 
     const updateSelectedNodeData = (patch: Partial<WorkflowNodeData>) => {
         if (!canEditWorkflows || !selectedNode) {
@@ -1263,27 +1252,26 @@ export default function WorkflowEditor({
     const selectedRollbackVersion = versions.find(version => version.id === rollbackVersionId);
 
     return (
-        <div className="workflow-fullscreen">
-            <Head title={`${workflow.name} Editor`} />
+            <div className="workflow-fullscreen">
+                <Head title={`${workflow.name} Editor`} />
 
-            <div className="workflow-canvas-layer">
-                {previewVersion && (
-                    <div className="pointer-events-auto absolute inset-x-0 top-0 z-10 flex items-center justify-between gap-4 border-b border-amber-200 bg-amber-50 px-5 py-2.5">
-                        <p className="text-sm font-medium text-amber-900">
-                            Viewing rev. {previewVersion.version_number} (read-only)
-                        </p>
-                        {latestVersion && (
-                            <button
-                                type="button"
-                                onClick={() => handleVersionTimelineClick(latestVersion)}
-                                className="text-sm font-semibold text-amber-700 hover:text-amber-900"
-                            >
-                                Return to latest
-                            </button>
-                        )}
-                    </div>
-                )}
-                <ReactFlowProvider>
+                <div className="workflow-canvas-layer">
+                    {previewVersion && (
+                        <div className="pointer-events-auto absolute inset-x-0 top-0 z-10 flex items-center justify-between gap-4 border-b border-amber-200 bg-amber-50 px-5 py-2.5">
+                            <p className="text-sm font-medium text-amber-900">
+                                Viewing rev. {previewVersion.version_number} (read-only)
+                            </p>
+                            {latestVersion && (
+                                <button
+                                    type="button"
+                                    onClick={() => handleVersionTimelineClick(latestVersion)}
+                                    className="text-sm font-semibold text-amber-700 hover:text-amber-900"
+                                >
+                                    Return to latest
+                                </button>
+                            )}
+                        </div>
+                    )}
                     <FlowCanvas
                         nodes={nodes}
                         edges={edges}
@@ -1310,10 +1298,9 @@ export default function WorkflowEditor({
                         onDropNode={handleDropNode}
                         editable={canEditWorkflows}
                     />
-                </ReactFlowProvider>
-            </div>
+                </div>
 
-            <header className="workflow-topbar">
+                <header className="workflow-topbar">
                 <div className="flex min-w-0 items-center gap-3">
                     <Link
                         href={route('projects.show', workflow.project.id)}
@@ -1374,52 +1361,6 @@ export default function WorkflowEditor({
                     </button>
                 </div>
             </header>
-
-            <aside className="workflow-node-toolbar" aria-label="Add workflow node">
-                <p className="eyebrow">Add</p>
-                {(
-                    [
-                        ['screen', 'Screen'],
-                        ['flash', 'Flash'],
-                        ['condition', 'Condition'],
-                        ['action', 'Action'],
-                    ] as [WorkflowNodeKind, string][]
-                ).map(([kind, label]) => (
-                    <div
-                        key={kind}
-                        draggable={canEditWorkflows}
-                        onDragStart={(e: DragEvent<HTMLDivElement>) => {
-                            e.dataTransfer.setData('application/reactflow', kind);
-                            e.dataTransfer.effectAllowed = 'move';
-                        }}
-                        aria-disabled={!canEditWorkflows}
-                        className="workflow-node-toolbar-button"
-                    >
-                        {label}
-                    </div>
-                ))}
-                <hr className="workflow-node-toolbar-divider" />
-                <p className="eyebrow">Terminals</p>
-                {(
-                    [
-                        ['start', 'Start'],
-                        ['end', 'End'],
-                    ] as [WorkflowNodeKind, string][]
-                ).map(([kind, label]) => (
-                    <div
-                        key={kind}
-                        draggable={canEditWorkflows}
-                        onDragStart={(e: DragEvent<HTMLDivElement>) => {
-                            e.dataTransfer.setData('application/reactflow', kind);
-                            e.dataTransfer.effectAllowed = 'move';
-                        }}
-                        aria-disabled={!canEditWorkflows}
-                        className="workflow-node-toolbar-button"
-                    >
-                        {label}
-                    </div>
-                ))}
-            </aside>
 
             {(selectedEdge || selectedNode) && (
                 <aside className="workflow-inspector-panel">
@@ -2377,10 +2318,6 @@ export default function WorkflowEditor({
                 <ContextMenu
                     position={contextMenuPosition}
                     onAddElement={handleAddElementFromContextMenu}
-                    onCopy={handleCopyFromContextMenu}
-                    onPaste={handlePasteFromContextMenu}
-                    onDelete={handleDeleteFromContextMenu}
-                    hasSelection={selectedNodes.length > 0}
                     onClose={closeContextMenu}
                 />
             )}
@@ -2465,6 +2402,7 @@ function FlowCanvas({
             nodesConnectable={editable}
             elementsSelectable={editable}
             fitView
+            fitViewOptions={{ duration: 300 }}
         >
             <Background gap={28} size={1} color="#7aa7f7" />
             <MiniMap
@@ -2476,5 +2414,13 @@ function FlowCanvas({
             />
             <Controls position="bottom-left" style={{ left: 180 }} />
         </ReactFlow>
+    );
+}
+
+export default function WorkflowEditor(props: WorkflowEditorProps) {
+    return (
+        <ReactFlowProvider>
+            <Editor {...props} />
+        </ReactFlowProvider>
     );
 }
