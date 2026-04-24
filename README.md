@@ -2,7 +2,7 @@
 
 > A process modeling and documentation platform built for agentic development — design, revise, and publish visual workflows that AI agents can understand and navigate via MCP.
 
-[![PHP](https://img.shields.io/badge/PHP-8.3+-blue.svg)](https://php.net)
+[![PHP](https://img.shields.io/badge/PHP-8.5-blue.svg)](https://php.net)
 [![Laravel](https://img.shields.io/badge/Laravel-13-red.svg)](https://laravel.com)
 [![React](https://img.shields.io/badge/React-18-61dafb.svg)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)](https://www.typescriptlang.org)
@@ -16,9 +16,9 @@ Process Atlas is a web application for **modeling, documenting, and tracking rev
 
 Instead of an AI agent blindly navigating an unfamiliar system, it can query Process Atlas via MCP to answer questions like:
 
-- *"What screens does the checkout flow consist of?"*
-- *"What conditions branch this process and what are the outcomes?"*
-- *"Where does this workflow hand off to another process?"*
+- _"What screens does the checkout flow consist of?"_
+- _"What conditions branch this process and what are the outcomes?"_
+- _"Where does this workflow hand off to another process?"_
 
 Process Atlas is the living map that agents read.
 
@@ -56,15 +56,15 @@ Process Atlas is the living map that agents read.
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Backend | PHP 8.5, Laravel 13, Inertia.js |
-| Frontend | React, TypeScript, Vite, Tailwind CSS |
-| Canvas | @xyflow/react |
-| MCP | Model Context Protocol server (process resources & tools) |
-| Database | PostgreSQL |
-| Cache / Sessions / Queue | Redis |
-| Infrastructure | Docker (php-fpm + nginx + node), SSL via mkcert |
+| Layer                    | Technology                                                |
+| ------------------------ | --------------------------------------------------------- |
+| Backend                  | PHP 8.5, Laravel 13, Inertia.js                           |
+| Frontend                 | React, TypeScript, Vite, Tailwind CSS                     |
+| Canvas                   | @xyflow/react                                             |
+| MCP                      | Model Context Protocol server (process resources & tools) |
+| Database                 | PostgreSQL                                                |
+| Cache / Sessions / Queue | Redis                                                     |
+| Infrastructure           | Docker (php-fpm + nginx + node), SSL via mkcert           |
 
 ---
 
@@ -125,15 +125,15 @@ https://localhost
 
 ## Development Commands
 
-| Command | Description |
-|---|---|
-| `make up` | Start containers in detached mode |
-| `make down` | Stop and remove containers |
-| `make logs` | Stream logs from all containers |
-| `make rebuild` | Rebuild images without cache |
-| `make reload` | Rebuild images with cache |
-| `make php` | Open a shell in the PHP container |
-| `make node` | Open a shell in the Node container |
+| Command          | Description                                |
+| ---------------- | ------------------------------------------ |
+| `make up`        | Start containers in detached mode          |
+| `make down`      | Stop and remove containers                 |
+| `make logs`      | Stream logs from all containers            |
+| `make rebuild`   | Rebuild images without cache               |
+| `make reload`    | Rebuild images with cache                  |
+| `make php`       | Open a shell in the PHP container          |
+| `make node`      | Open a shell in the Node container         |
 | `make node-sync` | Copy `node_modules` from container to host |
 
 All `php artisan` and `npm` commands must be run inside their respective containers:
