@@ -18,6 +18,7 @@ use App\DTO\Mcp\ToolArguments\RollbackRevisionArguments;
 use App\DTO\Mcp\ToolArguments\UpdateGraphArguments;
 use App\DTO\Mcp\ToolArguments\UpdateScreenArguments;
 use App\Models\User;
+use App\Models\Workflow;
 use App\Queries\McpQueryService;
 use App\Services\Audit\AuditLogger;
 use App\Support\PermissionList;
@@ -71,9 +72,15 @@ final class ToolsCallMethodHandler implements McpMethodHandler
     {
         $workflow = $this->queries->workflowDetails($arguments->workflowId);
 
-        Gate::forUser($actor)->authorize('view', $workflow);
+        if ($workflow instanceof Workflow) {
+            Gate::forUser($actor)->authorize('view', $workflow);
 
-        return ['workflow' => $workflow->toArray()];
+            return ['workflow' => $workflow->toArray()];
+        }
+
+        Gate::forUser($actor)->authorize('view', Workflow::query()->findOrFail($arguments->workflowId));
+
+        return ['workflow' => $workflow];
     }
 
     /**

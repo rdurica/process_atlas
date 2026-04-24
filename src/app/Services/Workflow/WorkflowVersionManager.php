@@ -7,10 +7,13 @@ use App\Models\ScreenCustomField;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowVersion;
+use App\Services\Cache\PublishedWorkflowCacheService;
 use Illuminate\Support\Facades\DB;
 
 final class WorkflowVersionManager
 {
+    public function __construct(private readonly PublishedWorkflowCacheService $cache) {}
+
     public function createInitialVersion(Workflow $workflow, User $actor): WorkflowVersion
     {
         return DB::transaction(function () use ($workflow, $actor): WorkflowVersion {
@@ -69,7 +72,7 @@ final class WorkflowVersionManager
 
     public function publishVersion(WorkflowVersion $version): void
     {
-        DB::transaction(function () use ($version): void {
+        $workflow = DB::transaction(function () use ($version): Workflow {
             $workflow = $version->workflow()->lockForUpdate()->firstOrFail();
             $version = $workflow->versions()->whereKey($version->id)->firstOrFail();
 
@@ -81,14 +84,18 @@ final class WorkflowVersionManager
                 'latest_version_id' => $version->id,
                 'status' => 'published',
             ]);
+
+            return $workflow;
         });
+
+        $this->cache->forget($workflow->id);
     }
 
     public function rollbackToVersion(Workflow $workflow, WorkflowVersion $target, User $actor): WorkflowVersion
     {
         abort_unless($target->workflow_id === $workflow->id, 422, 'Target revision does not belong to this workflow.');
 
-        return DB::transaction(function () use ($workflow, $target, $actor): WorkflowVersion {
+        $newVersion = DB::transaction(function () use ($workflow, $target, $actor): WorkflowVersion {
             $workflow = $this->lockWorkflow($workflow);
             $target = $workflow
                 ->versions()
@@ -116,11 +123,15 @@ final class WorkflowVersionManager
 
             return $newVersion;
         });
+
+        $this->cache->forget($workflow->id);
+
+        return $newVersion;
     }
 
     public function deleteVersion(Workflow $workflow, WorkflowVersion $version): void
     {
-        DB::transaction(function () use ($workflow, $version): void {
+        $workflow = DB::transaction(function () use ($workflow, $version): Workflow {
             $workflow = $this->lockWorkflow($workflow);
             $version = $workflow->versions()->whereKey($version->id)->firstOrFail();
 
@@ -138,7 +149,11 @@ final class WorkflowVersionManager
                     'status' => $newLatest->is_published ? 'published' : 'draft',
                 ]);
             }
+
+            return $workflow;
         });
+
+        $this->cache->forget($workflow->id);
     }
 
     private function cloneScreens(WorkflowVersion $sourceVersion, WorkflowVersion $newVersion): void

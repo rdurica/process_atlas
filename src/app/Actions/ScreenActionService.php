@@ -84,16 +84,14 @@ final class ScreenActionService
         $screen->loadMissing('workflowVersion');
         abort_if($screen->workflowVersion->is_published, 422, 'Cannot modify a published revision.');
 
-        return DB::transaction(function () use ($actor, $screen, $command): Screen {
-            $screen->update([
-                ...$command->toArray(),
-                'updated_by' => $actor->id,
-            ]);
+        $screen->update([
+            ...$command->toArray(),
+            'updated_by' => $actor->id,
+        ]);
 
-            AuditLogger::log($actor, $screen, 'updated', 'Screen updated');
+        AuditLogger::log($actor, $screen, 'updated', 'Screen updated');
 
-            return $screen->fresh(['customFields']);
-        });
+        return $screen->fresh(['customFields']);
     }
 
     public function upsertForMcp(User $actor, WorkflowVersion $workflowVersion, UpsertScreenCommand $command): Screen

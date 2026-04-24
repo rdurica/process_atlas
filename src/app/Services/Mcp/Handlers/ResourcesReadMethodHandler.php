@@ -7,6 +7,7 @@ use App\DTO\Mcp\McpParams;
 use App\DTO\Mcp\McpResourceReadResult;
 use App\DTO\Mcp\McpResourceUri;
 use App\Models\User;
+use App\Models\Workflow;
 use App\Queries\McpQueryService;
 use App\Support\PermissionList;
 use Illuminate\Support\Facades\Gate;
@@ -70,9 +71,15 @@ final class ResourcesReadMethodHandler implements McpMethodHandler
     {
         $workflow = $this->queries->workflowResourceById($workflowId);
 
-        Gate::forUser($actor)->authorize('view', $workflow);
+        if ($workflow instanceof Workflow) {
+            Gate::forUser($actor)->authorize('view', $workflow);
 
-        return ['workflow' => $workflow->toArray()];
+            return ['workflow' => $workflow->toArray()];
+        }
+
+        Gate::forUser($actor)->authorize('view', Workflow::query()->findOrFail($workflowId));
+
+        return ['workflow' => $workflow];
     }
 
     /**

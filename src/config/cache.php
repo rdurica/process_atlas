@@ -103,6 +103,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Cache Time-To-Live
+    |--------------------------------------------------------------------------
+    |
+    | Here you may define the default TTL values for specific cache types
+    | used throughout your application.
+    |
+    */
+
+    'ttl' => [
+        'published_workflow' => (int) env('CACHE_TTL_PUBLISHED_WORKFLOW', 3600),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Cache Key Prefix
     |--------------------------------------------------------------------------
     |

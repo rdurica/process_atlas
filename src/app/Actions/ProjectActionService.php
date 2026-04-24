@@ -30,21 +30,17 @@ final class ProjectActionService
 
     public function update(User $actor, Project $project, UpdateProjectCommand $command): Project
     {
-        return DB::transaction(function () use ($actor, $project, $command): Project {
-            $project->update($command->toArray());
+        $project->update($command->toArray());
 
-            AuditLogger::log($actor, $project, 'updated', 'Project updated');
+        AuditLogger::log($actor, $project, 'updated', 'Project updated');
 
-            return $project;
-        });
+        return $project;
     }
 
     public function delete(User $actor, Project $project): void
     {
-        DB::transaction(function () use ($actor, $project): void {
-            AuditLogger::log($actor, $project, 'deleted', 'Project deleted');
+        AuditLogger::log($actor, $project, 'deleted', 'Project deleted');
 
-            $project->delete();
-        });
+        $project->delete();
     }
 }

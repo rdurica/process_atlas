@@ -7,11 +7,15 @@ use App\Models\Screen;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowVersion;
+use App\Services\Cache\PublishedWorkflowCacheService;
 use Illuminate\Database\Eloquent\Builder;
 
 final class McpQueryService
 {
-    public function __construct(private readonly ProjectQueryService $projects) {}
+    public function __construct(
+        private readonly ProjectQueryService $projects,
+        private readonly PublishedWorkflowCacheService $cache,
+    ) {}
 
     /**
      * @return array<int, array{id: int, name: string, description: ?string}>
@@ -37,11 +41,32 @@ final class McpQueryService
         return $this->projects->accessibleQuery($actor);
     }
 
-    public function workflowDetails(int $workflowId): Workflow
+    public function workflowDetails(int $workflowId): Workflow|array
     {
-        return Workflow::query()
-            ->with(['latestVersion.screens.customFields', 'versions' => fn ($query) => $query->orderByDesc('version_number')])
-            ->findOrFail($workflowId);
+        $workflow = Workflow::query()->findOrFail($workflowId);
+
+        if ($workflow->published_version_id !== null) {
+            $cached = $this->cache->get($workflow->id);
+
+            if ($cached !== null) {
+                return $cached;
+            }
+
+            $workflow->load([
+                'latestVersion.screens.customFields',
+                'publishedVersion.screens.customFields',
+                'versions' => fn ($query) => $query->orderByDesc('version_number'),
+            ]);
+
+            $this->cache->put($workflow->id, $workflow->toArray());
+
+            return $workflow;
+        }
+
+        return $workflow->load([
+            'latestVersion.screens.customFields',
+            'versions' => fn ($query) => $query->orderByDesc('version_number'),
+        ]);
     }
 
     public function screenDetails(int $screenId): Screen
@@ -162,16 +187,35 @@ final class McpQueryService
             ->toArray();
     }
 
-    public function workflowResourceById(int $workflowId): Workflow
+    public function workflowResourceById(int $workflowId): Workflow|array
     {
-        return Workflow::query()
-            ->with([
+        $workflow = Workflow::query()->findOrFail($workflowId);
+
+        if ($workflow->published_version_id !== null) {
+            $cached = $this->cache->get($workflow->id);
+
+            if ($cached !== null) {
+                return $cached;
+            }
+
+            $workflow->load([
                 'project',
                 'latestVersion.screens.customFields',
-                'publishedVersion',
+                'publishedVersion.screens.customFields',
                 'versions' => fn ($query) => $query->with('creator')->orderByDesc('version_number'),
-            ])
-            ->findOrFail($workflowId);
+            ]);
+
+            $this->cache->put($workflow->id, $workflow->toArray());
+
+            return $workflow;
+        }
+
+        return $workflow->load([
+            'project',
+            'latestVersion.screens.customFields',
+            'publishedVersion',
+            'versions' => fn ($query) => $query->with('creator')->orderByDesc('version_number'),
+        ]);
     }
 
     /**

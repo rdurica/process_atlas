@@ -6,10 +6,13 @@ use App\Models\Project;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowVersion;
+use App\Services\Cache\PublishedWorkflowCacheService;
 use Illuminate\Support\Collection;
 
 final class WorkflowQueryService
 {
+    public function __construct(private readonly PublishedWorkflowCacheService $cache) {}
+
     /**
      * @return Collection<int, Workflow>
      */
@@ -27,8 +30,27 @@ final class WorkflowQueryService
         return $query->get();
     }
 
-    public function detailForApi(Workflow $workflow): Workflow
+    public function detailForApi(Workflow $workflow): Workflow|array
     {
+        if ($workflow->published_version_id !== null) {
+            $cached = $this->cache->get($workflow->id);
+
+            if ($cached !== null) {
+                return $cached;
+            }
+
+            $workflow->load([
+                'project',
+                'latestVersion.screens.customFields',
+                'publishedVersion.screens.customFields',
+                'versions' => fn ($query) => $query->orderByDesc('version_number'),
+            ]);
+
+            $this->cache->put($workflow->id, $workflow->toArray());
+
+            return $workflow;
+        }
+
         return $workflow->load([
             'project',
             'latestVersion.screens.customFields',
