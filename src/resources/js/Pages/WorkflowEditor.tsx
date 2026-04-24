@@ -2288,7 +2288,7 @@ function FlowCanvas({
                 nodeStrokeColor="#0f5ef7"
                 nodeColor="#d6e7ff"
             />
-            <Controls position="bottom-center" />
+            <Controls position="bottom-left" style={{ left: 180 }} />
         </ReactFlow>
     );
 }

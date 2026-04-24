@@ -204,7 +204,7 @@ export default function ProjectWorkflows({ project, workflows }: ProjectWorkflow
                         </div>
                     </div>
 
-                    <div className="p-6">
+                    <div className="px-6 pb-6 overflow-x-auto">
                         {filteredWorkflows.length === 0 ? (
                             <div className="empty-state py-12">
                                 {workflows.length === 0
@@ -212,50 +212,60 @@ export default function ProjectWorkflows({ project, workflows }: ProjectWorkflow
                                     : 'No workflows match the current filters.'}
                             </div>
                         ) : (
-                            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                                {filteredWorkflows.map(workflow => (
-                                    <div
-                                        key={workflow.id}
-                                        className="group relative rounded-2xl border border-slate-200/60 bg-white p-5 shadow-sm transition-all hover:border-slate-300 hover:shadow-md"
-                                    >
-                                        <div className="flex items-start justify-between">
-                                            <div className="min-w-0 flex-1">
-                                                <h3 className="truncate text-base font-semibold text-slate-950">
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="border-b border-slate-200/70">
+                                        <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Name</th>
+                                        <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Version</th>
+                                        <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Status</th>
+                                        <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Last Updated</th>
+                                        <th className="px-4 py-4 text-right text-xs font-bold uppercase tracking-wider text-slate-500">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {filteredWorkflows.map(workflow => (
+                                        <tr key={workflow.id} className="group transition-colors hover:bg-slate-50/80">
+                                            <td className="px-4 py-4">
+                                                <p className="font-semibold text-slate-950">
                                                     {workflow.name}
-                                                </h3>
-                                                <p className="mt-1 text-sm text-slate-500">
+                                                </p>
+                                            </td>
+                                            <td className="px-4 py-4">
+                                                <div className="flex flex-wrap items-center gap-1.5">
+                                                    <StatusBadge tone="brand">
+                                                        {workflow.latest_version
+                                                            ? `rev. ${workflow.latest_version.version_number}`
+                                                            : 'No revision'}
+                                                    </StatusBadge>
+                                                    {workflow.published_version_id && (
+                                                        <StatusBadge tone="success">Live</StatusBadge>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-4">
+                                                <StatusBadge tone={workflowTone(workflow.status)}>
+                                                    {workflow.status}
+                                                </StatusBadge>
+                                            </td>
+                                            <td className="px-4 py-4">
+                                                <p className="text-sm text-slate-500">
                                                     {formatTimestamp(workflow.updated_at)}
                                                 </p>
-                                            </div>
-                                            <StatusBadge tone={workflowTone(workflow.status)}>
-                                                {workflow.status}
-                                            </StatusBadge>
-                                        </div>
-
-                                        <div className="mt-4 flex items-center gap-2">
-                                            <StatusBadge tone="brand">
-                                                {workflow.latest_version
-                                                    ? `rev. ${workflow.latest_version.version_number}`
-                                                    : 'No revision'}
-                                            </StatusBadge>
-                                            {workflow.published_version_id && (
-                                                <StatusBadge tone="success">Live</StatusBadge>
-                                            )}
-                                        </div>
-
-                                        <div className="mt-4 flex items-center gap-2">
-                                            <Link
-                                                href={route('workflows.editor', {
-                                                    workflow: workflow.id,
-                                                })}
-                                                className="btn-secondary w-full justify-center px-3 py-2 text-sm"
-                                            >
-                                                Open Editor
-                                            </Link>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                                            </td>
+                                            <td className="px-4 py-4 text-right">
+                                                <Link
+                                                    href={route('workflows.editor', {
+                                                        workflow: workflow.id,
+                                                    })}
+                                                    className="btn-secondary px-3 py-1.5 text-xs"
+                                                >
+                                                    Open Editor
+                                                </Link>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         )}
                     </div>
                 </section>

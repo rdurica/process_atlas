@@ -97,26 +97,24 @@ export default function AuthenticatedLayout({
             )}
 
             <div className="mt-auto px-5 pb-5 pt-3">
-                <div className="rounded-3xl border border-white/70 bg-white/80 p-4 shadow-[0_18px_40px_rgba(15,23,42,0.08)] backdrop-blur">
-                    <p className="eyebrow text-slate-400">Signed In</p>
-                    <p className="mt-2 text-sm font-semibold text-slate-950">{user?.name}</p>
-                    <p className="mt-1 text-sm text-slate-500">{user?.email}</p>
-                    <div className="mt-4 flex gap-2">
-                        <Link
-                            href={route('profile.edit')}
-                            className="btn-secondary px-3 py-2 text-xs"
-                        >
-                            Profile
-                        </Link>
-                        <Link
-                            href={route('logout')}
-                            method="post"
-                            as="button"
-                            className="btn-ghost px-3 py-2 text-xs"
-                        >
-                            Log Out
-                        </Link>
-                    </div>
+                <p className="eyebrow text-slate-400">Signed In</p>
+                <p className="mt-2 text-sm font-semibold text-slate-950">{user?.name}</p>
+                <p className="mt-1 text-sm text-slate-500 truncate">{user?.email}</p>
+                <div className="mt-4 flex gap-2">
+                    <Link
+                        href={route('profile.edit')}
+                        className="btn-secondary px-3 py-2 text-xs"
+                    >
+                        Profile
+                    </Link>
+                    <Link
+                        href={route('logout')}
+                        method="post"
+                        as="button"
+                        className="btn-ghost px-3 py-2 text-xs"
+                    >
+                        Log Out
+                    </Link>
                 </div>
             </div>
         </div>

@@ -232,53 +232,74 @@ export default function Dashboard({ summary, projects }: DashboardProps) {
                         </div>
                     </div>
 
-                    <div className="p-6">
+                    <div className="px-6 pb-6 overflow-x-auto">
                         {filteredProjects.length === 0 ? (
                             <div className="empty-state py-12">
                                 No projects match the current filters.
                             </div>
                         ) : (
-                            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                                {filteredProjects.map(project => (
-                                    <Link
-                                        key={project.id}
-                                        href={route('projects.show', { project: project.id })}
-                                        className="group relative rounded-2xl border border-slate-200/60 bg-white p-5 shadow-sm transition-all hover:border-slate-300 hover:shadow-md"
-                                    >
-                                        <div className="flex items-start justify-between">
-                                            <div className="min-w-0 flex-1">
-                                                <h3 className="truncate text-base font-semibold text-slate-950 group-hover:text-blue-600">
-                                                    {project.name}
-                                                </h3>
-                                                <p className="mt-1 line-clamp-2 text-sm text-slate-500">
-                                                    {project.description ||
-                                                        'No project description'}
-                                                </p>
-                                            </div>
-                                            <span className="badge badge-neutral shrink-0">
-                                                {project.workflows_count} workflows
-                                            </span>
-                                        </div>
-
-                                        <div className="mt-4 flex items-center gap-2">
-                                            <StatusBadge tone="brand">
-                                                {project.latest_version_label}
-                                            </StatusBadge>
-                                            <StatusBadge tone="neutral">
-                                                {project.status_summary}
-                                            </StatusBadge>
-                                        </div>
-
-                                        {project.current_user_role && (
-                                            <div className="mt-3">
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="border-b border-slate-200/70">
+                                        <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Name</th>
+                                        <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Status</th>
+                                        <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Role</th>
+                                        <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Workflows</th>
+                                        <th className="px-4 py-4 text-right text-xs font-bold uppercase tracking-wider text-slate-500">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {filteredProjects.map(project => (
+                                        <tr key={project.id} className="group transition-colors hover:bg-slate-50/80">
+                                            <td className="px-4 py-4">
+                                                <Link
+                                                    href={route('projects.show', { project: project.id })}
+                                                    className="block"
+                                                >
+                                                    <p className="font-semibold text-slate-950 group-hover:text-blue-600">
+                                                        {project.name}
+                                                    </p>
+                                                    <p className="mt-0.5 text-sm text-slate-500 line-clamp-1">
+                                                        {project.description || 'No project description'}
+                                                    </p>
+                                                </Link>
+                                            </td>
+                                            <td className="px-4 py-4">
+                                                <div className="flex flex-wrap items-center gap-1.5">
+                                                    <StatusBadge tone="brand">
+                                                        {project.latest_version_label}
+                                                    </StatusBadge>
+                                                    <StatusBadge tone="neutral">
+                                                        {project.status_summary}
+                                                    </StatusBadge>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-4">
+                                                {project.current_user_role ? (
+                                                    <span className="badge badge-neutral">
+                                                        {ROLE_LABELS[project.current_user_role]}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-sm text-slate-400">—</span>
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-4">
                                                 <span className="badge badge-neutral">
-                                                    {ROLE_LABELS[project.current_user_role]}
+                                                    {project.workflows_count} workflows
                                                 </span>
-                                            </div>
-                                        )}
-                                    </Link>
-                                ))}
-                            </div>
+                                            </td>
+                                            <td className="px-4 py-4 text-right">
+                                                <Link
+                                                    href={route('projects.show', { project: project.id })}
+                                                    className="btn-secondary px-3 py-1.5 text-xs"
+                                                >
+                                                    View
+                                                </Link>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         )}
                     </div>
                 </section>
