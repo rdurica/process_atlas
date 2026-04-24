@@ -2,7 +2,7 @@
 
 ## Stack
 
-- **Backend**: Laravel 13, PHP 8.3+, Inertia.js
+- **Backend**: Laravel 13, PHP 8.5+, Inertia.js
 - **Frontend**: React 18, TypeScript, Vite, Tailwind CSS
 - **Canvas**: @xyflow/react
 - **Database**: PostgreSQL (prod), SQLite in-memory (tests)
@@ -13,16 +13,18 @@
 
 All development runs inside Docker containers via `docker compose`.
 
-| Command | Description |
-|---|---|
-| `make init` | First-time setup: certs, network, images, containers |
-| `make up` | Start containers detached |
-| `make down` | Stop containers |
-| `make logs` | Stream logs |
-| `make php` | Shell into PHP container |
-| `make node` | Shell into Node container |
+| Command               | Description                                          |
+| --------------------- | ---------------------------------------------------- |
+| `make init`           | First-time setup: certs, network, images, containers |
+| `make up`             | Start containers detached                            |
+| `make down`           | Stop containers                                      |
+| `make logs`           | Stream logs                                          |
+| `make php`            | Shell into PHP container                             |
+| `make node`           | Shell into Node container                            |
+| `make setup-githooks` | Enable pre-commit hook (Prettier on staged files)    |
 
 **All `php artisan` and `npm` commands must run inside their containers:**
+
 ```shell
 docker compose exec php-fpm php artisan <cmd>
 docker compose exec node npm <cmd>

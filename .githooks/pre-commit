@@ -1,0 +1,12 @@
+#!/bin/sh
+# Pre-commit hook: format staged frontend files via a temporary Node container.
+# .git is not mounted in the running node container, so we attach it here.
+# GIT_DISCOVERY_ACROSS_FILESYSTEM + safe.directory are required because .git is on a different mount.
+
+export GIT_DISCOVERY_ACROSS_FILESYSTEM=1
+
+docker compose run --rm \
+    -v "./.git:/app/.git" \
+    -w /app/src \
+    -e GIT_DISCOVERY_ACROSS_FILESYSTEM=1 \
+    node sh -c "git config --global --add safe.directory /app && npx lint-staged"

@@ -42,3 +42,7 @@ node:
 
 node-sync:
 	sudo docker compose cp node:/app/src/node_modules ./src
+
+setup-githooks:
+	git config core.hooksPath .githooks
+	chmod +x .githooks/pre-commit
