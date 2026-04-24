@@ -46,3 +46,9 @@ node-sync:
 setup-githooks:
 	git config core.hooksPath .githooks
 	chmod +x .githooks/pre-commit
+
+pint: ## Run Laravel Pint code formatter
+	@$(PHP_CONT) composer pint
+
+test: ## Run Pest PHP tests
+	@$(PHP_CONT) composer test

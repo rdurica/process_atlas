@@ -6,11 +6,13 @@ use Illuminate\Support\Facades\Cache;
 
 uses(RefreshDatabase::class);
 
-beforeEach(function (): void {
+beforeEach(function (): void
+{
     $this->seed();
 });
 
-it('caches published workflow data after first api request', function (): void {
+it('caches published workflow data after first api request', function (): void
+{
     $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
     $this->actingAs($owner);
 
@@ -42,7 +44,8 @@ it('caches published workflow data after first api request', function (): void {
     expect($cached['published_version']['screens'])->toBeArray();
 });
 
-it('invalidates cache when workflow is archived', function (): void {
+it('invalidates cache when workflow is archived', function (): void
+{
     $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
     $this->actingAs($owner);
 
@@ -73,7 +76,8 @@ it('invalidates cache when workflow is archived', function (): void {
     expect(Cache::get($cacheKey))->toBeNull();
 });
 
-it('invalidates cache when a new version is published', function (): void {
+it('invalidates cache when a new version is published', function (): void
+{
     $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
     $this->actingAs($owner);
 

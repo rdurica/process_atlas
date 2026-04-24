@@ -21,7 +21,8 @@ final class ScreenImageService
         $imagePath = $image->store('screens', 'public');
         $fullPath = Storage::disk('public')->path($imagePath);
 
-        if (getimagesize($fullPath) === false) {
+        if (getimagesize($fullPath) === false)
+        {
             Storage::disk('public')->delete($imagePath);
             throw new \InvalidArgumentException('Uploaded file is not a valid image.');
         }
@@ -33,7 +34,8 @@ final class ScreenImageService
 
     public function delete(?string $path): void
     {
-        if ($path) {
+        if ($path)
+        {
             Storage::disk('public')->delete($path);
         }
     }
@@ -42,7 +44,8 @@ final class ScreenImageService
     {
         [$origWidth, $origHeight, $type] = getimagesize($path);
 
-        if ($origWidth <= $maxWidth) {
+        if ($origWidth <= $maxWidth)
+        {
             return;
         }
 
@@ -52,7 +55,8 @@ final class ScreenImageService
 
         $dst = imagecreatetruecolor($newWidth, $newHeight);
 
-        switch ($type) {
+        switch ($type)
+        {
             case IMAGETYPE_JPEG:
                 $src = imagecreatefromjpeg($path);
                 imagecopyresampled($dst, $src, 0, 0, 0, 0, $newWidth, $newHeight, $origWidth, $origHeight);

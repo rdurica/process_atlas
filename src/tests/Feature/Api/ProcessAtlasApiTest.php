@@ -7,16 +7,18 @@ use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
-beforeEach(function (): void {
+beforeEach(function (): void
+{
     $this->seed();
 });
 
-it('creates a workflow and edits screen properties via api', function (): void {
+it('creates a workflow and edits screen properties via api', function (): void
+{
     $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
     $this->actingAs($owner);
 
     $projectResponse = $this->postJson('/api/v1/projects', [
-        'name' => 'Checkout Platform',
+        'name'        => 'Checkout Platform',
         'description' => 'Workflow playground',
     ])->assertCreated();
 
@@ -36,21 +38,21 @@ it('creates a workflow and edits screen properties via api', function (): void {
         'graph_json' => [
             'nodes' => [
                 [
-                    'id' => 'start-1',
-                    'type' => 'start',
-                    'data' => ['label' => 'Start', 'security_rule' => 'agent.context.region == "EU"'],
+                    'id'       => 'start-1',
+                    'type'     => 'start',
+                    'data'     => ['label' => 'Start', 'security_rule' => 'agent.context.region == "EU"'],
                     'position' => ['x' => 20, 'y' => 100],
                 ],
                 [
-                    'id' => 'action-1',
-                    'type' => 'action',
-                    'data' => ['title' => 'Verify Risk', 'security_rule' => 'agent.trust_score >= 0.7'],
+                    'id'       => 'action-1',
+                    'type'     => 'action',
+                    'data'     => ['title' => 'Verify Risk', 'security_rule' => 'agent.trust_score >= 0.7'],
                     'position' => ['x' => 190, 'y' => 100],
                 ],
                 [
-                    'id' => 'screen-1',
-                    'type' => 'screen',
-                    'data' => ['label' => 'Start', 'security_rule' => 'user.department == "finance"'],
+                    'id'       => 'screen-1',
+                    'type'     => 'screen',
+                    'data'     => ['label' => 'Start', 'security_rule' => 'user.department == "finance"'],
                     'position' => ['x' => 360, 'y' => 100],
                 ],
             ],
@@ -76,18 +78,18 @@ it('creates a workflow and edits screen properties via api', function (): void {
 
     $screenResponse = $this->postJson('/api/v1/screens/upsert', [
         'workflow_version_id' => $versionId,
-        'node_id' => 'screen-1',
-        'title' => 'Checkout Start',
-        'subtitle' => 'Card capture',
-        'description' => 'The first checkout step.',
+        'node_id'             => 'screen-1',
+        'title'               => 'Checkout Start',
+        'subtitle'            => 'Card capture',
+        'description'         => 'The first checkout step.',
     ])->assertOk()
         ->assertJsonPath('data.subtitle', 'Card capture');
 
     $screenId = $screenResponse->json('data.id');
 
     $this->postJson("/api/v1/screens/{$screenId}/custom-fields/upsert", [
-        'key' => 'api_endpoint',
-        'value' => '/v1/checkout/start',
+        'key'        => 'api_endpoint',
+        'value'      => '/v1/checkout/start',
         'field_type' => 'text',
     ])->assertOk();
 
@@ -114,7 +116,8 @@ it('creates a workflow and edits screen properties via api', function (): void {
         ->toBe('user.department == "finance"');
 });
 
-it('denies project creation for viewer role', function (): void {
+it('denies project creation for viewer role', function (): void
+{
     $viewer = User::query()->where('email', 'viewer@example.com')->firstOrFail();
     $this->actingAs($viewer);
 
@@ -123,7 +126,8 @@ it('denies project creation for viewer role', function (): void {
     ])->assertForbidden();
 });
 
-it('allows project creation for editor role', function (): void {
+it('allows project creation for editor role', function (): void
+{
     $editor = User::factory()->create([
         'email' => 'editor@example.com',
     ]);
@@ -136,7 +140,8 @@ it('allows project creation for editor role', function (): void {
     ])->assertCreated();
 });
 
-it('does not allow direct workflow status updates', function (): void {
+it('does not allow direct workflow status updates', function (): void
+{
     $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
     $this->actingAs($owner);
 
@@ -160,7 +165,8 @@ it('does not allow direct workflow status updates', function (): void {
         ->assertJsonPath('data.status', 'draft');
 });
 
-it('prevents demoting the last process owner in a project', function (): void {
+it('prevents demoting the last process owner in a project', function (): void
+{
     $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
     $this->actingAs($owner);
 
@@ -177,7 +183,7 @@ it('prevents demoting the last process owner in a project', function (): void {
 
     $this->postJson("/api/v1/projects/{$projectId}/members", [
         'email' => $secondOwner->email,
-        'role' => 'process_owner',
+        'role'  => 'process_owner',
     ])->assertCreated();
 
     $this->patchJson("/api/v1/projects/{$projectId}/members/{$owner->id}", [
@@ -186,7 +192,8 @@ it('prevents demoting the last process owner in a project', function (): void {
         ->assertJsonPath('data.role', 'viewer');
 });
 
-it('keeps screen image metadata when creating a draft revision', function (): void {
+it('keeps screen image metadata when creating a draft revision', function (): void
+{
     Storage::fake('public');
 
     $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
@@ -207,9 +214,9 @@ it('keeps screen image metadata when creating a draft revision', function (): vo
 
     $screenResponse = $this->post('/api/v1/screens/upsert', [
         'workflow_version_id' => $versionId,
-        'node_id' => 'screen-image-1',
-        'title' => 'Image screen',
-        'image' => UploadedFile::fake()->image('screen.png', 800, 600),
+        'node_id'             => 'screen-image-1',
+        'title'               => 'Image screen',
+        'image'               => UploadedFile::fake()->image('screen.png', 800, 600),
     ])->assertOk();
 
     $imagePath = $screenResponse->json('data.image_path');
@@ -225,20 +232,21 @@ it('keeps screen image metadata when creating a draft revision', function (): vo
         ->assertJsonPath('data.screens.0.image_path', $imagePath);
 });
 
-it('handles standard mcp initialize requests over api endpoint', function (): void {
+it('handles standard mcp initialize requests over api endpoint', function (): void
+{
     $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
     $token = $owner->createToken('mcp-test', ['mcp:use'])->plainTextToken;
 
     $response = $this->withHeader('Authorization', "Bearer {$token}")
         ->postJson('/api/mcp', [
             'jsonrpc' => '2.0',
-            'id' => 1,
-            'method' => 'initialize',
-            'params' => [
+            'id'      => 1,
+            'method'  => 'initialize',
+            'params'  => [
                 'protocolVersion' => '2024-11-05',
-                'capabilities' => [],
-                'clientInfo' => [
-                    'name' => 'feature-test',
+                'capabilities'    => [],
+                'clientInfo'      => [
+                    'name'    => 'feature-test',
                     'version' => '1.0.0',
                 ],
             ],
@@ -254,13 +262,14 @@ it('handles standard mcp initialize requests over api endpoint', function (): vo
     $this->withHeader('Authorization', "Bearer {$token}")
         ->postJson('/api/mcp', [
             'jsonrpc' => '2.0',
-            'method' => 'notifications/initialized',
-            'params' => [],
+            'method'  => 'notifications/initialized',
+            'params'  => [],
         ])
         ->assertNoContent();
 });
 
-it('lists and reads mcp resources over api endpoint', function (): void {
+it('lists and reads mcp resources over api endpoint', function (): void
+{
     $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
     $this->actingAs($owner);
 
@@ -279,24 +288,24 @@ it('lists and reads mcp resources over api endpoint', function (): void {
     $resourcesResponse = $this->withHeader('Authorization', "Bearer {$token}")
         ->postJson('/api/mcp', [
             'jsonrpc' => '2.0',
-            'id' => 2,
-            'method' => 'resources/list',
-            'params' => [],
+            'id'      => 2,
+            'method'  => 'resources/list',
+            'params'  => [],
         ])
         ->assertOk()
         ->assertJsonPath('jsonrpc', '2.0');
 
     expect($resourcesResponse->json('result.resources'))->toBeArray();
     expect(collect($resourcesResponse->json('result.resources'))->contains(
-        fn (array $resource): bool => ($resource['uri'] ?? null) === "process-atlas://projects/{$projectId}"
+        fn (array $resource): bool => ($resource['uri'] ?? null) === "process-atlas://projects/{$projectId}",
     ))->toBeTrue();
 
     $readResponse = $this->withHeader('Authorization', "Bearer {$token}")
         ->postJson('/api/mcp', [
             'jsonrpc' => '2.0',
-            'id' => 3,
-            'method' => 'resources/read',
-            'params' => ['uri' => "process-atlas://workflows/{$workflowId}"],
+            'id'      => 3,
+            'method'  => 'resources/read',
+            'params'  => ['uri' => "process-atlas://workflows/{$workflowId}"],
         ])
         ->assertOk()
         ->assertJsonPath('result.contents.0.uri', "process-atlas://workflows/{$workflowId}");
@@ -305,7 +314,8 @@ it('lists and reads mcp resources over api endpoint', function (): void {
     expect(data_get($payload, 'workflow.id'))->toBe($workflowId);
 });
 
-it('calls mcp tools and reports revision conflicts', function (): void {
+it('calls mcp tools and reports revision conflicts', function (): void
+{
     $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
     $this->actingAs($owner);
 
@@ -327,14 +337,14 @@ it('calls mcp tools and reports revision conflicts', function (): void {
     $this->withHeader('Authorization', "Bearer {$token}")
         ->postJson('/api/mcp', [
             'jsonrpc' => '2.0',
-            'id' => 4,
-            'method' => 'tools/call',
-            'params' => [
-                'name' => 'process_atlas.update_graph',
+            'id'      => 4,
+            'method'  => 'tools/call',
+            'params'  => [
+                'name'      => 'process_atlas.update_graph',
                 'arguments' => [
                     'workflow_revision_id' => $revisionId,
-                    'lock_revision' => 0,
-                    'graph_json' => [
+                    'lock_revision'        => 0,
+                    'graph_json'           => [
                         'nodes' => [],
                         'edges' => [],
                     ],
@@ -348,14 +358,14 @@ it('calls mcp tools and reports revision conflicts', function (): void {
     $this->withHeader('Authorization', "Bearer {$token}")
         ->postJson('/api/mcp', [
             'jsonrpc' => '2.0',
-            'id' => 5,
-            'method' => 'tools/call',
-            'params' => [
-                'name' => 'process_atlas.update_graph',
+            'id'      => 5,
+            'method'  => 'tools/call',
+            'params'  => [
+                'name'      => 'process_atlas.update_graph',
                 'arguments' => [
                     'workflow_revision_id' => $revisionId,
-                    'lock_revision' => 0,
-                    'graph_json' => [
+                    'lock_revision'        => 0,
+                    'graph_json'           => [
                         'nodes' => [],
                         'edges' => [],
                     ],
@@ -367,16 +377,17 @@ it('calls mcp tools and reports revision conflicts', function (): void {
         ->assertJsonPath('error.message', 'Revision conflict. Reload the latest draft and retry.');
 });
 
-it('forbids mcp access without mcp.use permission', function (): void {
+it('forbids mcp access without mcp.use permission', function (): void
+{
     $viewer = User::query()->where('email', 'viewer@example.com')->firstOrFail();
     $token = $viewer->createToken('mcp-test-forbidden', ['mcp:use'])->plainTextToken;
 
     $this->withHeader('Authorization', "Bearer {$token}")
         ->postJson('/api/mcp', [
             'jsonrpc' => '2.0',
-            'id' => 6,
-            'method' => 'initialize',
-            'params' => [],
+            'id'      => 6,
+            'method'  => 'initialize',
+            'params'  => [],
         ])
         ->assertForbidden();
 });

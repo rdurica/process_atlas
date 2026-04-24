@@ -33,26 +33,31 @@ class McpServeStdioCommand extends Command
     {
         $actor = $this->resolveActor();
 
-        if (! $actor instanceof User) {
+        if (! $actor instanceof User)
+        {
             return self::FAILURE;
         }
 
-        if (! $actor->can(PermissionList::MCP_USE)) {
+        if (! $actor->can(PermissionList::MCP_USE))
+        {
             $this->error('Actor user is missing mcp.use permission.');
 
             return self::FAILURE;
         }
 
-        while (($body = $this->readFrameBody()) !== null) {
+        while (($body = $this->readFrameBody()) !== null)
+        {
             $payload = json_decode($body, true);
-            if (! is_array($payload)) {
+            if (! is_array($payload))
+            {
                 $this->writeErrorResponse(null, -32700, 'Invalid JSON input.');
 
                 continue;
             }
 
             $response = $mcpServer->handle(McpRequest::fromArray($payload), $actor);
-            if ($response !== null) {
+            if ($response !== null)
+            {
                 $this->writeFrame($response->toArray());
             }
         }
@@ -64,17 +69,20 @@ class McpServeStdioCommand extends Command
     {
         $token = (string) config('services.mcp.token', '');
 
-        if ($token !== '') {
+        if ($token !== '')
+        {
             $accessToken = PersonalAccessToken::findToken($token);
 
-            if ($accessToken && $accessToken->tokenable instanceof User) {
+            if ($accessToken && $accessToken->tokenable instanceof User)
+            {
                 return $accessToken->tokenable;
             }
         }
 
         $userId = (int) ($this->option('user') ?? config('services.mcp.user_id', 0));
 
-        if ($userId <= 0) {
+        if ($userId <= 0)
+        {
             $this->error('Provide --user=<id>, MCP_USER_ID environment variable, or MCP_TOKEN.');
 
             return null;
@@ -82,7 +90,8 @@ class McpServeStdioCommand extends Command
 
         $actor = User::query()->find($userId);
 
-        if (! $actor) {
+        if (! $actor)
+        {
             $this->error('Actor user not found.');
 
             return null;
@@ -93,13 +102,16 @@ class McpServeStdioCommand extends Command
 
     private function readFrameBody(): ?string
     {
-        while (true) {
+        while (true)
+        {
             $headers = [];
 
-            while (($line = fgets(STDIN)) !== false) {
+            while (($line = fgets(STDIN)) !== false)
+            {
                 $line = rtrim($line, "\r\n");
 
-                if ($line === '') {
+                if ($line === '')
+                {
                     break;
                 }
 
@@ -107,26 +119,31 @@ class McpServeStdioCommand extends Command
                 $headers[strtolower(trim($name))] = trim($value);
             }
 
-            if ($line === false) {
+            if ($line === false)
+            {
                 return null;
             }
 
-            if ($headers === []) {
+            if ($headers === [])
+            {
                 continue;
             }
 
             $contentLength = isset($headers['content-length']) ? (int) $headers['content-length'] : 0;
-            if ($contentLength <= 0) {
+            if ($contentLength <= 0)
+            {
                 $this->writeErrorResponse(null, -32700, 'Invalid Content-Length header.');
 
                 continue;
             }
 
             $body = '';
-            while (strlen($body) < $contentLength) {
+            while (strlen($body) < $contentLength)
+            {
                 $chunk = fread(STDIN, $contentLength - strlen($body));
 
-                if ($chunk === false || $chunk === '') {
+                if ($chunk === false || $chunk === '')
+                {
                     return null;
                 }
 
@@ -143,7 +160,8 @@ class McpServeStdioCommand extends Command
     private function writeFrame(array $payload): void
     {
         $json = json_encode($payload, JSON_UNESCAPED_SLASHES);
-        if ($json === false) {
+        if ($json === false)
+        {
             return;
         }
 

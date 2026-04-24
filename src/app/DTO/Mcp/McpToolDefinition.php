@@ -19,7 +19,7 @@ final readonly class McpToolDefinition
     public function toArray(): array
     {
         return [
-            'name' => $this->name,
+            'name'        => $this->name,
             'description' => $this->description,
             'inputSchema' => $this->inputSchema,
         ];

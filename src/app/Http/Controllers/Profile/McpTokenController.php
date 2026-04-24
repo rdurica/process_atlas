@@ -22,7 +22,7 @@ class McpTokenController extends Controller
 
         return Redirect::route('profile.edit')->with([
             'mcp_token' => $token->plainTextToken,
-            'status' => 'MCP token generated successfully.',
+            'status'    => 'MCP token generated successfully.',
         ]);
     }
 

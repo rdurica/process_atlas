@@ -16,7 +16,7 @@ final class AuditLogger
         string $event,
         string $description,
         array $properties = [],
-        string $source = 'ui'
+        string $source = 'ui',
     ): void {
         activity('process_atlas')
             ->causedBy($actor)

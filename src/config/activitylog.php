@@ -68,6 +68,6 @@ return [
      */
     'actions' => [
         'log_activity' => LogActivityAction::class,
-        'clean_log' => CleanActivityLogAction::class,
+        'clean_log'    => CleanActivityLogAction::class,
     ],
 ];

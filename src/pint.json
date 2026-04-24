@@ -18,6 +18,23 @@
         "no_alias_functions": true,
         "no_extra_blank_lines": true,
         "no_unused_imports": true,
-        "ordered_imports": true
+        "ordered_imports": true,
+        "trailing_comma_in_multiline": {
+            "elements": ["arrays", "arguments", "parameters"]
+        },
+        "binary_operator_spaces": {
+            "operators": {
+                "=>": "align_single_space_minimal"
+            }
+        },
+        "braces_position": {
+            "control_structures_opening_brace": "next_line_unless_newline_at_signature_end",
+            "classes_opening_brace": "next_line_unless_newline_at_signature_end",
+            "anonymous_classes_opening_brace": "next_line_unless_newline_at_signature_end",
+            "anonymous_functions_opening_brace": "next_line_unless_newline_at_signature_end"
+        },
+        "control_structure_continuation_position": {
+            "position": "next_line"
+        }
     }
 }

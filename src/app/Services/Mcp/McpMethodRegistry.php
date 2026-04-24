@@ -45,7 +45,8 @@ final class McpMethodRegistry
         ];
 
         $this->handlers = [];
-        foreach ($allHandlers as $handler) {
+        foreach ($allHandlers as $handler)
+        {
             $this->handlers[$handler->method()] = $handler;
         }
     }
@@ -54,7 +55,8 @@ final class McpMethodRegistry
     {
         $handler = $this->handlers[$method] ?? null;
 
-        if (! $handler) {
+        if (! $handler)
+        {
             throw ValidationException::withMessages(['method' => 'Unknown MCP method.']);
         }
 

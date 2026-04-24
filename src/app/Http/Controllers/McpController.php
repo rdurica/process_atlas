@@ -21,7 +21,8 @@ class McpController extends Controller
             $request->user(),
         );
 
-        if ($response === null) {
+        if ($response === null)
+        {
             return response()->noContent();
         }
 

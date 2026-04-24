@@ -22,7 +22,8 @@ final readonly class McpToolResult
     public function toMethodResult(): McpMethodResult
     {
         $json = json_encode($this->structuredContent, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-        if ($json === false) {
+        if ($json === false)
+        {
             throw ValidationException::withMessages(['tool' => 'Unable to serialize tool output.']);
         }
 

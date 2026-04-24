@@ -5,11 +5,13 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-beforeEach(function (): void {
+beforeEach(function (): void
+{
     $this->seed();
 });
 
-it('allows user with mcp.use permission to generate a token', function (): void {
+it('allows user with mcp.use permission to generate a token', function (): void
+{
     $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
 
     $response = $this
@@ -27,7 +29,8 @@ it('allows user with mcp.use permission to generate a token', function (): void 
     expect($token->abilities)->toContain('mcp:use');
 });
 
-it('replaces existing token when generating a new one', function (): void {
+it('replaces existing token when generating a new one', function (): void
+{
     $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
     $oldToken = $owner->createToken('mcp', ['mcp:use']);
 
@@ -39,7 +42,8 @@ it('replaces existing token when generating a new one', function (): void {
     expect($owner->tokens()->where('id', $oldToken->accessToken->id)->exists())->toBeFalse();
 });
 
-it('allows user to delete their token', function (): void {
+it('allows user to delete their token', function (): void
+{
     $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
     $owner->createToken('mcp', ['mcp:use']);
 
@@ -54,7 +58,8 @@ it('allows user to delete their token', function (): void {
     expect($owner->tokens()->where('name', 'mcp')->exists())->toBeFalse();
 });
 
-it('forbids token generation for user without mcp.use permission', function (): void {
+it('forbids token generation for user without mcp.use permission', function (): void
+{
     $viewer = User::query()->where('email', 'viewer@example.com')->firstOrFail();
 
     $this
@@ -63,7 +68,8 @@ it('forbids token generation for user without mcp.use permission', function (): 
         ->assertForbidden();
 });
 
-it('forbids token deletion for user without mcp.use permission', function (): void {
+it('forbids token deletion for user without mcp.use permission', function (): void
+{
     $viewer = User::query()->where('email', 'viewer@example.com')->firstOrFail();
 
     $this
@@ -72,7 +78,8 @@ it('forbids token deletion for user without mcp.use permission', function (): vo
         ->assertForbidden();
 });
 
-it('generated token authenticates on the mcp api endpoint', function (): void {
+it('generated token authenticates on the mcp api endpoint', function (): void
+{
     $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
 
     $this
@@ -86,13 +93,13 @@ it('generated token authenticates on the mcp api endpoint', function (): void {
     $this->withHeader('Authorization', "Bearer {$plainToken}")
         ->postJson('/api/mcp', [
             'jsonrpc' => '2.0',
-            'id' => 1,
-            'method' => 'initialize',
-            'params' => [
+            'id'      => 1,
+            'method'  => 'initialize',
+            'params'  => [
                 'protocolVersion' => '2024-11-05',
-                'capabilities' => [],
-                'clientInfo' => [
-                    'name' => 'test-client',
+                'capabilities'    => [],
+                'clientInfo'      => [
+                    'name'    => 'test-client',
                     'version' => '1.0.0',
                 ],
             ],

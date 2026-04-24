@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('screens', function (Blueprint $table): void {
+        Schema::create('screens', function (Blueprint $table): void
+        {
             $table->id();
             $table->foreignId('workflow_version_id')->constrained()->cascadeOnDelete();
             $table->string('node_id');

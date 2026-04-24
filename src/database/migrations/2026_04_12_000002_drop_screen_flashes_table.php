@@ -24,7 +24,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::create('screen_flashes', function (Blueprint $table): void {
+        Schema::create('screen_flashes', function (Blueprint $table): void
+        {
             $table->id();
             $table->foreignId('screen_id')->constrained()->cascadeOnDelete();
             $table->string('type')->default('error');

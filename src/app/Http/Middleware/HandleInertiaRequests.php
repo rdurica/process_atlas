@@ -35,39 +35,45 @@ class HandleInertiaRequests extends Middleware
         $user = $request->user();
         $permissions = collect();
 
-        if ($user) {
+        if ($user)
+        {
             $permissions = $user->getAllPermissions()->pluck('name');
             $permissions->push('projects.view', 'workflows.view');
 
-            if ($user->can(PermissionList::PROJECTS_ADMIN) || $user->hasRole('process_owner')) {
+            if ($user->can(PermissionList::PROJECTS_ADMIN) || $user->hasRole('process_owner'))
+            {
                 $permissions->push('projects.manage', 'workflows.edit');
-            } elseif ($user->hasRole('editor')) {
+            }
+            elseif ($user->hasRole('editor'))
+            {
                 $permissions->push('workflows.edit');
             }
         }
 
         $projects = [];
-        if ($user) {
+        if ($user)
+        {
             $isAdmin = $user->can(PermissionList::PROJECTS_ADMIN);
             $projects = Project::query()
                 ->when(
                     ! $isAdmin,
                     fn ($query) => $query->whereHas(
                         'members',
-                        fn ($q) => $q->where('user_id', $user->id)
-                    )
+                        fn ($q) => $q->where('user_id', $user->id),
+                    ),
                 )
                 ->orderBy('name')
                 ->get()
-                ->map(function (Project $project) use ($user, $isAdmin) {
+                ->map(function (Project $project) use ($user, $isAdmin)
+                {
                     $currentUserRole = $isAdmin
                         ? 'process_owner'
                         : $user->projectRoleIn($project);
 
                     return [
-                        'id' => $project->id,
-                        'name' => $project->name,
-                        'description' => $project->description,
+                        'id'                => $project->id,
+                        'name'              => $project->name,
+                        'description'       => $project->description,
                         'current_user_role' => $currentUserRole,
                     ];
                 })
@@ -80,7 +86,7 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $user ? [
                     ...$user->only(['id', 'name', 'email', 'email_verified_at']),
-                    'roles' => $user->getRoleNames()->values(),
+                    'roles'       => $user->getRoleNames()->values(),
                     'permissions' => $permissions->unique()->values(),
                 ] : null,
             ],

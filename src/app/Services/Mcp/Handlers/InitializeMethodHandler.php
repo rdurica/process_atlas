@@ -22,18 +22,18 @@ final class InitializeMethodHandler implements McpMethodHandler
 
         return McpMethodResult::fromArray([
             'protocolVersion' => '2024-11-05',
-            'capabilities' => [
-                'tools' => ['listChanged' => false],
+            'capabilities'    => [
+                'tools'     => ['listChanged' => false],
                 'resources' => [
-                    'subscribe' => false,
+                    'subscribe'   => false,
                     'listChanged' => false,
                 ],
             ],
             'serverInfo' => [
-                'name' => 'process-atlas',
+                'name'    => 'process-atlas',
                 'version' => '1.0.0',
             ],
-            'instructions' => 'Use resources for reads and tools for mutations on workflow revisions.',
+            'instructions'       => 'Use resources for reads and tools for mutations on workflow revisions.',
             'clientCapabilities' => $clientCapabilities,
         ]);
     }

@@ -17,10 +17,10 @@ final readonly class McpResourceDefinition
     public function toArray(): array
     {
         return [
-            'uri' => $this->uri,
-            'name' => $this->name,
+            'uri'         => $this->uri,
+            'name'        => $this->name,
             'description' => $this->description,
-            'mimeType' => $this->mimeType,
+            'mimeType'    => $this->mimeType,
         ];
     }
 }

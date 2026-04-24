@@ -28,7 +28,7 @@ class WorkflowVersion extends Model
     {
         return [
             'is_published' => 'boolean',
-            'graph_json' => 'array',
+            'graph_json'   => 'array',
         ];
     }
 

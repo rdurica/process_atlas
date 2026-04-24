@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Api;
 
-use App\DTO\Command\UpdateScreenCommand;
+use App\DTO\Request\UpdateScreenRequest as UpdateScreenDto;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -19,17 +19,17 @@ class UpdateScreenRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => ['nullable', 'string', 'max:255'],
-            'subtitle' => ['nullable', 'string', 'max:255'],
+            'title'       => ['nullable', 'string', 'max:255'],
+            'subtitle'    => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
         ];
     }
 
-    public function toDto(): UpdateScreenCommand
+    public function toDto(): UpdateScreenDto
     {
         /** @var array<string, mixed> $validated */
         $validated = $this->validated();
 
-        return UpdateScreenCommand::fromArray($validated);
+        return UpdateScreenDto::fromArray($validated);
     }
 }

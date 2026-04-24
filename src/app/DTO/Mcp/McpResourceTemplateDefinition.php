@@ -18,9 +18,9 @@ final readonly class McpResourceTemplateDefinition
     {
         return [
             'uriTemplate' => $this->uriTemplate,
-            'name' => $this->name,
+            'name'        => $this->name,
             'description' => $this->description,
-            'mimeType' => $this->mimeType,
+            'mimeType'    => $this->mimeType,
         ];
     }
 }

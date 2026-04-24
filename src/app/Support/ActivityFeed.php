@@ -41,28 +41,36 @@ final class ActivityFeed
 
         $activities = Activity::query()
             ->where('log_name', 'process_atlas')
-            ->where(function ($query) use ($workflow, $versionIds, $screenIds, $customFieldIds): void {
-                $query->where(function ($inner) use ($workflow): void {
+            ->where(function ($query) use ($workflow, $versionIds, $screenIds, $customFieldIds): void
+            {
+                $query->where(function ($inner) use ($workflow): void
+                {
                     $inner->where('subject_type', Workflow::class)
                         ->where('subject_id', $workflow->id);
                 });
 
-                if ($versionIds->isNotEmpty()) {
-                    $query->orWhere(function ($inner) use ($versionIds): void {
+                if ($versionIds->isNotEmpty())
+                {
+                    $query->orWhere(function ($inner) use ($versionIds): void
+                    {
                         $inner->where('subject_type', WorkflowVersion::class)
                             ->whereIn('subject_id', $versionIds);
                     });
                 }
 
-                if ($screenIds->isNotEmpty()) {
-                    $query->orWhere(function ($inner) use ($screenIds): void {
+                if ($screenIds->isNotEmpty())
+                {
+                    $query->orWhere(function ($inner) use ($screenIds): void
+                    {
                         $inner->where('subject_type', Screen::class)
                             ->whereIn('subject_id', $screenIds);
                     });
                 }
 
-                if ($customFieldIds->isNotEmpty()) {
-                    $query->orWhere(function ($inner) use ($customFieldIds): void {
+                if ($customFieldIds->isNotEmpty())
+                {
+                    $query->orWhere(function ($inner) use ($customFieldIds): void
+                    {
                         $inner->where('subject_type', ScreenCustomField::class)
                             ->whereIn('subject_id', $customFieldIds);
                     });
@@ -84,17 +92,18 @@ final class ActivityFeed
     private function formatActivities(Collection $activities): array
     {
         return $activities
-            ->map(function (Activity $activity): array {
+            ->map(function (Activity $activity): array
+            {
                 $causer = $activity->causer;
 
                 return [
-                    'id' => $activity->id,
-                    'event' => Str::headline((string) ($activity->event ?: 'updated')),
-                    'description' => $activity->description,
-                    'created_at' => $activity->created_at?->toIso8601String(),
-                    'causer_name' => $causer instanceof User ? $causer->name : 'System',
+                    'id'            => $activity->id,
+                    'event'         => Str::headline((string) ($activity->event ?: 'updated')),
+                    'description'   => $activity->description,
+                    'created_at'    => $activity->created_at?->toIso8601String(),
+                    'causer_name'   => $causer instanceof User ? $causer->name : 'System',
                     'subject_label' => $this->resolveSubjectLabel($activity),
-                    'subject_type' => class_basename((string) $activity->subject_type),
+                    'subject_type'  => class_basename((string) $activity->subject_type),
                 ];
             })
             ->values()
@@ -105,9 +114,10 @@ final class ActivityFeed
     {
         $subject = $activity->subject;
 
-        return match ($activity->subject_type) {
-            Project::class => $subject instanceof Project ? $subject->name : 'Project',
-            Workflow::class => $subject instanceof Workflow ? $subject->name : 'Workflow',
+        return match ($activity->subject_type)
+        {
+            Project::class         => $subject instanceof Project ? $subject->name : 'Project',
+            Workflow::class        => $subject instanceof Workflow ? $subject->name : 'Workflow',
             WorkflowVersion::class => $subject instanceof WorkflowVersion
                 ? 'rev. ' . $subject->version_number
                 : 'Workflow revision',
@@ -115,7 +125,7 @@ final class ActivityFeed
                 ? ($subject->title ?: $subject->node_id)
                 : 'Screen',
             ScreenCustomField::class => $subject instanceof ScreenCustomField ? $subject->key : 'Custom field',
-            default => 'Activity',
+            default                  => 'Activity',
         };
     }
 }

@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Api;
 
-use App\DTO\Command\CreateWorkflowCommand;
+use App\DTO\Request\CreateWorkflowRequest as CreateWorkflowDto;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -23,11 +23,11 @@ class StoreWorkflowRequest extends FormRequest
         ];
     }
 
-    public function toDto(): CreateWorkflowCommand
+    public function toDto(): CreateWorkflowDto
     {
         /** @var array<string, mixed> $validated */
         $validated = $this->validated();
 
-        return CreateWorkflowCommand::fromArray($validated);
+        return CreateWorkflowDto::fromArray($validated);
     }
 }

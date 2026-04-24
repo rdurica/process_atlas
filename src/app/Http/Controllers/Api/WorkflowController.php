@@ -1,23 +1,30 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api;
 
-use App\Actions\WorkflowActionService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreWorkflowRequest;
 use App\Http\Requests\Api\UpdateWorkflowRequest;
 use App\Models\Project;
 use App\Models\Workflow;
-use App\Queries\WorkflowQueryService;
+use App\UseCase\Command\ArchiveWorkflowCommand;
+use App\UseCase\Command\CreateWorkflowCommand;
+use App\UseCase\Command\UnarchiveWorkflowCommand;
+use App\UseCase\Command\UpdateWorkflowCommand;
+use App\UseCase\Query\WorkflowQueryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 
 class WorkflowController extends Controller
 {
     public function __construct(
         private readonly WorkflowQueryService $workflows,
-        private readonly WorkflowActionService $actions,
+        private readonly CreateWorkflowCommand $createWorkflow,
+        private readonly UpdateWorkflowCommand $updateWorkflow,
+        private readonly ArchiveWorkflowCommand $archiveWorkflow,
+        private readonly UnarchiveWorkflowCommand $unarchiveWorkflow,
     ) {}
 
     public function index(Request $request, Project $project): JsonResponse
@@ -33,9 +40,9 @@ class WorkflowController extends Controller
     {
         $this->authorize('editWorkflows', $project);
 
-        $workflow = $this->actions->create($request->user(), $project, $request->toDto());
+        $response = $this->createWorkflow->execute($request->user(), $project, $request->toDto());
 
-        return response()->json(['data' => $workflow], 201);
+        return response()->json(['data' => $response->jsonSerialize()], 201);
     }
 
     public function show(Request $request, Workflow $workflow): JsonResponse
@@ -49,33 +56,26 @@ class WorkflowController extends Controller
     {
         $this->authorize('update', $workflow);
 
-        return response()->json([
-            'data' => $this->actions->update($request->user(), $workflow, $request->toDto()),
-        ]);
+        $response = $this->updateWorkflow->execute($request->user(), $workflow, $request->toDto());
+
+        return response()->json(['data' => $response->jsonSerialize()]);
     }
 
     public function archive(Request $request, Workflow $workflow): JsonResponse
     {
         $this->authorize('archive', $workflow);
 
-        $this->actions->archive($request->user(), $workflow);
+        $response = $this->archiveWorkflow->execute($request->user(), $workflow);
 
-        $workflow->refresh();
-
-        /** @var Carbon|null $archivedAt */
-        $archivedAt = $workflow->archived_at;
-
-        return response()->json(['data' => ['archived_at' => $archivedAt?->toIso8601String()]]);
+        return response()->json(['data' => ['archived_at' => $response->archivedAt]]);
     }
 
     public function unarchive(Request $request, Workflow $workflow): JsonResponse
     {
         $this->authorize('archive', $workflow);
 
-        $this->actions->unarchive($request->user(), $workflow);
+        $response = $this->unarchiveWorkflow->execute($request->user(), $workflow);
 
-        $workflow->refresh();
-
-        return response()->json(['data' => ['archived_at' => $workflow->archived_at]]);
+        return response()->json(['data' => ['archived_at' => $response->archivedAt]]);
     }
 }

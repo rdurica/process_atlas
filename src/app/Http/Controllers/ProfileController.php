@@ -20,9 +20,9 @@ class ProfileController extends Controller
     {
         return Inertia::render('Profile/Edit', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
-            'status' => session('status'),
-            'hasMcpToken' => $request->user()->tokens()->where('name', 'mcp')->exists(),
-            'mcpToken' => session('mcp_token'),
+            'status'          => session('status'),
+            'hasMcpToken'     => $request->user()->tokens()->where('name', 'mcp')->exists(),
+            'mcpToken'        => session('mcp_token'),
         ]);
     }
 
@@ -33,7 +33,8 @@ class ProfileController extends Controller
     {
         $request->user()->fill($request->validated());
 
-        if ($request->user()->isDirty('email')) {
+        if ($request->user()->isDirty('email'))
+        {
             $request->user()->email_verified_at = null;
         }
 

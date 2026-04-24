@@ -25,15 +25,16 @@ final readonly class McpResourceReadResult
     public function toMethodResult(): McpMethodResult
     {
         $text = json_encode($this->payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-        if ($text === false) {
+        if ($text === false)
+        {
             throw ValidationException::withMessages(['uri' => 'Unable to serialize MCP resource payload.']);
         }
 
         return McpMethodResult::fromArray([
             'contents' => [[
-                'uri' => $this->uri,
+                'uri'      => $this->uri,
                 'mimeType' => 'application/json',
-                'text' => $text,
+                'text'     => $text,
             ]],
         ]);
     }

@@ -14,28 +14,33 @@ final readonly class McpResourceUri
     public static function parse(string $uri): self
     {
         $prefix = 'process-atlas://';
-        if (! str_starts_with($uri, $prefix)) {
+        if (! str_starts_with($uri, $prefix))
+        {
             throw ValidationException::withMessages(['uri' => 'Unsupported MCP resource URI.']);
         }
 
         $resource = ltrim(substr($uri, strlen($prefix)), '/');
-        if ($resource === '') {
+        if ($resource === '')
+        {
             throw ValidationException::withMessages(['uri' => 'Resource path is required.']);
         }
 
         $segments = explode('/', $resource);
-        if (count($segments) > 2) {
+        if (count($segments) > 2)
+        {
             throw ValidationException::withMessages(['uri' => 'Invalid MCP resource URI format.']);
         }
 
         $kind = $segments[0];
         $id = $segments[1] ?? null;
 
-        if ($id === null) {
+        if ($id === null)
+        {
             return new self($kind, null);
         }
 
-        if (! ctype_digit($id) || (int) $id <= 0) {
+        if (! ctype_digit($id) || (int) $id <= 0)
+        {
             throw ValidationException::withMessages(['uri' => 'Resource ID must be a positive integer.']);
         }
 

@@ -9,7 +9,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('project_members', function (Blueprint $table): void {
+        Schema::create('project_members', function (Blueprint $table): void
+        {
             $table->id();
             $table->foreignId('project_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
@@ -19,11 +20,12 @@ return new class extends Migration
         });
 
         // Backfill: existing project creators become process_owner
-        DB::table('projects')->get()->each(function (object $project): void {
+        DB::table('projects')->get()->each(function (object $project): void
+        {
             DB::table('project_members')->insertOrIgnore([
                 'project_id' => $project->id,
-                'user_id' => $project->created_by,
-                'role' => 'process_owner',
+                'user_id'    => $project->created_by,
+                'role'       => 'process_owner',
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

@@ -6,16 +6,18 @@ use Inertia\Testing\AssertableInertia as Assert;
 
 uses(RefreshDatabase::class);
 
-beforeEach(function (): void {
+beforeEach(function (): void
+{
     $this->seed();
 });
 
-it('renders dashboard with enterprise summary and activity props', function (): void {
+it('renders dashboard with enterprise summary and activity props', function (): void
+{
     $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
     $this->actingAs($owner);
 
     $projectResponse = $this->postJson('/api/v1/projects', [
-        'name' => 'Checkout Platform',
+        'name'        => 'Checkout Platform',
         'description' => 'Workflow orchestration for payments.',
     ])->assertCreated();
 
@@ -37,12 +39,13 @@ it('renders dashboard with enterprise summary and activity props', function (): 
             ->has('projects.0.workflows', 1)
             ->has('recentActivity')
             ->where('recentActivity', fn ($activities): bool => collect($activities)->contains(
-                fn ($activity): bool => ($activity['subject_label'] ?? null) === 'Checkout Flow'
-            )
+                fn ($activity): bool => ($activity['subject_label'] ?? null) === 'Checkout Flow',
+            ),
             ));
 });
 
-it('shares read only permissions for viewer dashboard access', function (): void {
+it('shares read only permissions for viewer dashboard access', function (): void
+{
     $viewer = User::query()->where('email', 'viewer@example.com')->firstOrFail();
     $this->actingAs($viewer);
 
@@ -53,11 +56,12 @@ it('shares read only permissions for viewer dashboard access', function (): void
             ->where('auth.user.permissions', fn ($permissions): bool => collect($permissions)->contains('projects.view')
                 && collect($permissions)->contains('workflows.view')
                 && ! collect($permissions)->contains('projects.manage')
-                && ! collect($permissions)->contains('workflows.edit')
+                && ! collect($permissions)->contains('workflows.edit'),
             ));
 });
 
-it('renders workflow editor with recent activity and version metadata', function (): void {
+it('renders workflow editor with recent activity and version metadata', function (): void
+{
     $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
     $this->actingAs($owner);
 
@@ -95,7 +99,7 @@ it('renders workflow editor with recent activity and version metadata', function
             ->where('workflow.versions.0.creator.name', 'Owner')
             ->has('recentActivity')
             ->where('recentActivity', fn ($activities): bool => collect($activities)->contains(
-                fn ($activity): bool => ($activity['subject_label'] ?? null) === 'rev. 1'
-            )
+                fn ($activity): bool => ($activity['subject_label'] ?? null) === 'rev. 1',
+            ),
             ));
 });

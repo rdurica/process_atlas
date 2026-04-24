@@ -9,7 +9,8 @@ use App\Http\Controllers\Api\WorkflowVersionController;
 use App\Http\Controllers\McpController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth:sanctum', 'throttle:api'])->prefix('v1')->group(function (): void {
+Route::middleware(['auth:sanctum', 'throttle:api'])->prefix('v1')->group(function (): void
+{
     Route::get('/projects', [ProjectController::class, 'index']);
     Route::post('/projects', [ProjectController::class, 'store']);
     Route::get('/projects/{project}', [ProjectController::class, 'show']);

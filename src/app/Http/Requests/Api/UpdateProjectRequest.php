@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Api;
 
-use App\DTO\Command\UpdateProjectCommand;
+use App\DTO\Request\UpdateProjectRequest as UpdateProjectDto;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -19,16 +19,16 @@ class UpdateProjectRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'name'        => ['sometimes', 'required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
         ];
     }
 
-    public function toDto(): UpdateProjectCommand
+    public function toDto(): UpdateProjectDto
     {
         /** @var array<string, mixed> $validated */
         $validated = $this->validated();
 
-        return UpdateProjectCommand::fromArray($validated);
+        return UpdateProjectDto::fromArray($validated);
     }
 }

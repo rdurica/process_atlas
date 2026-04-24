@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('workflow_versions', function (Blueprint $table): void {
+        Schema::create('workflow_versions', function (Blueprint $table): void
+        {
             $table->id();
             $table->foreignId('workflow_id')->constrained()->cascadeOnDelete();
             $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
@@ -25,7 +26,8 @@ return new class extends Migration
             $table->index(['workflow_id', 'is_published']);
         });
 
-        Schema::table('workflows', function (Blueprint $table): void {
+        Schema::table('workflows', function (Blueprint $table): void
+        {
             $table
                 ->foreign('latest_version_id')
                 ->references('id')
@@ -45,7 +47,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('workflows', function (Blueprint $table): void {
+        Schema::table('workflows', function (Blueprint $table): void
+        {
             $table->dropForeign(['latest_version_id']);
             $table->dropForeign(['published_version_id']);
         });

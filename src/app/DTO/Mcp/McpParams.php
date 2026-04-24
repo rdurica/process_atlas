@@ -32,13 +32,15 @@ final readonly class McpParams
 
     public function string(string $key, string $default = ''): string
     {
-        if (! $this->has($key)) {
+        if (! $this->has($key))
+        {
             return $default;
         }
 
         $value = $this->values[$key];
 
-        if ($value === null) {
+        if ($value === null)
+        {
             return $default;
         }
 
@@ -47,7 +49,8 @@ final readonly class McpParams
 
     public function nullableString(string $key): ?string
     {
-        if (! $this->has($key) || $this->values[$key] === null) {
+        if (! $this->has($key) || $this->values[$key] === null)
+        {
             return null;
         }
 
@@ -56,7 +59,8 @@ final readonly class McpParams
 
     public function int(string $key, int $default = 0): int
     {
-        if (! $this->has($key) || $this->values[$key] === null) {
+        if (! $this->has($key) || $this->values[$key] === null)
+        {
             return $default;
         }
 

@@ -1,13 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api;
 
-use App\Actions\ProjectActionService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreProjectRequest;
 use App\Http\Requests\Api\UpdateProjectRequest;
 use App\Models\Project;
-use App\Queries\ProjectQueryService;
+use App\UseCase\Command\CreateProjectCommand;
+use App\UseCase\Command\DeleteProjectCommand;
+use App\UseCase\Command\UpdateProjectCommand;
+use App\UseCase\Query\ProjectQueryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -15,7 +19,9 @@ class ProjectController extends Controller
 {
     public function __construct(
         private readonly ProjectQueryService $projects,
-        private readonly ProjectActionService $actions,
+        private readonly CreateProjectCommand $createProject,
+        private readonly UpdateProjectCommand $updateProject,
+        private readonly DeleteProjectCommand $deleteProject,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -27,9 +33,9 @@ class ProjectController extends Controller
     {
         $this->authorize('create', Project::class);
 
-        $project = $this->actions->create($request->user(), $request->toDto());
+        $response = $this->createProject->execute($request->user(), $request->toDto());
 
-        return response()->json(['data' => $project], 201);
+        return response()->json(['data' => $response->jsonSerialize()], 201);
     }
 
     public function show(Request $request, Project $project): JsonResponse
@@ -43,16 +49,16 @@ class ProjectController extends Controller
     {
         $this->authorize('update', $project);
 
-        return response()->json([
-            'data' => $this->actions->update($request->user(), $project, $request->toDto()),
-        ]);
+        $response = $this->updateProject->execute($request->user(), $project, $request->toDto());
+
+        return response()->json(['data' => $response->jsonSerialize()]);
     }
 
     public function destroy(Request $request, Project $project): JsonResponse
     {
         $this->authorize('delete', $project);
 
-        $this->actions->delete($request->user(), $project);
+        $this->deleteProject->execute($request->user(), $project);
 
         return response()->json(status: 204);
     }

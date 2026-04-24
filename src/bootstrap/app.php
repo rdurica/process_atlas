@@ -19,7 +19,8 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__ . '/../routes/console.php',
         health: '/up',
     )
-    ->withMiddleware(function (Middleware $middleware): void {
+    ->withMiddleware(function (Middleware $middleware): void
+    {
         $middleware->statefulApi();
 
         $middleware->web(append: [
@@ -28,15 +29,18 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->alias([
-            'ability' => CheckForAnyAbility::class,
-            'role' => RoleMiddleware::class,
-            'permission' => PermissionMiddleware::class,
+            'ability'            => CheckForAnyAbility::class,
+            'role'               => RoleMiddleware::class,
+            'permission'         => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
         ]);
     })
-    ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->renderable(function (Throwable $e, Request $request): ?Response {
-            if ($request->is('api/*') && ! config('app.debug')) {
+    ->withExceptions(function (Exceptions $exceptions): void
+    {
+        $exceptions->renderable(function (Throwable $e, Request $request): ?Response
+        {
+            if ($request->is('api/*') && ! config('app.debug'))
+            {
                 return response()->json([
                     'message' => 'Server error.',
                 ], 500);

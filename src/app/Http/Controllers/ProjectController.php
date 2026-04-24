@@ -30,26 +30,26 @@ class ProjectController extends Controller
             ->orderBy('name')
             ->get()
             ->map(fn (Workflow $workflow): array => [
-                'id' => $workflow->id,
-                'name' => $workflow->name,
-                'status' => $workflow->status,
+                'id'             => $workflow->id,
+                'name'           => $workflow->name,
+                'status'         => $workflow->status,
                 'latest_version' => $workflow->latestVersion ? [
-                    'id' => $workflow->latestVersion->id,
+                    'id'             => $workflow->latestVersion->id,
                     'version_number' => $workflow->latestVersion->version_number,
-                    'is_published' => $workflow->latestVersion->is_published,
+                    'is_published'   => $workflow->latestVersion->is_published,
                 ] : null,
                 'published_version_id' => $workflow->published_version_id,
-                'updated_at' => $workflow->updated_at?->toIso8601String(),
+                'updated_at'           => $workflow->updated_at?->toIso8601String(),
             ])
             ->values()
             ->all();
 
         return Inertia::render('ProjectWorkflows', [
             'project' => [
-                'id' => $project->id,
-                'name' => $project->name,
-                'description' => $project->description,
-                'workflows_count' => $project->workflows()->notArchived()->count(),
+                'id'                => $project->id,
+                'name'              => $project->name,
+                'description'       => $project->description,
+                'workflows_count'   => $project->workflows()->notArchived()->count(),
                 'current_user_role' => $currentUserRole,
             ],
             'workflows' => $workflows,

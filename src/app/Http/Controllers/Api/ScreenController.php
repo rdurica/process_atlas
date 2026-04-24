@@ -1,14 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api;
 
-use App\Actions\ScreenActionService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\UpdateScreenRequest;
 use App\Http\Requests\Api\UpsertScreenRequest;
 use App\Models\Screen;
-use App\Queries\ScreenQueryService;
-use App\Queries\WorkflowVersionQueryService;
+use App\UseCase\Command\UpdateScreenCommand;
+use App\UseCase\Command\UpsertScreenCommand;
+use App\UseCase\Query\ScreenQueryService;
+use App\UseCase\Query\WorkflowVersionQueryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -17,7 +20,8 @@ class ScreenController extends Controller
     public function __construct(
         private readonly ScreenQueryService $screens,
         private readonly WorkflowVersionQueryService $versions,
-        private readonly ScreenActionService $actions,
+        private readonly UpsertScreenCommand $upsertScreen,
+        private readonly UpdateScreenCommand $updateScreen,
     ) {}
 
     public function show(Request $request, Screen $screen): JsonResponse
@@ -34,21 +38,21 @@ class ScreenController extends Controller
 
         $this->authorize('updateGraph', $workflowVersion);
 
-        $screen = $this->actions->upsert(
+        $response = $this->upsertScreen->execute(
             $request->user(),
             $workflowVersion,
             $command,
         );
 
-        return response()->json(['data' => $screen]);
+        return response()->json(['data' => $response->jsonSerialize()]);
     }
 
     public function update(UpdateScreenRequest $request, Screen $screen): JsonResponse
     {
         $this->authorize('update', $screen);
 
-        return response()->json([
-            'data' => $this->actions->update($request->user(), $screen, $request->toDto()),
-        ]);
+        $response = $this->updateScreen->execute($request->user(), $screen, $request->toDto());
+
+        return response()->json(['data' => $response->jsonSerialize()]);
     }
 }

@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Infrastructure\Transaction\LaravelTransactionManager;
+use App\Infrastructure\Transaction\TransactionManager;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -15,7 +17,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(TransactionManager::class, LaravelTransactionManager::class);
     }
 
     /**
@@ -25,11 +27,13 @@ class AppServiceProvider extends ServiceProvider
     {
         Vite::prefetch(concurrency: 3);
 
-        RateLimiter::for('api', function (Request $request): Limit {
+        RateLimiter::for('api', function (Request $request): Limit
+        {
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
 
-        RateLimiter::for('mcp', function (Request $request): Limit {
+        RateLimiter::for('mcp', function (Request $request): Limit
+        {
             return Limit::perMinute(30)->by($request->user()?->id ?: $request->ip());
         });
     }

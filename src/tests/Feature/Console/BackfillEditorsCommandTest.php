@@ -5,11 +5,13 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-beforeEach(function (): void {
+beforeEach(function (): void
+{
     $this->seed();
 });
 
-it('promotes viewer users to editor while preserving fixture viewer and owners', function (): void {
+it('promotes viewer users to editor while preserving fixture viewer and owners', function (): void
+{
     $viewerToPromote = User::factory()->create([
         'email' => 'legacy-viewer@example.com',
     ]);
@@ -41,7 +43,8 @@ it('promotes viewer users to editor while preserving fixture viewer and owners',
     expect($fixtureViewer->hasRole('editor'))->toBeFalse();
 });
 
-it('supports dry run mode without mutating roles', function (): void {
+it('supports dry run mode without mutating roles', function (): void
+{
     $viewerToPromote = User::factory()->create([
         'email' => 'dry-run-viewer@example.com',
     ]);

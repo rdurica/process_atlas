@@ -18,7 +18,8 @@ class DatabaseSeeder extends Seeder
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        foreach (PermissionList::all() as $permission) {
+        foreach (PermissionList::all() as $permission)
+        {
             Permission::query()->firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
 
@@ -43,20 +44,20 @@ class DatabaseSeeder extends Seeder
 
         $admin = User::query()->firstOrCreate(
             ['email' => 'admin@example.com'],
-            ['name' => 'Admin', 'password' => 'password']
+            ['name' => 'Admin', 'password' => 'password'],
         );
         $admin->syncRoles(['admin']);
 
         // Keep owner@example.com as process_owner for backwards compatibility
         $owner = User::query()->firstOrCreate(
             ['email' => 'owner@example.com'],
-            ['name' => 'Owner', 'password' => 'password']
+            ['name' => 'Owner', 'password' => 'password'],
         );
         $owner->syncRoles(['process_owner']);
 
         $viewer = User::query()->firstOrCreate(
             ['email' => 'viewer@example.com'],
-            ['name' => 'Viewer', 'password' => 'password']
+            ['name' => 'Viewer', 'password' => 'password'],
         );
         $viewer->syncRoles(['viewer']);
     }

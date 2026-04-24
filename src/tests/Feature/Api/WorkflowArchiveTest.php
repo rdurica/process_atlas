@@ -5,11 +5,13 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-beforeEach(function (): void {
+beforeEach(function (): void
+{
     $this->seed();
 });
 
-it('allows process owner to archive and unarchive a workflow', function (): void {
+it('allows process owner to archive and unarchive a workflow', function (): void
+{
     $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
     $this->actingAs($owner);
 
@@ -46,7 +48,8 @@ it('allows process owner to archive and unarchive a workflow', function (): void
         ->toContain($workflowId);
 });
 
-it('allows listing archived workflows with include_archived flag', function (): void {
+it('allows listing archived workflows with include_archived flag', function (): void
+{
     $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
     $this->actingAs($owner);
 
@@ -73,7 +76,8 @@ it('allows listing archived workflows with include_archived flag', function (): 
         ->toContain($workflowId);
 });
 
-it('denies archive action for editor role', function (): void {
+it('denies archive action for editor role', function (): void
+{
     $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
     $editor = User::factory()->create(['email' => 'editor-role@example.com']);
     $editor->assignRole('editor');
@@ -86,7 +90,7 @@ it('denies archive action for editor role', function (): void {
 
     $this->postJson("/api/v1/projects/{$projectId}/members", [
         'email' => $editor->email,
-        'role' => 'editor',
+        'role'  => 'editor',
     ])->assertCreated();
 
     $workflowResponse = $this->postJson("/api/v1/projects/{$projectId}/workflows", [
@@ -99,7 +103,8 @@ it('denies archive action for editor role', function (): void {
         ->assertForbidden();
 });
 
-it('denies archive action for viewer role', function (): void {
+it('denies archive action for viewer role', function (): void
+{
     $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
     $viewer = User::query()->where('email', 'viewer@example.com')->firstOrFail();
 
@@ -111,7 +116,7 @@ it('denies archive action for viewer role', function (): void {
 
     $this->postJson("/api/v1/projects/{$projectId}/members", [
         'email' => $viewer->email,
-        'role' => 'viewer',
+        'role'  => 'viewer',
     ])->assertCreated();
 
     $workflowResponse = $this->postJson("/api/v1/projects/{$projectId}/workflows", [
@@ -124,7 +129,8 @@ it('denies archive action for viewer role', function (): void {
         ->assertForbidden();
 });
 
-it('excludes archived workflows from project workflows_count', function (): void {
+it('excludes archived workflows from project workflows_count', function (): void
+{
     $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
     $this->actingAs($owner);
 
@@ -142,7 +148,7 @@ it('excludes archived workflows from project workflows_count', function (): void
         ->assertInertia(fn ($page) => $page
             ->component('ProjectWorkflows')
             ->where('project.workflows_count', 1)
-            ->has('workflows', 1)
+            ->has('workflows', 1),
         );
 
     $this->postJson("/api/v1/workflows/{$workflowId}/archive")->assertOk();
@@ -151,6 +157,6 @@ it('excludes archived workflows from project workflows_count', function (): void
         ->assertInertia(fn ($page) => $page
             ->component('ProjectWorkflows')
             ->where('project.workflows_count', 0)
-            ->has('workflows', 0)
+            ->has('workflows', 0),
         );
 });

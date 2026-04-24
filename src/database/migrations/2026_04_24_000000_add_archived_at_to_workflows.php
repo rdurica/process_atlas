@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('workflows', function (Blueprint $table): void {
+        Schema::table('workflows', function (Blueprint $table): void
+        {
             $table->timestamp('archived_at')->nullable()->after('published_version_id');
             $table->index('archived_at');
         });
@@ -22,7 +23,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('workflows', function (Blueprint $table): void {
+        Schema::table('workflows', function (Blueprint $table): void
+        {
             $table->dropIndex(['archived_at']);
             $table->dropColumn('archived_at');
         });

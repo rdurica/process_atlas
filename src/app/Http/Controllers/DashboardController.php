@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Queries\DashboardQueryService;
 use App\Support\ActivityFeed;
+use App\UseCase\Query\DashboardQueryService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;

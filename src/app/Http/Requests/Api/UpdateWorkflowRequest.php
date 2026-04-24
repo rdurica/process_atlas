@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Api;
 
-use App\DTO\Command\UpdateWorkflowCommand;
+use App\DTO\Request\UpdateWorkflowRequest as UpdateWorkflowDto;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -19,16 +19,16 @@ class UpdateWorkflowRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'name'   => ['sometimes', 'required', 'string', 'max:255'],
             'status' => ['prohibited'],
         ];
     }
 
-    public function toDto(): UpdateWorkflowCommand
+    public function toDto(): UpdateWorkflowDto
     {
         /** @var array<string, mixed> $validated */
         $validated = $this->validated();
 
-        return UpdateWorkflowCommand::fromArray($validated);
+        return UpdateWorkflowDto::fromArray($validated);
     }
 }

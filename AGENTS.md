@@ -55,7 +55,11 @@ npm run format:check # Prettier
 
 - **App entrypoint**: `src/` (Laravel skeleton)
 - **Frontend**: `src/resources/js/` — Inertia pages, React components, types
-- **Backend**: `src/app/` — Models, Controllers, Services
+- **Backend**: Lightweight hexagonal architecture
+  - **Adapters (HTTP)**: `app/Http/Controllers/` — thin controllers, delegate to use cases
+  - **Application layer**: `app/UseCase/` — Commands (write) and Queries (read)
+  - **Domain layer**: `app/Models/` (Eloquent entities), `app/Services/` (domain services), `app/DTO/`
+  - **Infrastructure**: `app/Infrastructure/` — transaction management, external concerns
 - **MCP server**: `POST /api/mcp` (auth: sanctum + mcp.use middleware)
 - **MCP stdio**: `php artisan mcp:serve-stdio --user=<id>`
 - **Workflow model** is the core domain entity; `app/Models/` has Workflow, WorkflowVersion, Screen, etc.
@@ -89,6 +93,23 @@ npm run format:check # Prettier
 - **CORS**: Explicitly configured in `config/cors.php` with `supports_credentials=true`.
 - **File upload**: Screen images are validated via `mimes:jpg,jpeg,png,webp` and checked with `getimagesize()` after upload.
 - **API error handling**: Set in `bootstrap/app.php` so API endpoints never return stack traces (generic JSON response when `APP_DEBUG=false`).
+
+## Agent Workflow
+
+After implementing any changes, the agent MUST run:
+
+```shell
+make pint   # format code
+make test   # run tests
+```
+
+If JS/TS/CSS files were modified, also run inside the node container:
+
+```shell
+npm run typecheck
+npm run lint
+npm run format:check
+```
 
 ## Important Gotchas
 

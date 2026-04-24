@@ -14,7 +14,8 @@ class ProjectAccessService
      */
     public function getProjectRole(User $user, Project $project): ?string
     {
-        if ($user->can(PermissionList::PROJECTS_ADMIN)) {
+        if ($user->can(PermissionList::PROJECTS_ADMIN))
+        {
             return 'process_owner';
         }
 
@@ -50,7 +51,8 @@ class ProjectAccessService
      */
     public function canManageMembers(User $user, Project $project): bool
     {
-        if ($user->can(PermissionList::PROJECTS_ADMIN)) {
+        if ($user->can(PermissionList::PROJECTS_ADMIN))
+        {
             return true;
         }
 

@@ -15,7 +15,7 @@ final readonly class McpError
     public function toArray(): array
     {
         return [
-            'code' => $this->code,
+            'code'    => $this->code,
             'message' => $this->message,
         ];
     }

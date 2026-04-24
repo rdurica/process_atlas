@@ -27,10 +27,11 @@ final readonly class McpResponse
     {
         $payload = [
             'jsonrpc' => '2.0',
-            'id' => $this->id,
+            'id'      => $this->id,
         ];
 
-        if ($this->error !== null) {
+        if ($this->error !== null)
+        {
             $payload['error'] = $this->error->toArray();
 
             return $payload;

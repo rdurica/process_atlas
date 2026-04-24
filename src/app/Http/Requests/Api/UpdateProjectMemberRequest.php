@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Api;
 
-use App\DTO\Command\UpdateProjectMemberRoleCommand;
+use App\DTO\Request\UpdateProjectMemberRoleRequest as UpdateProjectMemberRoleDto;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -23,11 +23,11 @@ class UpdateProjectMemberRequest extends FormRequest
         ];
     }
 
-    public function toDto(): UpdateProjectMemberRoleCommand
+    public function toDto(): UpdateProjectMemberRoleDto
     {
         /** @var array<string, mixed> $validated */
         $validated = $this->validated();
 
-        return UpdateProjectMemberRoleCommand::fromArray($validated);
+        return UpdateProjectMemberRoleDto::fromArray($validated);
     }
 }

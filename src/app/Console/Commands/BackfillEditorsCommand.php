@@ -40,22 +40,27 @@ class BackfillEditorsCommand extends Command
         $promoted = 0;
         $skippedOwner = 0;
 
-        foreach ($candidates as $user) {
-            if ($user->hasRole('process_owner')) {
+        foreach ($candidates as $user)
+        {
+            if ($user->hasRole('process_owner'))
+            {
                 $skippedOwner++;
 
                 continue;
             }
 
-            if (! $user->hasRole($editorRole->name)) {
+            if (! $user->hasRole($editorRole->name))
+            {
                 $promoted++;
 
-                if (! $dryRun) {
+                if (! $dryRun)
+                {
                     $user->assignRole($editorRole);
                 }
             }
 
-            if ($user->hasRole($viewerRole->name) && ! $dryRun) {
+            if ($user->hasRole($viewerRole->name) && ! $dryRun)
+            {
                 $user->removeRole($viewerRole);
             }
         }
@@ -64,7 +69,7 @@ class BackfillEditorsCommand extends Command
             'Backfill finished. promoted=%d skipped_owner=%d dry_run=%s',
             $promoted,
             $skippedOwner,
-            $dryRun ? 'yes' : 'no'
+            $dryRun ? 'yes' : 'no',
         ));
 
         return self::SUCCESS;

@@ -8,8 +8,8 @@ use App\DTO\Mcp\McpResourceReadResult;
 use App\DTO\Mcp\McpResourceUri;
 use App\Models\User;
 use App\Models\Workflow;
-use App\Queries\McpQueryService;
 use App\Support\PermissionList;
+use App\UseCase\Query\McpQueryService;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
@@ -27,13 +27,15 @@ final class ResourcesReadMethodHandler implements McpMethodHandler
         $this->authorizeMcpUsage($actor);
 
         $uri = $params->string('uri');
-        if ($uri === '') {
+        if ($uri === '')
+        {
             throw ValidationException::withMessages(['uri' => 'uri is required.']);
         }
 
         $resourceUri = McpResourceUri::parse($uri);
 
-        $payload = match ($resourceUri->kind) {
+        $payload = match ($resourceUri->kind)
+        {
             'projects' => $resourceUri->id === null
                 ? ['projects' => $this->queries->listProjectsResource($actor)]
                 : $this->projectPayload($actor, $resourceUri->id),
@@ -71,7 +73,8 @@ final class ResourcesReadMethodHandler implements McpMethodHandler
     {
         $workflow = $this->queries->workflowResourceById($workflowId);
 
-        if ($workflow instanceof Workflow) {
+        if ($workflow instanceof Workflow)
+        {
             Gate::forUser($actor)->authorize('view', $workflow);
 
             return ['workflow' => $workflow->toArray()];

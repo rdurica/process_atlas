@@ -32,10 +32,10 @@ final readonly class UpdateScreenArguments
     {
         return [
             'workflow_revision_id' => $this->workflowRevisionId,
-            'node_id' => $this->nodeId,
-            'title' => $this->title,
-            'subtitle' => $this->subtitle,
-            'description' => $this->description,
+            'node_id'              => $this->nodeId,
+            'title'                => $this->title,
+            'subtitle'             => $this->subtitle,
+            'description'          => $this->description,
         ];
     }
 }

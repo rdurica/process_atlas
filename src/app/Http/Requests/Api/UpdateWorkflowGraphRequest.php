@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Api;
 
-use App\DTO\Command\UpdateWorkflowGraphCommand;
+use App\DTO\Request\UpdateWorkflowGraphRequest as UpdateWorkflowGraphDto;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -19,18 +19,18 @@ class UpdateWorkflowGraphRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'graph_json' => ['required', 'array'],
+            'graph_json'       => ['required', 'array'],
             'graph_json.nodes' => ['present', 'array'],
             'graph_json.edges' => ['present', 'array'],
-            'lock_version' => ['required', 'integer', 'min:0'],
+            'lock_version'     => ['required', 'integer', 'min:0'],
         ];
     }
 
-    public function toDto(): UpdateWorkflowGraphCommand
+    public function toDto(): UpdateWorkflowGraphDto
     {
         /** @var array<string, mixed> $validated */
         $validated = $this->validated();
 
-        return UpdateWorkflowGraphCommand::fromArray($validated);
+        return UpdateWorkflowGraphDto::fromArray($validated);
     }
 }

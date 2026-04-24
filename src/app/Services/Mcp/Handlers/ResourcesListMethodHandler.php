@@ -6,9 +6,9 @@ use App\DTO\Mcp\McpMethodResult;
 use App\DTO\Mcp\McpParams;
 use App\DTO\Mcp\McpResourceDefinition;
 use App\Models\User;
-use App\Queries\McpQueryService;
 use App\Services\Mcp\McpResourceCatalog;
 use App\Support\PermissionList;
+use App\UseCase\Query\McpQueryService;
 
 final class ResourcesListMethodHandler implements McpMethodHandler
 {
@@ -36,7 +36,8 @@ final class ResourcesListMethodHandler implements McpMethodHandler
 
         $resources = McpResourceCatalog::baseResources();
 
-        foreach ($projects as $project) {
+        foreach ($projects as $project)
+        {
             $resources[] = new McpResourceDefinition(
                 uri: "process-atlas://projects/{$project->id}",
                 name: "Project {$project->id}: {$project->name}",
@@ -45,7 +46,8 @@ final class ResourcesListMethodHandler implements McpMethodHandler
             );
         }
 
-        foreach ($workflows as $workflow) {
+        foreach ($workflows as $workflow)
+        {
             $resources[] = new McpResourceDefinition(
                 uri: "process-atlas://workflows/{$workflow->id}",
                 name: "Workflow {$workflow->id}: {$workflow->name}",
@@ -54,7 +56,8 @@ final class ResourcesListMethodHandler implements McpMethodHandler
             );
         }
 
-        foreach ($revisions as $revision) {
+        foreach ($revisions as $revision)
+        {
             $resources[] = new McpResourceDefinition(
                 uri: "process-atlas://revisions/{$revision->id}",
                 name: "Revision {$revision->version_number}",
@@ -63,7 +66,8 @@ final class ResourcesListMethodHandler implements McpMethodHandler
             );
         }
 
-        foreach ($screens as $screen) {
+        foreach ($screens as $screen)
+        {
             $resources[] = new McpResourceDefinition(
                 uri: "process-atlas://screens/{$screen->id}",
                 name: "Screen {$screen->id}: " . ($screen->title ?: $screen->node_id),

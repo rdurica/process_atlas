@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('screen_custom_fields', function (Blueprint $table): void {
+        Schema::create('screen_custom_fields', function (Blueprint $table): void
+        {
             $table->id();
             $table->foreignId('screen_id')->constrained()->cascadeOnDelete();
             $table->string('key');

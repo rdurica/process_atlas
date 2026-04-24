@@ -6,19 +6,20 @@ use Tests\TestCase;
 
 uses(TestCase::class);
 
-it('stores and retrieves published workflow data', function (): void {
+it('stores and retrieves published workflow data', function (): void
+{
     $service = new PublishedWorkflowCacheService;
 
     expect($service->get(1))->toBeNull();
 
     $data = [
-        'id' => 1,
-        'name' => 'Test Workflow',
+        'id'                => 1,
+        'name'              => 'Test Workflow',
         'published_version' => [
-            'id' => 10,
+            'id'             => 10,
             'version_number' => 1,
-            'graph_json' => ['nodes' => [], 'edges' => []],
-            'screens' => [],
+            'graph_json'     => ['nodes' => [], 'edges' => []],
+            'screens'        => [],
         ],
     ];
 
@@ -27,7 +28,8 @@ it('stores and retrieves published workflow data', function (): void {
     expect($service->get(1))->toBe($data);
 });
 
-it('forgets cached data', function (): void {
+it('forgets cached data', function (): void
+{
     $service = new PublishedWorkflowCacheService;
 
     $service->put(1, ['id' => 1]);
@@ -37,7 +39,8 @@ it('forgets cached data', function (): void {
     expect($service->get(1))->toBeNull();
 });
 
-it('uses the configured ttl', function (): void {
+it('uses the configured ttl', function (): void
+{
     config()->set('cache.ttl.published_workflow', 7200);
 
     $service = new PublishedWorkflowCacheService;
