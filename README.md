@@ -135,6 +135,8 @@ https://localhost
 | `make php`       | Open a shell in the PHP container          |
 | `make node`      | Open a shell in the Node container         |
 | `make node-sync` | Copy `node_modules` from container to host |
+| `make pint`      | Run Laravel Pint code formatter            |
+| `make test`      | Run Pest PHP tests                         |
 
 All `php artisan` and `npm` commands must be run inside their respective containers:
 
@@ -152,19 +154,23 @@ docker compose exec node npm run build
 
 ```
 process_atlas/
-├── build/          # Docker build files and NGINX config
-├── src/            # Laravel application
+├── build/                  # Docker build files and NGINX config
+├── src/                    # Laravel application
 │   ├── app/
-│   │   ├── Http/Controllers/
-│   │   ├── Models/         # Workflow, WorkflowVersion, Screen, ...
-│   │   └── Services/
+│   │   ├── DTO/            # Data Transfer Objects (Request, Response)
+│   │   ├── Http/           # HTTP layer — Controllers, Middleware, Requests
+│   │   ├── Infrastructure/ # Infrastructure concerns (transactions)
+│   │   ├── Models/         # Eloquent entities (Workflow, Screen, ...)
+│   │   ├── Services/       # Domain services (Audit, MCP, Workflow, ...)
+│   │   ├── Support/        # Helper classes
+│   │   └── UseCase/        # Application layer — Commands (write) & Queries (read)
+│   ├── config/
+│   ├── database/
 │   ├── resources/
-│   │   ├── js/
-│   │   │   ├── Pages/      # Inertia page components (React + TypeScript)
-│   │   │   └── types/
+│   │   ├── js/             # React + TypeScript frontend (Inertia pages, types)
 │   │   └── css/
 │   ├── routes/
-│   └── database/migrations/
+│   └── tests/              # Pest — Feature & Unit tests
 ├── compose.yaml
 ├── makefile
 └── LICENSE
