@@ -28,7 +28,16 @@ import {
     useReactFlow,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import React, { DragEvent, FormEvent, MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+    DragEvent,
+    FormEvent,
+    MouseEvent,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import ContextMenu from '../features/workflow-editor/components/ContextMenu';
 import { useCopyPaste } from '../features/workflow-editor/hooks/useCopyPaste';
 
@@ -392,18 +401,17 @@ function inspectorTabsForNodeKind(nodeKind: WorkflowNodeKind): [InspectorTab, st
     return [];
 }
 
-function Editor({
-    workflow,
-    projectWorkflows,
-    currentUserRole,
-}: WorkflowEditorProps) {
+function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorProps) {
     const latestVersion = workflow.latest_version;
     const isArchived = workflow.archived_at != null;
     const canEditInProject = currentUserRole === 'process_owner' || currentUserRole === 'editor';
     const canPublishWorkflows = currentUserRole === 'process_owner';
     const [previewVersion, setPreviewVersion] = useState<WorkflowVersionSummary | null>(null);
     const canEditWorkflows =
-        canEditInProject && latestVersion?.is_published !== true && previewVersion === null && !isArchived;
+        canEditInProject &&
+        latestVersion?.is_published !== true &&
+        previewVersion === null &&
+        !isArchived;
     const initialNodes = useMemo(
         () => buildInitialNodes(latestVersion?.graph_json?.nodes, latestVersion?.screens ?? []),
         [latestVersion?.graph_json?.nodes, latestVersion?.screens]
@@ -459,10 +467,7 @@ function Editor({
         closeContextMenu,
     } = useCopyPaste({ setNodes });
 
-    const selectedNodes = useMemo(
-        () => nodes.filter(node => node.selected),
-        [nodes]
-    );
+    const selectedNodes = useMemo(() => nodes.filter(node => node.selected), [nodes]);
 
     const versions = useMemo(
         () => [...workflow.versions].sort((a, b) => b.version_number - a.version_number),
@@ -675,7 +680,10 @@ function Editor({
 
     const handleAddElementFromContextMenu = useCallback(
         (kind: WorkflowNodeKind) => {
-            const position = { x: contextMenuFlowPosition.current.x, y: contextMenuFlowPosition.current.y };
+            const position = {
+                x: contextMenuFlowPosition.current.x,
+                y: contextMenuFlowPosition.current.y,
+            };
             if (kind === 'screen') {
                 const nextId = `screen-${Date.now()}`;
                 setNodes(currentNodes => [
@@ -703,7 +711,8 @@ function Editor({
                 setNodes(currentNodes => {
                     const labelIndex =
                         currentNodes.filter(
-                            node => node.type === kind || (kind === 'condition' && node.type === 'if')
+                            node =>
+                                node.type === kind || (kind === 'condition' && node.type === 'if')
                         ).length + 1;
                     const data =
                         kind === 'flash'
@@ -719,7 +728,11 @@ function Editor({
                               : kind === 'start'
                                 ? { label: 'Start', security_rule: null }
                                 : kind === 'end'
-                                  ? { label: 'End', linked_workflow_id: null, linked_workflow_name: null }
+                                  ? {
+                                        label: 'End',
+                                        linked_workflow_id: null,
+                                        linked_workflow_name: null,
+                                    }
                                   : {
                                         title: `Action ${labelIndex}`,
                                         description: '',
@@ -1253,62 +1266,62 @@ function Editor({
     const selectedRollbackVersion = versions.find(version => version.id === rollbackVersionId);
 
     return (
-            <div className="workflow-fullscreen">
-                <Head title={`${workflow.name} Editor`} />
+        <div className="workflow-fullscreen">
+            <Head title={`${workflow.name} Editor`} />
 
-                <div className="workflow-canvas-layer">
-                    {previewVersion && (
-                        <div className="pointer-events-auto absolute inset-x-0 top-0 z-10 flex items-center justify-between gap-4 border-b border-amber-200 bg-amber-50 px-5 py-2.5">
-                            <p className="text-sm font-medium text-amber-900">
-                                Viewing rev. {previewVersion.version_number} (read-only)
-                            </p>
-                            {latestVersion && (
-                                <button
-                                    type="button"
-                                    onClick={() => handleVersionTimelineClick(latestVersion)}
-                                    className="text-sm font-semibold text-amber-700 hover:text-amber-900"
-                                >
-                                    Return to latest
-                                </button>
-                            )}
-                        </div>
-                    )}
-                    {isArchived && (
-                        <div className="pointer-events-auto absolute inset-x-0 top-0 z-10 flex items-center justify-center gap-4 border-b border-slate-200 bg-slate-100 px-5 py-2.5">
-                            <p className="text-sm font-medium text-slate-700">
-                                This workflow is archived and read-only.
-                            </p>
-                        </div>
-                    )}
-                    <FlowCanvas
-                        nodes={nodes}
-                        edges={edges}
-                        nodeTypes={nodeTypes}
-                        onNodesChange={handleNodesChange}
-                        onEdgesChange={handleEdgesChange}
-                        onConnect={onConnect}
-                        onNodeClick={(_, node) =>
-                            setNodeSelected(
-                                node.id,
-                                isWorkflowNodeKind(node.type) ? node.type : undefined
-                            )
-                        }
-                        onNodeDoubleClick={(_, node) =>
-                            setNodeSelected(
-                                node.id,
-                                isWorkflowNodeKind(node.type) ? node.type : undefined
-                            )
-                        }
-                        onEdgeClick={(_, edge) => setEdgeSelected(edge.id)}
-                        onEdgeDoubleClick={(_, edge) => setEdgeSelected(edge.id)}
-                        onPaneClick={clearCanvasSelection}
-                        onPaneContextMenu={handlePaneContextMenu}
-                        onDropNode={handleDropNode}
-                        editable={canEditWorkflows}
-                    />
-                </div>
+            <div className="workflow-canvas-layer">
+                {previewVersion && (
+                    <div className="pointer-events-auto absolute inset-x-0 top-0 z-10 flex items-center justify-between gap-4 border-b border-amber-200 bg-amber-50 px-5 py-2.5">
+                        <p className="text-sm font-medium text-amber-900">
+                            Viewing rev. {previewVersion.version_number} (read-only)
+                        </p>
+                        {latestVersion && (
+                            <button
+                                type="button"
+                                onClick={() => handleVersionTimelineClick(latestVersion)}
+                                className="text-sm font-semibold text-amber-700 hover:text-amber-900"
+                            >
+                                Return to latest
+                            </button>
+                        )}
+                    </div>
+                )}
+                {isArchived && (
+                    <div className="pointer-events-auto absolute inset-x-0 top-0 z-10 flex items-center justify-center gap-4 border-b border-slate-200 bg-slate-100 px-5 py-2.5">
+                        <p className="text-sm font-medium text-slate-700">
+                            This workflow is archived and read-only.
+                        </p>
+                    </div>
+                )}
+                <FlowCanvas
+                    nodes={nodes}
+                    edges={edges}
+                    nodeTypes={nodeTypes}
+                    onNodesChange={handleNodesChange}
+                    onEdgesChange={handleEdgesChange}
+                    onConnect={onConnect}
+                    onNodeClick={(_, node) =>
+                        setNodeSelected(
+                            node.id,
+                            isWorkflowNodeKind(node.type) ? node.type : undefined
+                        )
+                    }
+                    onNodeDoubleClick={(_, node) =>
+                        setNodeSelected(
+                            node.id,
+                            isWorkflowNodeKind(node.type) ? node.type : undefined
+                        )
+                    }
+                    onEdgeClick={(_, edge) => setEdgeSelected(edge.id)}
+                    onEdgeDoubleClick={(_, edge) => setEdgeSelected(edge.id)}
+                    onPaneClick={clearCanvasSelection}
+                    onPaneContextMenu={handlePaneContextMenu}
+                    onDropNode={handleDropNode}
+                    editable={canEditWorkflows}
+                />
+            </div>
 
-                <header className="workflow-topbar">
+            <header className="workflow-topbar">
                 <div className="flex min-w-0 items-center gap-3">
                     <Link
                         href={route('projects.show', workflow.project.id)}
@@ -1322,9 +1335,7 @@ function Editor({
                     <StatusBadge tone={workflowTone(workflow.status)}>
                         {workflow.status}
                     </StatusBadge>
-                    {isArchived && (
-                        <StatusBadge tone="neutral">Archived</StatusBadge>
-                    )}
+                    {isArchived && <StatusBadge tone="neutral">Archived</StatusBadge>}
                     <StatusBadge tone={graphTone(graphState)}>{graphLabel(graphState)}</StatusBadge>
                 </div>
 
@@ -1358,7 +1369,11 @@ function Editor({
                     <button
                         type="button"
                         onClick={publishCurrent}
-                        disabled={!canPublishWorkflows || latestVersion?.is_published === true || isArchived}
+                        disabled={
+                            !canPublishWorkflows ||
+                            latestVersion?.is_published === true ||
+                            isArchived
+                        }
                         className="btn-secondary workflow-action-button"
                     >
                         Publish

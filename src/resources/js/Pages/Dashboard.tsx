@@ -232,7 +232,7 @@ export default function Dashboard({ summary, projects }: DashboardProps) {
                         </div>
                     </div>
 
-                    <div className="px-6 pb-6 overflow-x-auto">
+                    <div className="overflow-x-auto px-6 pb-6">
                         {filteredProjects.length === 0 ? (
                             <div className="empty-state py-12">
                                 No projects match the current filters.
@@ -241,26 +241,42 @@ export default function Dashboard({ summary, projects }: DashboardProps) {
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b border-slate-200/70">
-                                        <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Name</th>
-                                        <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Status</th>
-                                        <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Role</th>
-                                        <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Workflows</th>
-                                        <th className="px-4 py-4 text-right text-xs font-bold uppercase tracking-wider text-slate-500">Actions</th>
+                                        <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
+                                            Name
+                                        </th>
+                                        <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
+                                            Status
+                                        </th>
+                                        <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
+                                            Role
+                                        </th>
+                                        <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
+                                            Workflows
+                                        </th>
+                                        <th className="px-4 py-4 text-right text-xs font-bold uppercase tracking-wider text-slate-500">
+                                            Actions
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     {filteredProjects.map(project => (
-                                        <tr key={project.id} className="group transition-colors hover:bg-slate-50/80">
+                                        <tr
+                                            key={project.id}
+                                            className="group transition-colors hover:bg-slate-50/80"
+                                        >
                                             <td className="px-4 py-4">
                                                 <Link
-                                                    href={route('projects.show', { project: project.id })}
+                                                    href={route('projects.show', {
+                                                        project: project.id,
+                                                    })}
                                                     className="block"
                                                 >
                                                     <p className="font-semibold text-slate-950 group-hover:text-blue-600">
                                                         {project.name}
                                                     </p>
-                                                    <p className="mt-0.5 text-sm text-slate-500 line-clamp-1">
-                                                        {project.description || 'No project description'}
+                                                    <p className="mt-0.5 line-clamp-1 text-sm text-slate-500">
+                                                        {project.description ||
+                                                            'No project description'}
                                                     </p>
                                                 </Link>
                                             </td>
@@ -280,7 +296,9 @@ export default function Dashboard({ summary, projects }: DashboardProps) {
                                                         {ROLE_LABELS[project.current_user_role]}
                                                     </span>
                                                 ) : (
-                                                    <span className="text-sm text-slate-400">—</span>
+                                                    <span className="text-sm text-slate-400">
+                                                        —
+                                                    </span>
                                                 )}
                                             </td>
                                             <td className="px-4 py-4">
@@ -290,7 +308,9 @@ export default function Dashboard({ summary, projects }: DashboardProps) {
                                             </td>
                                             <td className="px-4 py-4 text-right">
                                                 <Link
-                                                    href={route('projects.show', { project: project.id })}
+                                                    href={route('projects.show', {
+                                                        project: project.id,
+                                                    })}
                                                     className="btn-secondary px-3 py-1.5 text-xs"
                                                 >
                                                     View

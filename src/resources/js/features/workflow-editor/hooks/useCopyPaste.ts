@@ -48,10 +48,13 @@ export function useCopyPaste({ setNodes }: UseCopyPasteOptions) {
         return newNodes;
     }, [copiedNodes, setNodes, closeContextMenu]);
 
-    const deleteNodes = useCallback((nodeIds: string[]) => {
-        setNodes(currentNodes => currentNodes.filter(node => !nodeIds.includes(node.id)));
-        closeContextMenu();
-    }, [setNodes, closeContextMenu]);
+    const deleteNodes = useCallback(
+        (nodeIds: string[]) => {
+            setNodes(currentNodes => currentNodes.filter(node => !nodeIds.includes(node.id)));
+            closeContextMenu();
+        },
+        [setNodes, closeContextMenu]
+    );
 
     return {
         copiedNodes,

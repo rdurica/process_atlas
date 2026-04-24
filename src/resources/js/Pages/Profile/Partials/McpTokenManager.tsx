@@ -43,8 +43,8 @@ export default function McpTokenManager({
                 <h2 className="text-lg font-medium text-gray-900">MCP Token</h2>
 
                 <p className="mt-1 text-sm text-gray-600">
-                    Generate a personal access token for the MCP server. You can only have one active
-                    token at a time.
+                    Generate a personal access token for the MCP server. You can only have one
+                    active token at a time.
                 </p>
             </header>
 

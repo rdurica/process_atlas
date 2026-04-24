@@ -99,12 +99,9 @@ export default function AuthenticatedLayout({
             <div className="mt-auto px-5 pb-5 pt-3">
                 <p className="eyebrow text-slate-400">Signed In</p>
                 <p className="mt-2 text-sm font-semibold text-slate-950">{user?.name}</p>
-                <p className="mt-1 text-sm text-slate-500 truncate">{user?.email}</p>
+                <p className="mt-1 truncate text-sm text-slate-500">{user?.email}</p>
                 <div className="mt-4 flex gap-2">
-                    <Link
-                        href={route('profile.edit')}
-                        className="btn-secondary px-3 py-2 text-xs"
-                    >
+                    <Link href={route('profile.edit')} className="btn-secondary px-3 py-2 text-xs">
                         Profile
                     </Link>
                     <Link

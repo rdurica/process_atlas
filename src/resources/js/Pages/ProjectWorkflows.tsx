@@ -280,7 +280,7 @@ export default function ProjectWorkflows({ project, workflows }: ProjectWorkflow
                         </div>
                     </div>
 
-                    <div className="px-6 pb-6 overflow-x-auto">
+                    <div className="overflow-x-auto px-6 pb-6">
                         {displayedWorkflows.length === 0 ? (
                             <div className="empty-state py-12">
                                 {workflows.length === 0 && !showArchived
@@ -291,11 +291,21 @@ export default function ProjectWorkflows({ project, workflows }: ProjectWorkflow
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b border-slate-200/70">
-                                        <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Name</th>
-                                        <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Version</th>
-                                        <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Status</th>
-                                        <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Last Updated</th>
-                                        <th className="px-4 py-4 text-right text-xs font-bold uppercase tracking-wider text-slate-500">Actions</th>
+                                        <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
+                                            Name
+                                        </th>
+                                        <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
+                                            Version
+                                        </th>
+                                        <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
+                                            Status
+                                        </th>
+                                        <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
+                                            Last Updated
+                                        </th>
+                                        <th className="px-4 py-4 text-right text-xs font-bold uppercase tracking-wider text-slate-500">
+                                            Actions
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
@@ -308,28 +318,43 @@ export default function ProjectWorkflows({ project, workflows }: ProjectWorkflow
                                             >
                                                 <td className="px-4 py-4">
                                                     <div className="flex items-center gap-2">
-                                                        <p className={`font-semibold ${isArchived ? 'text-slate-500' : 'text-slate-950'}`}>
+                                                        <p
+                                                            className={`font-semibold ${isArchived ? 'text-slate-500' : 'text-slate-950'}`}
+                                                        >
                                                             {workflow.name}
                                                         </p>
                                                         {isArchived && (
-                                                            <StatusBadge tone="neutral">Archived</StatusBadge>
+                                                            <StatusBadge tone="neutral">
+                                                                Archived
+                                                            </StatusBadge>
                                                         )}
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-4">
                                                     <div className="flex flex-wrap items-center gap-1.5">
-                                                        <StatusBadge tone={isArchived ? 'neutral' : 'brand'}>
+                                                        <StatusBadge
+                                                            tone={isArchived ? 'neutral' : 'brand'}
+                                                        >
                                                             {workflow.latest_version
                                                                 ? `rev. ${workflow.latest_version.version_number}`
                                                                 : 'No revision'}
                                                         </StatusBadge>
-                                                        {workflow.published_version_id && !isArchived && (
-                                                            <StatusBadge tone="success">Live</StatusBadge>
-                                                        )}
+                                                        {workflow.published_version_id &&
+                                                            !isArchived && (
+                                                                <StatusBadge tone="success">
+                                                                    Live
+                                                                </StatusBadge>
+                                                            )}
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-4">
-                                                    <StatusBadge tone={isArchived ? 'neutral' : workflowTone(workflow.status)}>
+                                                    <StatusBadge
+                                                        tone={
+                                                            isArchived
+                                                                ? 'neutral'
+                                                                : workflowTone(workflow.status)
+                                                        }
+                                                    >
                                                         {workflow.status}
                                                     </StatusBadge>
                                                 </td>
@@ -348,12 +373,18 @@ export default function ProjectWorkflows({ project, workflows }: ProjectWorkflow
                                                         >
                                                             Open Editor
                                                         </Link>
-                                                        {canArchiveInProject(project.current_user_role) && (
+                                                        {canArchiveInProject(
+                                                            project.current_user_role
+                                                        ) && (
                                                             <>
                                                                 {isArchived ? (
                                                                     <button
                                                                         type="button"
-                                                                        onClick={() => unarchiveWorkflow(workflow.id)}
+                                                                        onClick={() =>
+                                                                            unarchiveWorkflow(
+                                                                                workflow.id
+                                                                            )
+                                                                        }
                                                                         disabled={pendingArchive}
                                                                         className="btn-secondary px-3 py-1.5 text-xs"
                                                                     >
@@ -362,7 +393,11 @@ export default function ProjectWorkflows({ project, workflows }: ProjectWorkflow
                                                                 ) : (
                                                                     <button
                                                                         type="button"
-                                                                        onClick={() => setConfirmArchiveId(workflow.id)}
+                                                                        onClick={() =>
+                                                                            setConfirmArchiveId(
+                                                                                workflow.id
+                                                                            )
+                                                                        }
                                                                         className="btn-secondary px-3 py-1.5 text-xs text-rose-700 hover:border-rose-300 hover:bg-rose-50"
                                                                     >
                                                                         Archive
@@ -379,7 +414,9 @@ export default function ProjectWorkflows({ project, workflows }: ProjectWorkflow
                             </table>
                         )}
                         {loadingArchived && (
-                            <p className="py-4 text-center text-sm text-slate-500">Loading archived workflows…</p>
+                            <p className="py-4 text-center text-sm text-slate-500">
+                                Loading archived workflows…
+                            </p>
                         )}
                     </div>
                 </section>
@@ -434,7 +471,11 @@ export default function ProjectWorkflows({ project, workflows }: ProjectWorkflow
             </Modal>
 
             {/* Confirm Archive Modal */}
-            <Modal show={confirmArchiveId !== null} onClose={() => setConfirmArchiveId(null)} maxWidth="md">
+            <Modal
+                show={confirmArchiveId !== null}
+                onClose={() => setConfirmArchiveId(null)}
+                maxWidth="md"
+            >
                 <div className="space-y-5 p-6 sm:p-7">
                     <div>
                         <p className="eyebrow">Archive Workflow</p>
