@@ -1,4 +1,4 @@
-FROM node:20
+FROM node:22
 
 ENV TERM=xterm-256color
 WORKDIR /app/src

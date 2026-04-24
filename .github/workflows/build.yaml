@@ -5,6 +5,7 @@ on:
     types:
       - published
       - edited
+  workflow_dispatch:
 
 jobs:
   build:
@@ -45,7 +46,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: Dockerfile
+          file: build/prod/Dockerfile
           pull: true
           push: true
           tags: ${{ steps.meta.outputs.tags }}
