@@ -44,20 +44,20 @@ class DatabaseSeeder extends Seeder
 
         $admin = User::query()->firstOrCreate(
             ['email' => 'admin@example.com'],
-            ['name' => 'Admin', 'password' => 'password'],
+            ['name' => 'Admin', 'password' => 'password', 'email_verified_at' => now()],
         );
         $admin->syncRoles(['admin']);
 
         // Keep owner@example.com as process_owner for backwards compatibility
         $owner = User::query()->firstOrCreate(
             ['email' => 'owner@example.com'],
-            ['name' => 'Owner', 'password' => 'password'],
+            ['name' => 'Owner', 'password' => 'password', 'email_verified_at' => now()],
         );
         $owner->syncRoles(['process_owner']);
 
         $viewer = User::query()->firstOrCreate(
             ['email' => 'viewer@example.com'],
-            ['name' => 'Viewer', 'password' => 'password'],
+            ['name' => 'Viewer', 'password' => 'password', 'email_verified_at' => now()],
         );
         $viewer->syncRoles(['viewer']);
     }

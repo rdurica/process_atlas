@@ -18,8 +18,8 @@ test('new users can register', function ()
         'password_confirmation' => 'password',
     ]);
 
-    $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    $this->assertGuest();
+    $response->assertRedirect(route('verification.notice'));
 
     $user = User::query()->where('email', 'test@example.com')->first();
     expect($user)->not->toBeNull();

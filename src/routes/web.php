@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => redirect()->route('login'));
 
-Route::middleware(['auth'])->group(function (): void
+Route::middleware(['auth', 'verified'])->group(function (): void
 {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/projects/{project}', [ProjectController::class, 'show'])->name('projects.show');
@@ -21,7 +21,7 @@ Route::middleware(['auth'])->group(function (): void
     Route::get('/admin/users', AdminController::class)->name('admin.users');
 });
 
-Route::middleware('auth')->group(function ()
+Route::middleware(['auth', 'verified'])->group(function ()
 {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
