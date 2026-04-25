@@ -39,6 +39,7 @@ import React, {
     useState,
 } from 'react';
 import { useAutosave } from '@/hooks/useAutosave';
+import { useCanvasHistory } from '@/hooks/useCanvasHistory';
 import ContextMenu from '../features/workflow-editor/components/ContextMenu';
 import { useCopyPaste } from '../features/workflow-editor/hooks/useCopyPaste';
 
@@ -419,11 +420,12 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
     );
 
     const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-    const initialEdges = (latestRevision?.graph_json?.edges ?? []).map(edge => ({
+    const initialEdges: Edge[] = (latestRevision?.graph_json?.edges ?? []).map(edge => ({
         ...edge,
         markerEnd: { type: MarkerType.ArrowClosed, color: '#0f5ef7', width: 10, height: 10 },
     }));
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+    const { undo, redo, canUndo, canRedo } = useCanvasHistory(nodes, edges, setNodes, setEdges);
     const [screens, setScreens] = useState<Screen[]>(latestRevision?.screens ?? []);
     const [lockVersion, setLockVersion] = useState<number>(latestRevision?.lock_version ?? 0);
     const [selectedNodeId, setSelectedNodeId] = useState<string | null>(
@@ -588,6 +590,16 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                 pasteNodes();
             }
 
+            if (isCtrlOrCmd && e.key === 'z' && !e.shiftKey) {
+                e.preventDefault();
+                undo();
+            }
+
+            if (isCtrlOrCmd && e.key === 'z' && e.shiftKey) {
+                e.preventDefault();
+                redo();
+            }
+
             if ((e.key === 'Delete' || e.key === 'Backspace') && selectedNodes.length > 0) {
                 e.preventDefault();
                 const idsToDelete = selectedNodes.filter(n => n.type !== 'start').map(n => n.id);
@@ -601,7 +613,16 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [canEditWorkflows, selectedNodes, copiedNodes, copyNodes, pasteNodes, deleteNodes]);
+    }, [
+        canEditWorkflows,
+        selectedNodes,
+        copiedNodes,
+        copyNodes,
+        pasteNodes,
+        deleteNodes,
+        undo,
+        redo,
+    ]);
 
     useEffect(() => {
         const handleClickOutside = () => {
@@ -1428,6 +1449,24 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                 </div>
 
                 <div className="workflow-actions">
+                    <button
+                        type="button"
+                        onClick={undo}
+                        disabled={!canEditWorkflows || !canUndo}
+                        className="btn-secondary workflow-action-button"
+                        title="Undo (Ctrl+Z)"
+                    >
+                        &#x21B6;
+                    </button>
+                    <button
+                        type="button"
+                        onClick={redo}
+                        disabled={!canEditWorkflows || !canRedo}
+                        className="btn-secondary workflow-action-button"
+                        title="Redo (Ctrl+Shift+Z)"
+                    >
+                        &#x21B7;
+                    </button>
                     <button
                         type="button"
                         onClick={() => saveGraph('ui')}
