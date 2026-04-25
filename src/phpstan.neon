@@ -5,8 +5,6 @@ parameters:
     level: 8
     paths:
         - app/
-    excludePaths:
-        - app/Http/Controllers/Auth/*
     bootstrapFiles:
         - bootstrap/app.php
     reportUnmatchedIgnoredErrors: false

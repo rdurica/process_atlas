@@ -3,25 +3,17 @@
 namespace App\Models;
 
 use Database\Factories\WorkflowRevisionFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+#[Fillable(['workflow_id', 'created_by', 'revision_number', 'is_published', 'graph_json', 'lock_version', 'rollback_from_revision_id'])]
 class WorkflowRevision extends Model
 {
     /** @use HasFactory<WorkflowRevisionFactory> */
     use HasFactory;
-
-    protected $fillable = [
-        'workflow_id',
-        'created_by',
-        'revision_number',
-        'is_published',
-        'graph_json',
-        'lock_version',
-        'rollback_from_revision_id',
-    ];
 
     /**
      * @return array<string, string>

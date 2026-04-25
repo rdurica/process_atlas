@@ -2,17 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+#[Fillable(['project_id', 'user_id', 'role'])]
 class ProjectMember extends Model
 {
-    protected $fillable = [
-        'project_id',
-        'user_id',
-        'role',
-    ];
-
     /**
      * @return BelongsTo<Project, $this>
      */

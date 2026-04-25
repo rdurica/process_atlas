@@ -3,25 +3,18 @@
 namespace App\Models;
 
 use Database\Factories\WorkflowFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+#[Fillable(['project_id', 'name', 'status', 'latest_revision_id', 'published_revision_id', 'archived_at'])]
 class Workflow extends Model
 {
     /** @use HasFactory<WorkflowFactory> */
     use HasFactory;
-
-    protected $fillable = [
-        'project_id',
-        'name',
-        'status',
-        'latest_revision_id',
-        'published_revision_id',
-        'archived_at',
-    ];
 
     /**
      * @return array<string, string>
