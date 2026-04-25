@@ -590,8 +590,10 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
 
             if ((e.key === 'Delete' || e.key === 'Backspace') && selectedNodes.length > 0) {
                 e.preventDefault();
-                const idsToDelete = selectedNodes.map(n => n.id);
-                deleteNodes(idsToDelete);
+                const idsToDelete = selectedNodes.filter(n => n.type !== 'start').map(n => n.id);
+                if (idsToDelete.length > 0) {
+                    deleteNodes(idsToDelete);
+                }
                 setSelectedNodeId(null);
                 setSelectedEdgeId(null);
             }
@@ -831,7 +833,14 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
     });
 
     const handleNodesChange = (changes: Parameters<typeof onNodesChange>[0]) => {
-        onNodesChange(changes);
+        const allowedChanges = changes.filter(change => {
+            if (change.type === 'remove') {
+                const node = nodes.find(n => n.id === change.id);
+                return node?.type !== 'start';
+            }
+            return true;
+        });
+        onNodesChange(allowedChanges);
     };
 
     const handleEdgesChange = (changes: Parameters<typeof onEdgesChange>[0]) => {
@@ -1103,6 +1112,10 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
     };
 
     const removeWorkflowNode = (nodeId: string) => {
+        const node = nodes.find(n => n.id === nodeId);
+        if (node?.type === 'start') {
+            return;
+        }
         setNodes(currentNodes => currentNodes.filter(node => node.id !== nodeId));
         setEdges(currentEdges =>
             currentEdges.filter(edge => edge.source !== nodeId && edge.target !== nodeId)
@@ -1824,16 +1837,18 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                                     </>
                                 )}
 
-                                <div className="workflow-inline-actions">
-                                    <button
-                                        type="button"
-                                        onClick={() => removeWorkflowNode(selectedNode.id)}
-                                        disabled={!canEditWorkflows}
-                                        className="btn-danger workflow-wide-button"
-                                    >
-                                        Delete Node
-                                    </button>
-                                </div>
+                                {selectedNode.type !== 'start' && (
+                                    <div className="workflow-inline-actions">
+                                        <button
+                                            type="button"
+                                            onClick={() => removeWorkflowNode(selectedNode.id)}
+                                            disabled={!canEditWorkflows}
+                                            className="btn-danger workflow-wide-button"
+                                        >
+                                            Delete Node
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         ) : selectedNode ? (
                             <div className="mt-5 space-y-5">
@@ -2199,16 +2214,18 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                                     </div>
                                 )}
 
-                                <div className="workflow-inline-actions">
-                                    <button
-                                        type="button"
-                                        onClick={() => removeWorkflowNode(selectedNode.id)}
-                                        disabled={!canEditWorkflows}
-                                        className="btn-danger workflow-wide-button"
-                                    >
-                                        Delete Node
-                                    </button>
-                                </div>
+                                {selectedNode.type !== 'start' && (
+                                    <div className="workflow-inline-actions">
+                                        <button
+                                            type="button"
+                                            onClick={() => removeWorkflowNode(selectedNode.id)}
+                                            disabled={!canEditWorkflows}
+                                            className="btn-danger workflow-wide-button"
+                                        >
+                                            Delete Node
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         ) : null}
                     </section>

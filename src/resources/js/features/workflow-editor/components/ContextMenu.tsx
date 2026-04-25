@@ -12,7 +12,6 @@ const addElementKinds: [WorkflowNodeKind, string][] = [
     ['flash', 'Flash'],
     ['condition', 'Condition'],
     ['action', 'Action'],
-    ['start', 'Start'],
     ['end', 'End'],
 ];
 
