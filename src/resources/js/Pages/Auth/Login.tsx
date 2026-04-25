@@ -122,6 +122,16 @@ export default function Login({
                         <button type="submit" className="login-submit" disabled={processing}>
                             Log in
                         </button>
+
+                        <p className="text-center text-sm text-slate-600">
+                            Don&apos;t have an account?{' '}
+                            <Link
+                                href={route('register')}
+                                className="font-semibold text-blue-700 underline-offset-4 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                            >
+                                Register
+                            </Link>
+                        </p>
                     </form>
                 </div>
             </section>
