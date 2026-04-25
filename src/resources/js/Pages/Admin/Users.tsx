@@ -95,6 +95,7 @@ export default function AdminUsers() {
     const [from, setFrom] = useState(0);
     const [to, setTo] = useState(0);
     const abortControllerRef = useRef<AbortController | null>(null);
+    const isFirstSearchEffect = useRef(true);
 
     const fetchUsers = useCallback(async (targetPage: number, targetSearch: string) => {
         if (abortControllerRef.current) {
@@ -129,6 +130,10 @@ export default function AdminUsers() {
     }, [fetchUsers]);
 
     useEffect(() => {
+        if (isFirstSearchEffect.current) {
+            isFirstSearchEffect.current = false;
+            return;
+        }
         const timer = setTimeout(() => {
             fetchUsers(1, searchQuery);
         }, 400);
