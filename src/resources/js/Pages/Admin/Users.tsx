@@ -1,5 +1,6 @@
 import { Head, usePage } from '@inertiajs/react';
-import { useCallback, useEffect, useState } from 'react';
+import axios from 'axios';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import Modal from '@/Components/Modal';
 import StatusBadge from '@/Components/StatusBadge';
@@ -87,22 +88,60 @@ export default function AdminUsers() {
     const [pendingRoles, setPendingRoles] = useState(false);
     const [pendingToggle, setPendingToggle] = useState<number | null>(null);
     const [pendingDelete, setPendingDelete] = useState<number | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [page, setPage] = useState(1);
+    const [lastPage, setLastPage] = useState(1);
+    const [total, setTotal] = useState(0);
+    const [from, setFrom] = useState(0);
+    const [to, setTo] = useState(0);
+    const abortControllerRef = useRef<AbortController | null>(null);
 
-    const fetchUsers = useCallback(async () => {
+    const fetchUsers = useCallback(async (targetPage: number, targetSearch: string) => {
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
         setLoading(true);
         try {
-            const response = await window.axios.get<{ data: UserItem[] }>('/api/v1/admin/users');
+            const response = await window.axios.get('/api/v1/admin/users', {
+                params: { page: targetPage, per_page: 20, search: targetSearch },
+                signal: controller.signal,
+            });
             setUsers(response.data.data);
-        } catch {
-            // ignore
+            setPage(response.data.current_page);
+            setLastPage(response.data.last_page);
+            setTotal(response.data.total);
+            setFrom(response.data.from);
+            setTo(response.data.to);
+        } catch (error) {
+            if (axios.isCancel(error)) {
+                return;
+            }
         } finally {
             setLoading(false);
         }
     }, []);
 
     useEffect(() => {
-        fetchUsers();
+        fetchUsers(1, '');
     }, [fetchUsers]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            fetchUsers(1, searchQuery);
+        }, 400);
+        return () => clearTimeout(timer);
+    }, [searchQuery, fetchUsers]);
+
+    useEffect(() => {
+        return () => {
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+        };
+    }, []);
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -114,7 +153,7 @@ export default function AdminUsers() {
             await window.axios.post('/api/v1/admin/users', form);
             setShowCreateModal(false);
             setForm({ name: '', email: '', password: '', roles: [] });
-            fetchUsers();
+            fetchUsers(page, searchQuery);
         } catch (err: unknown) {
             const axiosErr = err as { response?: { data?: { errors?: Record<string, string[]> } } };
             const serverErrors = axiosErr.response?.data?.errors;
@@ -143,7 +182,7 @@ export default function AdminUsers() {
             });
             setShowRolesModal(false);
             setEditingUser(null);
-            fetchUsers();
+            fetchUsers(page, searchQuery);
         } catch (err: unknown) {
             setFormError(resolveApiError(err, 'The roles could not be updated.'));
         } finally {
@@ -155,7 +194,7 @@ export default function AdminUsers() {
         setPendingToggle(id);
         try {
             await window.axios.patch(`/api/v1/admin/users/${id}/active`);
-            fetchUsers();
+            fetchUsers(page, searchQuery);
         } catch {
             // ignore
         } finally {
@@ -168,7 +207,7 @@ export default function AdminUsers() {
         setPendingDelete(id);
         try {
             await window.axios.delete(`/api/v1/admin/users/${id}`);
-            fetchUsers();
+            fetchUsers(page, searchQuery);
         } catch {
             // ignore
         } finally {
@@ -215,10 +254,45 @@ export default function AdminUsers() {
                         <p className="eyebrow">Users</p>
                         <h2 className="panel-title mt-2">System Users</h2>
                     </div>
+                    <div className="flex w-full flex-col gap-3 lg:w-auto lg:flex-row lg:items-center">
+                        <div className="relative min-w-[260px] lg:w-[320px]">
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)}
+                                placeholder="Search by name or email..."
+                                className="input-shell"
+                            />
+                            {loading && users.length > 0 && (
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2">
+                                    <svg
+                                        className="h-4 w-4 animate-spin text-slate-400"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <circle
+                                            className="opacity-25"
+                                            cx="12"
+                                            cy="12"
+                                            r="10"
+                                            stroke="currentColor"
+                                            strokeWidth="4"
+                                        />
+                                        <path
+                                            className="opacity-75"
+                                            fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                        />
+                                    </svg>
+                                </span>
+                            )}
+                        </div>
+                    </div>
                 </div>
 
                 <div className="overflow-x-auto px-6 pb-6">
-                    {loading ? (
+                    {loading && users.length === 0 ? (
                         <div className="empty-state py-12">Loading users…</div>
                     ) : users.length === 0 ? (
                         <div className="empty-state py-12">No users found.</div>
@@ -307,6 +381,32 @@ export default function AdminUsers() {
                         </table>
                     )}
                 </div>
+                {!loading && total > 0 && (
+                    <div className="flex items-center justify-between border-t border-slate-200/70 px-6 py-4">
+                        <p className="text-sm text-slate-500">
+                            Showing {from} to {to} of {total} users
+                        </p>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => fetchUsers(page - 1, searchQuery)}
+                                disabled={page <= 1}
+                                className="btn-ghost px-3 py-1.5 text-sm disabled:opacity-40"
+                            >
+                                Previous
+                            </button>
+                            <span className="text-sm text-slate-600">
+                                Page {page} of {lastPage}
+                            </span>
+                            <button
+                                onClick={() => fetchUsers(page + 1, searchQuery)}
+                                disabled={page >= lastPage}
+                                className="btn-ghost px-3 py-1.5 text-sm disabled:opacity-40"
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </div>
+                )}
             </section>
 
             <Modal show={showCreateModal} onClose={() => setShowCreateModal(false)} maxWidth="lg">
