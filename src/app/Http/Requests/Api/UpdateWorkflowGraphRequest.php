@@ -23,6 +23,7 @@ class UpdateWorkflowGraphRequest extends FormRequest
             'graph_json.nodes' => ['present', 'array'],
             'graph_json.edges' => ['present', 'array'],
             'lock_version'     => ['required', 'integer', 'min:0'],
+            'source'           => ['nullable', 'string', 'in:ui,autosave'],
         ];
     }
 

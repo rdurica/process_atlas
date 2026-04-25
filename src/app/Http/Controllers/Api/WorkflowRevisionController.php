@@ -51,10 +51,13 @@ class WorkflowRevisionController extends Controller
     {
         $this->authorize('updateGraph', $workflowRevision);
 
+        $dto = $request->toDto();
+
         $response = $this->updateGraph->execute(
             $this->user(),
             $workflowRevision,
-            $request->toDto(),
+            $dto,
+            $dto->source ?? 'ui',
         );
 
         return response()->json(['data' => $response->toApiArray()]);

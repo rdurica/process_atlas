@@ -38,6 +38,7 @@ import React, {
     useRef,
     useState,
 } from 'react';
+import { useAutosave } from '@/hooks/useAutosave';
 import ContextMenu from '../features/workflow-editor/components/ContextMenu';
 import { useCopyPaste } from '../features/workflow-editor/hooks/useCopyPaste';
 
@@ -455,6 +456,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
         useState<ScreenCustomField['field_type']>('text');
     const graphInitialized = useRef(false);
     const contextMenuFlowPosition = useRef({ x: 0, y: 0 });
+    const clearScreenAutosaveRef = useRef<(() => void) | null>(null);
 
     const {
         copiedNodes,
@@ -515,6 +517,13 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
     }, [edges, nodes]);
 
     useEffect(() => {
+        clearScreenAutosaveRef.current?.();
+        lastSavedScreenRef.current = {
+            title: selectedScreen?.title ?? '',
+            subtitle: selectedScreen?.subtitle ?? '',
+            description: selectedScreen?.description ?? '',
+            nodeId: selectedScreen?.node_id ?? null,
+        };
         setTitle(selectedScreen?.title ?? '');
         setSubtitle(selectedScreen?.subtitle ?? '');
         setDescription(selectedScreen?.description ?? '');
@@ -812,6 +821,15 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
         setLastSavedAt(new Date().toISOString());
     };
 
+    useAutosave({
+        saveFn: async () => {
+            await saveGraph('autosave');
+        },
+        dependencies: [nodes, edges],
+        delay: 2000,
+        enabled: canEditWorkflows && graphState === 'dirty',
+    });
+
     const handleNodesChange = (changes: Parameters<typeof onNodesChange>[0]) => {
         onNodesChange(changes);
     };
@@ -919,13 +937,15 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
         }
     };
 
-    const saveGraph = async () => {
+    const saveGraph = async (source: 'ui' | 'autosave' = 'ui') => {
         if (!latestRevision || !canEditWorkflows) {
             return;
         }
 
         setGraphState('saving');
-        setGraphMessage('Saving current canvas state.');
+        setGraphMessage(
+            source === 'autosave' ? 'Autosaving canvas…' : 'Saving current canvas state.'
+        );
         setActionError(null);
 
         try {
@@ -937,11 +957,16 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                         edges,
                     },
                     lock_version: lockVersion,
+                    source,
                 }
             );
 
             setLockVersion(response.data.data.lock_version);
-            markGraphSaved('Canvas state saved to the current draft.');
+            markGraphSaved(
+                source === 'autosave'
+                    ? 'Canvas autosaved.'
+                    : 'Canvas state saved to the current draft.'
+            );
         } catch (error) {
             const message = resolveApiError(error, 'Graph save failed. Refresh and retry.');
 
@@ -953,6 +978,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
 
             setGraphMessage(message);
             setActionError(message);
+            throw error;
         }
     };
 
@@ -1005,6 +1031,55 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
 
         return updatedScreen;
     };
+
+    const lastSavedScreenRef = useRef<{
+        title: string;
+        subtitle: string;
+        description: string;
+        nodeId: string | null;
+    }>({ title: '', subtitle: '', description: '', nodeId: null });
+
+    const { clearTimer: clearScreenAutosave } = useAutosave({
+        saveFn: async () => {
+            if (!latestRevision || !selectedNodeId || !canEditWorkflows) {
+                return;
+            }
+
+            const last = lastSavedScreenRef.current;
+            if (
+                title === last.title &&
+                subtitle === last.subtitle &&
+                description === last.description &&
+                selectedNodeId === last.nodeId
+            ) {
+                return;
+            }
+
+            setIsSavingScreen(true);
+            setActionError(null);
+
+            try {
+                await saveScreenData();
+                lastSavedScreenRef.current = {
+                    title,
+                    subtitle,
+                    description,
+                    nodeId: selectedNodeId,
+                };
+                setActionNotice('Screen metadata autosaved.');
+            } catch (error) {
+                setActionError(resolveApiError(error, 'Screen autosave failed.'));
+                throw error;
+            } finally {
+                setIsSavingScreen(false);
+            }
+        },
+        dependencies: [title, subtitle, description],
+        delay: 1000,
+        enabled: canEditWorkflows && selectedNodeId !== null,
+    });
+
+    clearScreenAutosaveRef.current = clearScreenAutosave;
 
     const upsertScreen = async (event: FormEvent) => {
         event.preventDefault();
@@ -1342,7 +1417,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                 <div className="workflow-actions">
                     <button
                         type="button"
-                        onClick={saveGraph}
+                        onClick={() => saveGraph('ui')}
                         disabled={!canEditWorkflows || graphState === 'saving'}
                         className="btn-primary workflow-action-button"
                     >
