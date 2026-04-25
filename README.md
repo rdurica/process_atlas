@@ -70,18 +70,7 @@ Process Atlas is the living map that agents read.
 
 ## MCP Protocol
 
-Process Atlas exposes a standard MCP JSON-RPC server over:
-
-- HTTP: `POST /api/mcp` (requires `auth:sanctum` and `mcp.use`)
-- Stdio: `php artisan mcp:serve-stdio --user=<id>`
-
-Supported MCP methods:
-
-- `initialize`, `notifications/initialized`, `ping`
-- `tools/list`, `tools/call`
-- `resources/list`, `resources/read`, `resources/templates/list`
-
-Resource URIs use the `process-atlas://` scheme (for example `process-atlas://workflows/12`).
+Process Atlas exposes a standard MCP JSON-RPC server. See [MCP documentation](docs/MCP.md) for details on setup, authentication, resources, tools, and configuration.
 
 ---
 
