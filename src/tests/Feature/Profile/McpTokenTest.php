@@ -27,6 +27,7 @@ it('allows user with mcp.use permission to generate a token', function (): void
 
     $token = $owner->tokens()->where('name', 'mcp')->first();
     expect($token->abilities)->toContain('mcp:use');
+    expect($token->expires_at)->not->toBeNull();
 });
 
 it('replaces existing token when generating a new one', function (): void
@@ -106,4 +107,19 @@ it('generated token authenticates on the mcp api endpoint', function (): void
         ])
         ->assertOk()
         ->assertJsonPath('result.protocolVersion', '2024-11-05');
+});
+
+it('rejects expired mcp tokens on the mcp api endpoint', function (): void
+{
+    $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
+    $plainToken = $owner->createToken('mcp', ['mcp:use'], now()->subMinute())->plainTextToken;
+
+    $this->withHeader('Authorization', "Bearer {$plainToken}")
+        ->postJson('/api/mcp', [
+            'jsonrpc' => '2.0',
+            'id'      => 1,
+            'method'  => 'initialize',
+            'params'  => [],
+        ])
+        ->assertUnauthorized();
 });

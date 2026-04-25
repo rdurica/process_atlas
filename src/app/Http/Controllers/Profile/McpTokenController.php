@@ -18,7 +18,9 @@ class McpTokenController extends Controller
 
         $user->tokens()->where('name', 'mcp')->delete();
 
-        $token = $user->createToken('mcp', ['mcp:use']);
+        $expiresAt = now()->addDays((int) config('sanctum.mcp_token_expiration_days', 90));
+
+        $token = $user->createToken('mcp', ['mcp:use'], $expiresAt);
 
         return Redirect::route('profile.edit')->with([
             'mcp_token' => $token->plainTextToken,

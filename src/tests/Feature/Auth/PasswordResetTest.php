@@ -22,6 +22,32 @@ test('reset password link can be requested', function ()
     Notification::assertSentTo($user, ResetPassword::class);
 });
 
+test('reset password request does not reveal unknown email addresses', function ()
+{
+    Notification::fake();
+
+    $response = $this->post('/forgot-password', ['email' => 'missing@example.com']);
+
+    $response
+        ->assertSessionHasNoErrors()
+        ->assertSessionHas('status', trans('passwords.sent'));
+
+    Notification::assertNothingSent();
+});
+
+test('reset password request is rate limited', function ()
+{
+    Notification::fake();
+
+    for ($attempt = 0; $attempt < 5; $attempt++)
+    {
+        $this->post('/forgot-password', ['email' => 'rate-limited@example.com']);
+    }
+
+    $this->post('/forgot-password', ['email' => 'rate-limited@example.com'])
+        ->assertTooManyRequests();
+});
+
 test('reset password screen can be rendered', function ()
 {
     Notification::fake();

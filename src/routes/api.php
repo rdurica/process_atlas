@@ -10,7 +10,7 @@ use App\Http\Controllers\Api\WorkflowRevisionController;
 use App\Http\Controllers\McpController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth:sanctum', 'throttle:api'])->prefix('v1')->group(function (): void
+Route::middleware(['auth:sanctum', 'verified', 'throttle:api'])->prefix('v1')->group(function (): void
 {
     Route::get('/projects', [ProjectController::class, 'index']);
     Route::post('/projects', [ProjectController::class, 'store']);
@@ -45,12 +45,15 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->prefix('v1')->group(functio
     Route::post('/screens/{screen}/custom-fields/upsert', [ScreenCustomFieldController::class, 'upsert']);
     Route::delete('/custom-fields/{screenCustomField}', [ScreenCustomFieldController::class, 'destroy']);
 
-    Route::get('/admin/users', [AdminUserController::class, 'index']);
-    Route::post('/admin/users', [AdminUserController::class, 'store']);
-    Route::patch('/admin/users/{user}', [AdminUserController::class, 'update']);
-    Route::patch('/admin/users/{user}/roles', [AdminUserController::class, 'updateRoles']);
-    Route::patch('/admin/users/{user}/active', [AdminUserController::class, 'toggleActive']);
-    Route::delete('/admin/users/{user}', [AdminUserController::class, 'destroy']);
+    Route::middleware('can:admin')->group(function (): void
+    {
+        Route::get('/admin/users', [AdminUserController::class, 'index']);
+        Route::post('/admin/users', [AdminUserController::class, 'store']);
+        Route::patch('/admin/users/{user}', [AdminUserController::class, 'update']);
+        Route::patch('/admin/users/{user}/roles', [AdminUserController::class, 'updateRoles']);
+        Route::patch('/admin/users/{user}/active', [AdminUserController::class, 'toggleActive']);
+        Route::delete('/admin/users/{user}', [AdminUserController::class, 'destroy']);
+    });
 });
 
-Route::middleware(['auth:sanctum', 'ability:mcp:use', 'throttle:mcp'])->post('/mcp', McpController::class);
+Route::middleware(['auth:sanctum', 'verified', 'ability:mcp:use', 'throttle:mcp'])->post('/mcp', McpController::class);

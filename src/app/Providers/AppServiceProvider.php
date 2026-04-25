@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -38,6 +39,13 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('mcp', function (Request $request): Limit
         {
             return Limit::perMinute(30)->by($request->user()?->id ?: $request->ip());
+        });
+
+        RateLimiter::for('password-reset', function (Request $request): Limit
+        {
+            $email = Str::lower((string) $request->input('email', ''));
+
+            return Limit::perMinute(5)->by($email . '|' . $request->ip());
         });
     }
 }

@@ -54,4 +54,4 @@ test: ## Run Pest PHP tests
 	@$(PHP_CONT) composer test
 
 phpstan: ## Run PHPStan static analysis
-	@$(PHP_CONT) composer phpstan -d memory_limit=512M
+	@$(PHP_CONT) composer phpstan

@@ -18,6 +18,8 @@ class ProjectController extends Controller
 
     public function show(Request $request, Project $project): Response
     {
+        $this->authorize('view', $project);
+
         $user = $this->user();
         $isAdmin = $user->can(PermissionList::PROJECTS_ADMIN);
         $currentUserRole = $isAdmin ? 'process_owner' : $user->projectRoleIn($project);

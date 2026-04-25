@@ -14,7 +14,14 @@ final class ToggleUserActiveCommand
     {
         abort_if($actor->id === $user->id, 422, 'Cannot disable yourself.');
 
+        $isDeactivating = $user->is_active === true;
+
         $user->update(['is_active' => ! $user->is_active]);
+
+        if ($isDeactivating)
+        {
+            $user->tokens()->delete();
+        }
 
         AuditLogger::log($actor, $user, 'updated', 'User active status toggled');
 

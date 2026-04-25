@@ -231,6 +231,11 @@ export default function AdminUsers() {
         });
     };
 
+    if (!(user as { is_admin?: boolean } | undefined)?.is_admin) {
+        window.location.href = route('dashboard');
+        return null;
+    }
+
     return (
         <AuthenticatedLayout
             contentWidth="wide"

@@ -18,7 +18,10 @@ Route::middleware(['auth', 'verified'])->group(function (): void
     Route::get('/workflows/{workflow}', WorkflowEditorController::class)
         ->name('workflows.editor');
 
-    Route::get('/admin/users', AdminController::class)->name('admin.users');
+    Route::middleware('can:admin')->group(function (): void
+    {
+        Route::get('/admin/users', AdminController::class)->name('admin.users');
+    });
 });
 
 Route::middleware(['auth', 'verified'])->group(function ()

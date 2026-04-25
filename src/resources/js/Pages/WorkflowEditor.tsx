@@ -703,11 +703,14 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
     const handlePaneContextMenu = useCallback(
         (event: MouseEvent) => {
             event.preventDefault();
+            if (!canEditWorkflows) {
+                return;
+            }
             const flowPosition = screenToFlowPosition({ x: event.clientX, y: event.clientY });
             contextMenuFlowPosition.current = flowPosition;
             openContextMenu(event.clientX, event.clientY);
         },
-        [openContextMenu, screenToFlowPosition]
+        [canEditWorkflows, openContextMenu, screenToFlowPosition]
     );
 
     const handleAddElementFromContextMenu = useCallback(
@@ -2548,7 +2551,7 @@ function FlowCanvas({
             onEdgeClick={onEdgeClick}
             onEdgeDoubleClick={editable ? onEdgeDoubleClick : undefined}
             onPaneClick={onPaneClick}
-            onPaneContextMenu={onPaneContextMenu}
+            onPaneContextMenu={editable ? onPaneContextMenu : undefined}
             onSelectionChange={({ nodes: selectedNodes }) => {
                 if (onSelectionChange) {
                     onSelectionChange(selectedNodes || []);

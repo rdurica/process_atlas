@@ -54,6 +54,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | MCP Token Expiration Days
+    |--------------------------------------------------------------------------
+    |
+    | MCP tokens are long-lived personal access tokens generated from the user
+    | profile. Keep them bounded so leaked tokens naturally age out.
+    |
+    */
+
+    'mcp_token_expiration_days' => (int) env('SANCTUM_MCP_TOKEN_EXPIRATION_DAYS', 90),
+
+    /*
+    |--------------------------------------------------------------------------
     | Token Prefix
     |--------------------------------------------------------------------------
     |
