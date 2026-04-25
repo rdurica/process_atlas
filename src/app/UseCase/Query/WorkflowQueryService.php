@@ -2,10 +2,11 @@
 
 namespace App\UseCase\Query;
 
+use App\Exceptions\ConsistencyException;
 use App\Models\Project;
 use App\Models\User;
 use App\Models\Workflow;
-use App\Models\WorkflowVersion;
+use App\Models\WorkflowRevision;
 use App\Services\Cache\PublishedWorkflowCacheService;
 use Illuminate\Support\Collection;
 
@@ -20,7 +21,7 @@ final class WorkflowQueryService
     {
         $query = $project
             ->workflows()
-            ->with(['latestVersion', 'publishedVersion'])
+            ->with(['latestRevision', 'publishedRevision'])
             ->orderBy('id');
 
         if (! $includeArchived)
@@ -31,9 +32,10 @@ final class WorkflowQueryService
         return $query->get();
     }
 
+    /** @return Workflow|array<string, mixed> */
     public function detailForApi(Workflow $workflow): Workflow|array
     {
-        if ($workflow->published_version_id !== null)
+        if ($workflow->published_revision_id !== null)
         {
             $cached = $this->cache->get($workflow->id);
 
@@ -44,9 +46,9 @@ final class WorkflowQueryService
 
             $workflow->load([
                 'project',
-                'latestVersion.screens.customFields',
-                'publishedVersion.screens.customFields',
-                'versions' => fn ($query) => $query->orderByDesc('version_number'),
+                'latestRevision.screens.customFields',
+                'publishedRevision.screens.customFields',
+                'revisions' => fn ($query) => $query->orderByDesc('revision_number'),
             ]);
 
             $this->cache->put($workflow->id, $workflow->toArray());
@@ -56,9 +58,9 @@ final class WorkflowQueryService
 
         return $workflow->load([
             'project',
-            'latestVersion.screens.customFields',
-            'publishedVersion',
-            'versions' => fn ($query) => $query->orderByDesc('version_number'),
+            'latestRevision.screens.customFields',
+            'publishedRevision',
+            'revisions' => fn ($query) => $query->orderByDesc('revision_number'),
         ]);
     }
 
@@ -66,9 +68,9 @@ final class WorkflowQueryService
     {
         return $workflow->load([
             'project',
-            'latestVersion.creator',
-            'latestVersion.screens.customFields',
-            'versions' => fn ($query) => $query->with('creator')->orderByDesc('version_number'),
+            'latestRevision.creator',
+            'latestRevision.screens.customFields',
+            'revisions' => fn ($query) => $query->with('creator')->orderByDesc('revision_number'),
         ]);
     }
 
@@ -79,7 +81,13 @@ final class WorkflowQueryService
     {
         $workflow->loadMissing('project');
 
-        return $workflow->project
+        $project = $workflow->project;
+        if (! $project instanceof Project)
+        {
+            throw new ConsistencyException('Workflow is missing a project.');
+        }
+
+        return $project
             ->workflows()
             ->notArchived()
             ->select(['id', 'name', 'status'])
@@ -91,13 +99,19 @@ final class WorkflowQueryService
     {
         $workflow->loadMissing('project');
 
+        $project = $workflow->project;
+        if (! $project instanceof Project)
+        {
+            throw new ConsistencyException('Workflow is missing a project.');
+        }
+
         return $user->isAdmin()
             ? 'process_owner'
-            : (string) $user->projectRoleIn($workflow->project);
+            : (string) $user->projectRoleIn($project);
     }
 
-    public function findRollbackTarget(int $workflowVersionId): WorkflowVersion
+    public function findRollbackTarget(int $workflowRevisionId): WorkflowRevision
     {
-        return WorkflowVersion::query()->findOrFail($workflowVersionId);
+        return WorkflowRevision::query()->findOrFail($workflowRevisionId);
     }
 }

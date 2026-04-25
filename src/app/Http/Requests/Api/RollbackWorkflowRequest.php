@@ -18,7 +18,7 @@ class RollbackWorkflowRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'to_version_id' => ['required', 'integer', 'exists:workflow_versions,id'],
+            'to_version_id' => ['required', 'integer', 'exists:workflow_revisions,id'],
         ];
     }
 }

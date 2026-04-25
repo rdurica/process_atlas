@@ -30,7 +30,7 @@ interface UseWorkflowGraphOptions {
     initialNodes: Node[];
     initialEdges: Edge[];
     lockVersion: number;
-    latestVersionId: number | null;
+    latestRevisionId: number | null;
     canEdit: boolean;
 }
 
@@ -59,7 +59,7 @@ export function useWorkflowGraph({
     initialNodes,
     initialEdges,
     lockVersion: initialLockVersion,
-    latestVersionId,
+    latestRevisionId,
     canEdit,
 }: UseWorkflowGraphOptions): UseWorkflowGraphReturn {
     const initialEdgesWithMarkers = initialEdges.map(edge => ({
@@ -220,14 +220,14 @@ export function useWorkflowGraph({
     );
 
     const saveGraph = useCallback(async () => {
-        if (!latestVersionId || !canEdit) return;
+        if (!latestRevisionId || !canEdit) return;
 
         setGraphState('saving');
         setGraphMessage('Saving current canvas state.');
 
         try {
             const response = await window.axios.patch(
-                `/api/v1/workflow-versions/${latestVersionId}/graph`,
+                `/api/v1/workflow-revisions/${latestRevisionId}/graph`,
                 {
                     graph_json: {
                         nodes,
@@ -255,7 +255,7 @@ export function useWorkflowGraph({
             setGraphMessage(message);
             throw new Error(message);
         }
-    }, [latestVersionId, canEdit, nodes, edges, lockVersion, markGraphSaved]);
+    }, [latestRevisionId, canEdit, nodes, edges, lockVersion, markGraphSaved]);
 
     return {
         nodes,

@@ -22,7 +22,9 @@ final readonly class ProjectResponse implements JsonSerializable
             id: $project->id,
             name: $project->name,
             description: $project->description,
-            createdAt: $project->created_at->toIso8601String(),
+            createdAt: $project->created_at !== null
+                ? $project->created_at->toIso8601String()
+                : '',
         );
     }
 

@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('workflows', function (Blueprint $table): void
         {
-            $table->timestamp('archived_at')->nullable()->after('published_version_id');
+            $table->timestamp('archived_at')->nullable()->after('published_revision_id');
             $table->index('archived_at');
         });
     }

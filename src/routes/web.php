@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Profile\McpTokenController;
 use App\Http\Controllers\ProfileController;
@@ -16,6 +17,8 @@ Route::middleware(['auth'])->group(function (): void
 
     Route::get('/workflows/{workflow}', WorkflowEditorController::class)
         ->name('workflows.editor');
+
+    Route::get('/admin/users', AdminController::class)->name('admin.users');
 });
 
 Route::middleware('auth')->group(function ()

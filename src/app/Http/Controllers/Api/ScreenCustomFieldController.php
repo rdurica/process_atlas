@@ -24,7 +24,7 @@ class ScreenCustomFieldController extends Controller
     {
         $this->authorize('update', $screen);
 
-        $response = $this->upsertField->execute($request->user(), $screen, $request->toDto());
+        $response = $this->upsertField->execute($this->user(), $screen, $request->toDto());
 
         return response()->json(['data' => $response->jsonSerialize()]);
     }
@@ -33,7 +33,7 @@ class ScreenCustomFieldController extends Controller
     {
         $this->authorize('delete', $screenCustomField);
 
-        $this->deleteField->execute($request->user(), $screenCustomField);
+        $this->deleteField->execute($this->user(), $screenCustomField);
 
         return response()->json(status: 204);
     }

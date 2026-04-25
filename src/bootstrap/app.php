@@ -1,5 +1,7 @@
 <?php
 
+use App\Exceptions\DomainException;
+use App\Exceptions\NotFoundException;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -7,6 +9,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
 use Laravel\Sanctum\Http\Middleware\CheckForAnyAbility;
+use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
@@ -22,6 +25,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void
     {
         $middleware->statefulApi();
+
+        $middleware->api(prepend: [
+            EnsureFrontendRequestsAreStateful::class,
+        ]);
 
         $middleware->web(append: [
             HandleInertiaRequests::class,
@@ -39,13 +46,27 @@ return Application::configure(basePath: dirname(__DIR__))
     {
         $exceptions->renderable(function (Throwable $e, Request $request): ?Response
         {
-            if ($request->is('api/*') && ! config('app.debug'))
+            if (! $request->is('api/*') || config('app.debug'))
+            {
+                return null;
+            }
+
+            if ($e instanceof NotFoundException)
             {
                 return response()->json([
-                    'message' => 'Server error.',
+                    'message' => $e->getMessage(),
+                ], 404);
+            }
+
+            if ($e instanceof DomainException)
+            {
+                return response()->json([
+                    'message' => $e->getMessage(),
                 ], 500);
             }
 
-            return null;
+            return response()->json([
+                'message' => 'Server error.',
+            ], 500);
         });
     })->create();

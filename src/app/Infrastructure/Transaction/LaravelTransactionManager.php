@@ -8,7 +8,13 @@ use Illuminate\Support\Facades\DB;
 
 final readonly class LaravelTransactionManager implements TransactionManager
 {
-    public function transactional(callable $callback): mixed
+    /**
+     * @template T
+     *
+     * @param  \Closure(): T  $callback
+     * @return T
+     */
+    public function transactional(\Closure $callback): mixed
     {
         return DB::transaction($callback);
     }

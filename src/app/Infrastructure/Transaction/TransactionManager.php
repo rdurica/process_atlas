@@ -6,5 +6,5 @@ namespace App\Infrastructure\Transaction;
 
 interface TransactionManager
 {
-    public function transactional(callable $callback): mixed;
+    public function transactional(\Closure $callback): mixed;
 }

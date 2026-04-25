@@ -22,8 +22,8 @@ use App\Models\Workflow;
 use App\Services\Audit\AuditLogger;
 use App\Support\PermissionList;
 use App\UseCase\Command\CreateWorkflowDraftCommand;
-use App\UseCase\Command\PublishWorkflowVersionCommand;
-use App\UseCase\Command\RollbackWorkflowVersionCommand;
+use App\UseCase\Command\PublishWorkflowRevisionCommand;
+use App\UseCase\Command\RollbackWorkflowRevisionCommand;
 use App\UseCase\Command\UpdateWorkflowGraphCommand;
 use App\UseCase\Command\UpsertScreenCommand;
 use App\UseCase\Query\McpQueryService;
@@ -37,8 +37,8 @@ final class ToolsCallMethodHandler implements McpMethodHandler
         private readonly UpsertScreenCommand $upsertScreen,
         private readonly UpdateWorkflowGraphCommand $updateGraph,
         private readonly CreateWorkflowDraftCommand $createDraft,
-        private readonly PublishWorkflowVersionCommand $publish,
-        private readonly RollbackWorkflowVersionCommand $rollback,
+        private readonly PublishWorkflowRevisionCommand $publish,
+        private readonly RollbackWorkflowRevisionCommand $rollback,
     ) {}
 
     public function method(): string
@@ -173,7 +173,7 @@ final class ToolsCallMethodHandler implements McpMethodHandler
         );
 
         return [
-            'workflow_revision_id' => $response->workflowVersionId,
+            'workflow_revision_id' => $response->workflowRevisionId,
             'lock_revision'        => $response->lockVersion,
         ];
     }
@@ -201,14 +201,14 @@ final class ToolsCallMethodHandler implements McpMethodHandler
      */
     private function publishRevision(User $actor, PublishRevisionArguments $arguments): array
     {
-        $version = $this->queries->revisionWithProject($arguments->workflowRevisionId);
+        $revision = $this->queries->revisionWithProject($arguments->workflowRevisionId);
 
-        Gate::forUser($actor)->authorize('publish', $version);
+        Gate::forUser($actor)->authorize('publish', $revision);
 
-        $response = $this->publish->execute($actor, $version);
+        $response = $this->publish->execute($actor, $revision);
 
-        AuditLogger::log($actor, $version, 'published', 'Workflow revision published by MCP', [
-            'workflow_id' => $version->workflow_id,
+        AuditLogger::log($actor, $revision, 'published', 'Workflow revision published by MCP', [
+            'workflow_id' => $revision->workflow_id,
         ], source: 'mcp');
 
         return [

@@ -32,9 +32,9 @@ it('creates a workflow and edits screen properties via api', function (): void
 
     $workflowShow = $this->getJson("/api/v1/workflows/{$workflowId}")->assertOk();
 
-    $versionId = (int) $workflowShow->json('data.latest_version.id');
+    $versionId = (int) $workflowShow->json('data.latest_revision.id');
 
-    $this->patchJson("/api/v1/workflow-versions/{$versionId}/graph", [
+    $this->patchJson("/api/v1/workflow-revisions/{$versionId}/graph", [
         'graph_json' => [
             'nodes' => [
                 [
@@ -64,7 +64,7 @@ it('creates a workflow and edits screen properties via api', function (): void
         'lock_version' => 0,
     ])->assertOk()->assertJsonPath('data.lock_version', 1);
 
-    $savedVersion = $this->getJson("/api/v1/workflow-versions/{$versionId}")
+    $savedVersion = $this->getJson("/api/v1/workflow-revisions/{$versionId}")
         ->assertOk();
 
     $savedNodes = collect($savedVersion->json('data.graph_json.nodes'));
@@ -77,11 +77,11 @@ it('creates a workflow and edits screen properties via api', function (): void
         ->toBe('user.department == "finance"');
 
     $screenResponse = $this->postJson('/api/v1/screens/upsert', [
-        'workflow_version_id' => $versionId,
-        'node_id'             => 'screen-1',
-        'title'               => 'Checkout Start',
-        'subtitle'            => 'Card capture',
-        'description'         => 'The first checkout step.',
+        'workflow_revision_id' => $versionId,
+        'node_id'              => 'screen-1',
+        'title'                => 'Checkout Start',
+        'subtitle'             => 'Card capture',
+        'description'          => 'The first checkout step.',
     ])->assertOk()
         ->assertJsonPath('data.subtitle', 'Card capture');
 
@@ -97,12 +97,12 @@ it('creates a workflow and edits screen properties via api', function (): void
     expect($screenShow->json('data'))->not->toHaveKey('flashes');
     expect($screenShow->json('data.custom_fields'))->toHaveCount(1);
 
-    $draftResponse = $this->postJson("/api/v1/workflows/{$workflowId}/versions")
+    $draftResponse = $this->postJson("/api/v1/workflows/{$workflowId}/revisions")
         ->assertCreated();
 
     $draftVersionId = (int) $draftResponse->json('data.id');
 
-    $draftVersion = $this->getJson("/api/v1/workflow-versions/{$draftVersionId}")
+    $draftVersion = $this->getJson("/api/v1/workflow-revisions/{$draftVersionId}")
         ->assertOk();
 
     expect($draftVersion->json('data.screens.0.subtitle'))->toBe('Card capture');
@@ -210,24 +210,24 @@ it('keeps screen image metadata when creating a draft revision', function (): vo
     $workflowId = (int) $workflowResponse->json('data.id');
 
     $workflowShow = $this->getJson("/api/v1/workflows/{$workflowId}")->assertOk();
-    $versionId = (int) $workflowShow->json('data.latest_version.id');
+    $versionId = (int) $workflowShow->json('data.latest_revision.id');
 
     $screenResponse = $this->post('/api/v1/screens/upsert', [
-        'workflow_version_id' => $versionId,
-        'node_id'             => 'screen-image-1',
-        'title'               => 'Image screen',
-        'image'               => UploadedFile::fake()->image('screen.png', 800, 600),
+        'workflow_revision_id' => $versionId,
+        'node_id'              => 'screen-image-1',
+        'title'                => 'Image screen',
+        'image'                => UploadedFile::fake()->image('screen.png', 800, 600),
     ])->assertOk();
 
     $imagePath = $screenResponse->json('data.image_path');
     expect($imagePath)->not->toBeNull();
     Storage::disk('public')->assertExists($imagePath);
 
-    $draftResponse = $this->postJson("/api/v1/workflows/{$workflowId}/versions")
+    $draftResponse = $this->postJson("/api/v1/workflows/{$workflowId}/revisions")
         ->assertCreated();
     $draftVersionId = (int) $draftResponse->json('data.id');
 
-    $this->getJson("/api/v1/workflow-versions/{$draftVersionId}")
+    $this->getJson("/api/v1/workflow-revisions/{$draftVersionId}")
         ->assertOk()
         ->assertJsonPath('data.screens.0.image_path', $imagePath);
 });
@@ -330,7 +330,7 @@ it('calls mcp tools and reports revision conflicts', function (): void
     $workflowId = (int) $workflowResponse->json('data.id');
 
     $workflowShow = $this->getJson("/api/v1/workflows/{$workflowId}")->assertOk();
-    $revisionId = (int) $workflowShow->json('data.latest_version.id');
+    $revisionId = (int) $workflowShow->json('data.latest_revision.id');
 
     $token = $owner->createToken('mcp-test-tools', ['mcp:use'])->plainTextToken;
 

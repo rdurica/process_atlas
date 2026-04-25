@@ -6,6 +6,7 @@ use App\Infrastructure\Transaction\LaravelTransactionManager;
 use App\Infrastructure\Transaction\TransactionManager;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
@@ -26,6 +27,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Vite::prefetch(concurrency: 3);
+
+        Gate::define('admin', fn ($user) => $user->isAdmin());
 
         RateLimiter::for('api', function (Request $request): Limit
         {

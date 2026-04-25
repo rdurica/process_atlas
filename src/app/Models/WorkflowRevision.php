@@ -2,23 +2,25 @@
 
 namespace App\Models;
 
+use Database\Factories\WorkflowRevisionFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class WorkflowVersion extends Model
+class WorkflowRevision extends Model
 {
+    /** @use HasFactory<WorkflowRevisionFactory> */
     use HasFactory;
 
     protected $fillable = [
         'workflow_id',
         'created_by',
-        'version_number',
+        'revision_number',
         'is_published',
         'graph_json',
         'lock_version',
-        'rollback_from_version_id',
+        'rollback_from_revision_id',
     ];
 
     /**
@@ -57,10 +59,10 @@ class WorkflowVersion extends Model
     }
 
     /**
-     * @return BelongsTo<WorkflowVersion, $this>
+     * @return BelongsTo<WorkflowRevision, $this>
      */
     public function rollbackSource(): BelongsTo
     {
-        return $this->belongsTo(WorkflowVersion::class, 'rollback_from_version_id');
+        return $this->belongsTo(WorkflowRevision::class, 'rollback_from_revision_id');
     }
 }

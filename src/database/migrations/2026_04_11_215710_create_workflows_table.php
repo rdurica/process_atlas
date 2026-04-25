@@ -17,12 +17,12 @@ return new class extends Migration
             $table->foreignId('project_id')->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->string('status')->default('draft');
-            $table->unsignedBigInteger('latest_version_id')->nullable();
-            $table->unsignedBigInteger('published_version_id')->nullable();
+            $table->unsignedBigInteger('latest_revision_id')->nullable();
+            $table->unsignedBigInteger('published_revision_id')->nullable();
             $table->timestamps();
 
-            $table->index('latest_version_id');
-            $table->index('published_version_id');
+            $table->index('latest_revision_id');
+            $table->index('published_revision_id');
         });
     }
 

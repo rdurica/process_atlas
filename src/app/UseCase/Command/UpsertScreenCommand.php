@@ -6,10 +6,11 @@ namespace App\UseCase\Command;
 
 use App\DTO\Request\UpsertScreenRequest;
 use App\DTO\Response\ScreenResponse;
+use App\Exceptions\ScreenNotFoundException;
 use App\Infrastructure\Transaction\TransactionManager;
 use App\Models\Screen;
 use App\Models\User;
-use App\Models\WorkflowVersion;
+use App\Models\WorkflowRevision;
 use App\Services\Audit\AuditLogger;
 use App\Services\Screen\ScreenImageService;
 use Throwable;
@@ -21,9 +22,9 @@ final class UpsertScreenCommand
         private readonly TransactionManager $transactionManager,
     ) {}
 
-    public function execute(User $actor, WorkflowVersion $workflowVersion, UpsertScreenRequest $request): ScreenResponse
+    public function execute(User $actor, WorkflowRevision $workflowRevision, UpsertScreenRequest $request): ScreenResponse
     {
-        abort_if($workflowVersion->is_published, 422, 'Cannot modify a published revision.');
+        abort_if($workflowRevision->is_published, 422, 'Cannot modify a published revision.');
 
         $newImagePath = null;
         $previousImagePath = null;
@@ -32,15 +33,15 @@ final class UpsertScreenCommand
         {
             $screen = $this->transactionManager->transactional(function () use (
                 $actor,
-                $workflowVersion,
+                $workflowRevision,
                 $request,
                 &$newImagePath,
                 &$previousImagePath,
             ): Screen {
                 $screen = Screen::query()->firstOrCreate(
                     [
-                        'workflow_version_id' => $workflowVersion->id,
-                        'node_id'             => $request->nodeId,
+                        'workflow_revision_id' => $workflowRevision->id,
+                        'node_id'              => $request->nodeId,
                     ],
                     [
                         'created_by' => $actor->id,
@@ -71,7 +72,13 @@ final class UpsertScreenCommand
 
                 AuditLogger::log($actor, $screen, 'updated', 'Screen upserted');
 
-                return $screen->fresh(['customFields']);
+                $screen = $screen->fresh(['customFields']);
+                if (! $screen instanceof Screen)
+                {
+                    throw new ScreenNotFoundException('Screen not found after upsert.');
+                }
+
+                return $screen;
             });
         }
         catch (Throwable $exception)

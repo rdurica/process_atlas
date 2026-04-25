@@ -88,6 +88,7 @@ class HandleInertiaRequests extends Middleware
                     ...$user->only(['id', 'name', 'email', 'email_verified_at']),
                     'roles'       => $user->getRoleNames()->values(),
                     'permissions' => $permissions->unique()->values(),
+                    'is_admin'    => $user->isAdmin(),
                 ] : null,
             ],
             'ziggy' => fn () => [

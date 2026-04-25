@@ -4,7 +4,7 @@ import type { FieldEditorMode } from '../types';
 
 interface UseScreenEditorOptions {
     screens: Screen[];
-    latestVersionId: number | null;
+    latestRevisionId: number | null;
     canEdit: boolean;
     onScreenUpdate: (updatedScreen: Screen) => void;
     onNodesUpdate: (nodeId: string, data: Record<string, unknown>) => void;
@@ -54,7 +54,7 @@ interface UseScreenEditorReturn {
 
 export function useScreenEditor({
     screens,
-    latestVersionId,
+    latestRevisionId,
     canEdit,
     onScreenUpdate,
     onNodesUpdate,
@@ -127,10 +127,10 @@ export function useScreenEditor({
             description: string,
             imageFile: File | null
         ): Promise<Screen | null> => {
-            if (!latestVersionId || !canEdit) return null;
+            if (!latestRevisionId || !canEdit) return null;
 
             const form = new FormData();
-            form.append('workflow_version_id', String(latestVersionId));
+            form.append('workflow_revision_id', String(latestRevisionId));
             form.append('node_id', nodeId);
             form.append('title', title);
             form.append('subtitle', subtitle);
@@ -151,7 +151,7 @@ export function useScreenEditor({
 
             return updatedScreen;
         },
-        [latestVersionId, canEdit, onScreenUpdate, onNodesUpdate]
+        [latestRevisionId, canEdit, onScreenUpdate, onNodesUpdate]
     );
 
     const upsertCustomField = useCallback(

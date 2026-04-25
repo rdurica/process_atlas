@@ -8,11 +8,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('workflow_versions', function (Blueprint $table): void
+        Schema::table('workflow_revisions', function (Blueprint $table): void
         {
-            $table->foreignId('rollback_from_version_id')
+            $table->foreignId('rollback_from_revision_id')
                 ->nullable()
-                ->constrained('workflow_versions')
+                ->constrained('workflow_revisions')
                 ->nullOnDelete()
                 ->after('lock_version');
         });
@@ -20,10 +20,10 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('workflow_versions', function (Blueprint $table): void
+        Schema::table('workflow_revisions', function (Blueprint $table): void
         {
-            $table->dropForeign(['rollback_from_version_id']);
-            $table->dropColumn('rollback_from_version_id');
+            $table->dropForeign(['rollback_from_revision_id']);
+            $table->dropColumn('rollback_from_revision_id');
         });
     }
 };

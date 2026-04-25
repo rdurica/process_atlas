@@ -14,11 +14,13 @@ final readonly class WorkflowResponse implements JsonSerializable
         public int $id,
         public string $name,
         public string $status,
-        public ?int $latestVersionId,
-        public ?int $publishedVersionId,
+        public ?int $latestRevisionId,
+        public ?int $publishedRevisionId,
         public ?string $archivedAt,
-        public ?array $latestVersion,
-        public ?array $publishedVersion,
+        /** @var array<string, mixed>|null */
+        public ?array $latestRevision,
+        /** @var array<string, mixed>|null */
+        public ?array $publishedRevision,
     ) {}
 
     public static function fromModel(Workflow $workflow): self
@@ -27,17 +29,17 @@ final readonly class WorkflowResponse implements JsonSerializable
             id: $workflow->id,
             name: $workflow->name,
             status: $workflow->status,
-            latestVersionId: $workflow->latest_version_id,
-            publishedVersionId: $workflow->published_version_id,
+            latestRevisionId: $workflow->latest_revision_id,
+            publishedRevisionId: $workflow->published_revision_id,
             /** @phpstan-ignore-next-line */
             archivedAt: $workflow->archived_at instanceof Carbon
                 ? $workflow->archived_at->toIso8601String()
                 : $workflow->archived_at,
-            latestVersion: $workflow->relationLoaded('latestVersion') && $workflow->latestVersion !== null
-                ? $workflow->latestVersion->toArray()
+            latestRevision: $workflow->relationLoaded('latestRevision') && $workflow->latestRevision !== null
+                ? $workflow->latestRevision->toArray()
                 : null,
-            publishedVersion: $workflow->relationLoaded('publishedVersion') && $workflow->publishedVersion !== null
-                ? $workflow->publishedVersion->toArray()
+            publishedRevision: $workflow->relationLoaded('publishedRevision') && $workflow->publishedRevision !== null
+                ? $workflow->publishedRevision->toArray()
                 : null,
         );
     }
@@ -48,14 +50,14 @@ final readonly class WorkflowResponse implements JsonSerializable
     public function jsonSerialize(): array
     {
         return [
-            'id'                   => $this->id,
-            'name'                 => $this->name,
-            'status'               => $this->status,
-            'latest_version_id'    => $this->latestVersionId,
-            'published_version_id' => $this->publishedVersionId,
-            'archived_at'          => $this->archivedAt,
-            'latest_version'       => $this->latestVersion,
-            'published_version'    => $this->publishedVersion,
+            'id'                    => $this->id,
+            'name'                  => $this->name,
+            'status'                => $this->status,
+            'latest_revision_id'    => $this->latestRevisionId,
+            'published_revision_id' => $this->publishedRevisionId,
+            'archived_at'           => $this->archivedAt,
+            'latest_revision'       => $this->latestRevision,
+            'published_revision'    => $this->publishedRevision,
         ];
     }
 }

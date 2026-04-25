@@ -5,7 +5,7 @@ namespace App\UseCase\Query;
 use App\Models\Project;
 use App\Models\User;
 use App\Models\Workflow;
-use App\Models\WorkflowVersion;
+use App\Models\WorkflowRevision;
 use App\Support\PermissionList;
 
 final class DashboardQueryService
@@ -26,7 +26,7 @@ final class DashboardQueryService
                 ),
             )
             ->with([
-                'workflows' => fn ($query) => $query->with(['latestVersion', 'publishedVersion'])->orderBy('name'),
+                'workflows' => fn ($query) => $query->with(['latestRevision', 'publishedRevision'])->orderBy('name'),
             ])
             ->withCount('workflows')
             ->orderBy('name')
@@ -35,9 +35,9 @@ final class DashboardQueryService
         $projectIds = $projects->pluck('id');
 
         $summary = [
-            'projects'       => $projects->count(),
-            'workflows'      => Workflow::query()->whereIn('project_id', $projectIds)->count(),
-            'draft_versions' => WorkflowVersion::query()
+            'projects'        => $projects->count(),
+            'workflows'       => Workflow::query()->whereIn('project_id', $projectIds)->count(),
+            'draft_revisions' => WorkflowRevision::query()
                 ->whereHas('workflow', fn ($q) => $q->whereIn('project_id', $projectIds))
                 ->where('is_published', false)
                 ->count(),
@@ -51,8 +51,8 @@ final class DashboardQueryService
         {
             $publishedCount = $project->workflows->where('status', 'published')->count();
             $draftCount = $project->workflows->where('status', 'draft')->count();
-            $latestVersionNumber = $project->workflows
-                ->pluck('latestVersion.version_number')
+            $latestRevisionNumber = $project->workflows
+                ->pluck('latestRevision.revision_number')
                 ->filter()
                 ->max();
 
@@ -61,12 +61,12 @@ final class DashboardQueryService
                 : $user->projectRoleIn($project);
 
             return [
-                'id'                   => $project->id,
-                'name'                 => $project->name,
-                'description'          => $project->description,
-                'workflows_count'      => $project->workflows_count,
-                'latest_version_label' => $latestVersionNumber ? 'rev. ' . $latestVersionNumber : 'Not started',
-                'status_summary'       => match (true)
+                'id'                    => $project->id,
+                'name'                  => $project->name,
+                'description'           => $project->description,
+                'workflows_count'       => $project->workflows_count,
+                'latest_revision_label' => $latestRevisionNumber ? 'rev. ' . $latestRevisionNumber : 'Not started',
+                'status_summary'        => match (true)
                 {
                     $project->workflows_count === 0        => 'No workflows',
                     $publishedCount > 0 && $draftCount > 0 => $publishedCount . ' published / ' . $draftCount . ' draft',
@@ -75,16 +75,16 @@ final class DashboardQueryService
                 },
                 'current_user_role' => $currentUserRole,
                 'workflows'         => $project->workflows->map(fn (Workflow $workflow): array => [
-                    'id'             => $workflow->id,
-                    'name'           => $workflow->name,
-                    'status'         => $workflow->status,
-                    'latest_version' => $workflow->latestVersion ? [
-                        'id'             => $workflow->latestVersion->id,
-                        'version_number' => $workflow->latestVersion->version_number,
-                        'is_published'   => $workflow->latestVersion->is_published,
+                    'id'              => $workflow->id,
+                    'name'            => $workflow->name,
+                    'status'          => $workflow->status,
+                    'latest_revision' => $workflow->latestRevision ? [
+                        'id'              => $workflow->latestRevision->id,
+                        'revision_number' => $workflow->latestRevision->revision_number,
+                        'is_published'    => $workflow->latestRevision->is_published,
                     ] : null,
-                    'published_version_id' => $workflow->published_version_id,
-                    'updated_at'           => $workflow->updated_at?->toIso8601String(),
+                    'published_revision_id' => $workflow->published_revision_id,
+                    'updated_at'            => $workflow->updated_at?->toIso8601String(),
                 ])->values()->all(),
             ];
         })->values()->all();

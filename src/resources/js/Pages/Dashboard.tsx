@@ -144,7 +144,7 @@ export default function Dashboard({ summary, projects }: DashboardProps) {
         },
         {
             label: 'Draft Revisions',
-            value: summary.draft_versions,
+            value: summary.draft_revisions,
             detail: 'Unpublished changes waiting for review or release.',
             accentClass: 'metric-card-drafts',
         },
@@ -283,7 +283,7 @@ export default function Dashboard({ summary, projects }: DashboardProps) {
                                             <td className="px-4 py-4">
                                                 <div className="flex flex-wrap items-center gap-1.5">
                                                     <StatusBadge tone="brand">
-                                                        {project.latest_version_label}
+                                                        {project.latest_revision_label}
                                                     </StatusBadge>
                                                     <StatusBadge tone="neutral">
                                                         {project.status_summary}

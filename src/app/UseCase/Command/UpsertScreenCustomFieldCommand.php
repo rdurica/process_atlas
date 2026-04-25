@@ -6,9 +6,11 @@ namespace App\UseCase\Command;
 
 use App\DTO\Request\UpsertScreenCustomFieldRequest;
 use App\DTO\Response\ScreenCustomFieldResponse;
+use App\Exceptions\ConsistencyException;
 use App\Infrastructure\Transaction\TransactionManager;
 use App\Models\Screen;
 use App\Models\User;
+use App\Models\WorkflowRevision;
 use App\Services\Audit\AuditLogger;
 
 final class UpsertScreenCustomFieldCommand
@@ -22,12 +24,17 @@ final class UpsertScreenCustomFieldCommand
         return $this->transactionManager->transactional(function () use ($actor, $screen, $request): ScreenCustomFieldResponse
         {
             $screen = Screen::query()
-                ->with('workflowVersion')
+                ->with('workflowRevision')
                 ->whereKey($screen->id)
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            abort_if($screen->workflowVersion->is_published, 422, 'Cannot modify a published revision.');
+            $workflowRevision = $screen->workflowRevision;
+            if (! $workflowRevision instanceof WorkflowRevision)
+            {
+                throw new ConsistencyException('Screen is missing a workflow revision.');
+            }
+            abort_if($workflowRevision->is_published, 422, 'Cannot modify a published revision.');
 
             $field = $screen->customFields()->updateOrCreate(
                 ['key' => $request->key],

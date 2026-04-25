@@ -60,7 +60,7 @@ final class ResourcesListMethodHandler implements McpMethodHandler
         {
             $resources[] = new McpResourceDefinition(
                 uri: "process-atlas://revisions/{$revision->id}",
-                name: "Revision {$revision->version_number}",
+                name: "Revision {$revision->revision_number}",
                 description: 'Workflow revision with graph and screens.',
                 mimeType: 'application/json',
             );

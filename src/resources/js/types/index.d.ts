@@ -7,6 +7,7 @@ export interface User {
     email_verified_at?: string;
     roles: string[];
     permissions: string[];
+    is_admin: boolean;
 }
 
 export type ProjectRole = 'process_owner' | 'editor' | 'viewer';

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\ScreenFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,12 +12,13 @@ use Illuminate\Support\Facades\Storage;
 
 class Screen extends Model
 {
+    /** @use HasFactory<ScreenFactory> */
     use HasFactory;
 
     protected $appends = ['image_url'];
 
     protected $fillable = [
-        'workflow_version_id',
+        'workflow_revision_id',
         'node_id',
         'title',
         'subtitle',
@@ -26,6 +28,9 @@ class Screen extends Model
         'updated_by',
     ];
 
+    /**
+     * @return Attribute<string|null, never>
+     */
     protected function imageUrl(): Attribute
     {
         return Attribute::make(
@@ -36,11 +41,11 @@ class Screen extends Model
     }
 
     /**
-     * @return BelongsTo<WorkflowVersion, $this>
+     * @return BelongsTo<WorkflowRevision, $this>
      */
-    public function workflowVersion(): BelongsTo
+    public function workflowRevision(): BelongsTo
     {
-        return $this->belongsTo(WorkflowVersion::class);
+        return $this->belongsTo(WorkflowRevision::class);
     }
 
     /**

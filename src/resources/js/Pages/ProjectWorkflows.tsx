@@ -335,11 +335,11 @@ export default function ProjectWorkflows({ project, workflows }: ProjectWorkflow
                                                         <StatusBadge
                                                             tone={isArchived ? 'neutral' : 'brand'}
                                                         >
-                                                            {workflow.latest_version
-                                                                ? `rev. ${workflow.latest_version.version_number}`
+                                                            {workflow.latest_revision
+                                                                ? `rev. ${workflow.latest_revision.revision_number}`
                                                                 : 'No revision'}
                                                         </StatusBadge>
-                                                        {workflow.published_version_id &&
+                                                        {workflow.published_revision_id &&
                                                             !isArchived && (
                                                                 <StatusBadge tone="success">
                                                                     Live

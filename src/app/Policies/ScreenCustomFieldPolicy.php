@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\Project;
 use App\Models\ScreenCustomField;
 use App\Models\User;
 use App\Services\ProjectAccessService;
@@ -12,8 +13,14 @@ final class ScreenCustomFieldPolicy
 
     public function delete(User $user, ScreenCustomField $screenCustomField): bool
     {
-        $screenCustomField->loadMissing('screen.workflowVersion.workflow.project');
+        $screenCustomField->loadMissing('screen.workflowRevision.workflow.project');
 
-        return $this->access->canEdit($user, $screenCustomField->screen->workflowVersion->workflow->project);
+        $project = $screenCustomField->screen?->workflowRevision?->workflow?->project;
+        if (! $project instanceof Project)
+        {
+            return false;
+        }
+
+        return $this->access->canEdit($user, $project);
     }
 }

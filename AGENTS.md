@@ -99,8 +99,9 @@ npm run format:check # Prettier
 After implementing any changes, the agent MUST run:
 
 ```shell
-make pint   # format code
-make test   # run tests
+make pint     # format code
+make test     # run tests
+make phpstan  # static analysis
 ```
 
 If JS/TS/CSS files were modified, also run inside the node container:

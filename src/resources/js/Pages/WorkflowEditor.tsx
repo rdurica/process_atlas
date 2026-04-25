@@ -4,7 +4,7 @@ import type {
     Screen,
     ScreenCustomField,
     WorkflowData,
-    WorkflowVersionSummary,
+    WorkflowRevisionSummary,
 } from '@/types/processAtlas';
 import { Head, Link, router } from '@inertiajs/react';
 import {
@@ -402,35 +402,35 @@ function inspectorTabsForNodeKind(nodeKind: WorkflowNodeKind): [InspectorTab, st
 }
 
 function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorProps) {
-    const latestVersion = workflow.latest_version;
+    const latestRevision = workflow.latest_revision;
     const isArchived = workflow.archived_at != null;
     const canEditInProject = currentUserRole === 'process_owner' || currentUserRole === 'editor';
     const canPublishWorkflows = currentUserRole === 'process_owner';
-    const [previewVersion, setPreviewVersion] = useState<WorkflowVersionSummary | null>(null);
+    const [previewRevision, setPreviewRevision] = useState<WorkflowRevisionSummary | null>(null);
     const canEditWorkflows =
         canEditInProject &&
-        latestVersion?.is_published !== true &&
-        previewVersion === null &&
+        latestRevision?.is_published !== true &&
+        previewRevision === null &&
         !isArchived;
     const initialNodes = useMemo(
-        () => buildInitialNodes(latestVersion?.graph_json?.nodes, latestVersion?.screens ?? []),
-        [latestVersion?.graph_json?.nodes, latestVersion?.screens]
+        () => buildInitialNodes(latestRevision?.graph_json?.nodes, latestRevision?.screens ?? []),
+        [latestRevision?.graph_json?.nodes, latestRevision?.screens]
     );
 
     const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-    const initialEdges = (latestVersion?.graph_json?.edges ?? []).map(edge => ({
+    const initialEdges = (latestRevision?.graph_json?.edges ?? []).map(edge => ({
         ...edge,
         markerEnd: { type: MarkerType.ArrowClosed, color: '#0f5ef7', width: 10, height: 10 },
     }));
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-    const [screens, setScreens] = useState<Screen[]>(latestVersion?.screens ?? []);
-    const [lockVersion, setLockVersion] = useState<number>(latestVersion?.lock_version ?? 0);
+    const [screens, setScreens] = useState<Screen[]>(latestRevision?.screens ?? []);
+    const [lockVersion, setLockVersion] = useState<number>(latestRevision?.lock_version ?? 0);
     const [selectedNodeId, setSelectedNodeId] = useState<string | null>(
         initialNodes[0]?.id ?? null
     );
     const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
-    const [rollbackVersionId, setRollbackVersionId] = useState<number | null>(
-        workflow.versions.find(version => version.id !== latestVersion?.id)?.id ?? null
+    const [rollbackRevisionId, setRollbackVersionId] = useState<number | null>(
+        workflow.revisions.find(revision => revision.id !== latestRevision?.id)?.id ?? null
     );
     const [title, setTitle] = useState('');
     const [subtitle, setSubtitle] = useState('');
@@ -469,9 +469,9 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
 
     const selectedNodes = useMemo(() => nodes.filter(node => node.selected), [nodes]);
 
-    const versions = useMemo(
-        () => [...workflow.versions].sort((a, b) => b.version_number - a.version_number),
-        [workflow.versions]
+    const revisions = useMemo(
+        () => [...workflow.revisions].sort((a, b) => b.revision_number - a.revision_number),
+        [workflow.revisions]
     );
 
     const selectedScreen = useMemo(
@@ -540,14 +540,14 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
         }
     }, [inspectorTab, selectedNode, selectedNodeKind]);
 
-    // Sync canvas state when latestVersion changes (e.g. after rollback draft is created)
+    // Sync canvas state when latestRevision changes (e.g. after rollback draft is created)
     useEffect(() => {
-        if (!latestVersion) return;
+        if (!latestRevision) return;
         graphInitialized.current = false;
-        setPreviewVersion(null);
-        setNodes(buildInitialNodes(latestVersion.graph_json?.nodes, latestVersion.screens ?? []));
+        setPreviewRevision(null);
+        setNodes(buildInitialNodes(latestRevision.graph_json?.nodes, latestRevision.screens ?? []));
         setEdges(
-            (latestVersion.graph_json?.edges ?? []).map(edge => ({
+            (latestRevision.graph_json?.edges ?? []).map(edge => ({
                 ...edge,
                 markerEnd: {
                     type: MarkerType.ArrowClosed,
@@ -557,11 +557,11 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                 },
             }))
         );
-        setScreens(latestVersion.screens ?? []);
-        setLockVersion(latestVersion.lock_version ?? 0);
+        setScreens(latestRevision.screens ?? []);
+        setLockVersion(latestRevision.lock_version ?? 0);
         setGraphState('saved');
         setGraphMessage('No pending canvas changes.');
-    }, [latestVersion?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [latestRevision?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -920,7 +920,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
     };
 
     const saveGraph = async () => {
-        if (!latestVersion || !canEditWorkflows) {
+        if (!latestRevision || !canEditWorkflows) {
             return;
         }
 
@@ -930,7 +930,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
 
         try {
             const response = await window.axios.patch(
-                `/api/v1/workflow-versions/${latestVersion.id}/graph`,
+                `/api/v1/workflow-revisions/${latestRevision.id}/graph`,
                 {
                     graph_json: {
                         nodes,
@@ -982,12 +982,12 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
     };
 
     const saveScreenData = async (): Promise<Screen | null> => {
-        if (!latestVersion || !selectedNodeId) {
+        if (!latestRevision || !selectedNodeId) {
             return null;
         }
 
         const form = new FormData();
-        form.append('workflow_version_id', String(latestVersion.id));
+        form.append('workflow_revision_id', String(latestRevision.id));
         form.append('node_id', selectedNodeId);
         form.append('title', title);
         form.append('subtitle', subtitle);
@@ -1184,31 +1184,31 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
         }
 
         await runWorkflowAction(async () => {
-            await window.axios.post(`/api/v1/workflows/${workflow.id}/versions`);
+            await window.axios.post(`/api/v1/workflows/${workflow.id}/revisions`);
         }, 'A new draft revision was created.');
     };
 
     const publishCurrent = async () => {
-        if (!latestVersion || !canPublishWorkflows) {
+        if (!latestRevision || !canPublishWorkflows) {
             return;
         }
 
         await runWorkflowAction(async () => {
-            await window.axios.post(`/api/v1/workflow-versions/${latestVersion.id}/publish`);
+            await window.axios.post(`/api/v1/workflow-revisions/${latestRevision.id}/publish`);
         }, 'The current revision was published.');
     };
 
-    const handleVersionTimelineClick = async (version: WorkflowVersionSummary) => {
-        setRollbackVersionId(version.id);
+    const handleRevisionTimelineClick = async (revision: WorkflowRevisionSummary) => {
+        setRollbackVersionId(revision.id);
 
-        if (latestVersion && version.id === latestVersion.id) {
+        if (latestRevision && revision.id === latestRevision.id) {
             graphInitialized.current = false;
-            setPreviewVersion(null);
+            setPreviewRevision(null);
             setNodes(
-                buildInitialNodes(latestVersion.graph_json?.nodes, latestVersion.screens ?? [])
+                buildInitialNodes(latestRevision.graph_json?.nodes, latestRevision.screens ?? [])
             );
             setEdges(
-                (latestVersion.graph_json?.edges ?? []).map((edge: Edge) => ({
+                (latestRevision.graph_json?.edges ?? []).map((edge: Edge) => ({
                     ...edge,
                     markerEnd: {
                         type: MarkerType.ArrowClosed,
@@ -1222,12 +1222,12 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
         }
 
         try {
-            const response = await window.axios.get<{ data: WorkflowVersionSummary }>(
-                `/api/v1/workflow-versions/${version.id}`
+            const response = await window.axios.get<{ data: WorkflowRevisionSummary }>(
+                `/api/v1/workflow-revisions/${revision.id}`
             );
             const data = response.data.data;
             graphInitialized.current = false;
-            setPreviewVersion(data);
+            setPreviewRevision(data);
             setNodes(buildInitialNodes(data.graph_json?.nodes, data.screens ?? []));
             setEdges(
                 (data.graph_json?.edges ?? []).map((edge: Edge) => ({
@@ -1245,40 +1245,40 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
         }
     };
 
-    const deleteVersion = async (version: WorkflowVersionSummary) => {
+    const deleteRevision = async (version: WorkflowRevisionSummary) => {
         await runWorkflowAction(async () => {
-            await window.axios.delete(`/api/v1/workflow-versions/${version.id}`);
-        }, `rev. ${version.version_number} was deleted.`);
+            await window.axios.delete(`/api/v1/workflow-revisions/${version.id}`);
+        }, `rev. ${version.revision_number} was deleted.`);
     };
 
     const rollback = async () => {
-        if (!rollbackVersionId || !canPublishWorkflows) {
+        if (!rollbackRevisionId || !canPublishWorkflows) {
             return;
         }
 
         await runWorkflowAction(async () => {
             await window.axios.post(`/api/v1/workflows/${workflow.id}/rollback`, {
-                to_version_id: rollbackVersionId,
+                to_version_id: rollbackRevisionId,
             });
         }, 'A rollback draft was created from the selected revision.');
     };
 
-    const selectedRollbackVersion = versions.find(version => version.id === rollbackVersionId);
+    const selectedRollbackRevision = revisions.find(revision => revision.id === rollbackRevisionId);
 
     return (
         <div className="workflow-fullscreen">
             <Head title={`${workflow.name} Editor`} />
 
             <div className="workflow-canvas-layer">
-                {previewVersion && (
+                {previewRevision && (
                     <div className="pointer-events-auto absolute inset-x-0 top-0 z-10 flex items-center justify-between gap-4 border-b border-amber-200 bg-amber-50 px-5 py-2.5">
                         <p className="text-sm font-medium text-amber-900">
-                            Viewing rev. {previewVersion.version_number} (read-only)
+                            Viewing rev. {previewRevision.revision_number} (read-only)
                         </p>
-                        {latestVersion && (
+                        {latestRevision && (
                             <button
                                 type="button"
-                                onClick={() => handleVersionTimelineClick(latestVersion)}
+                                onClick={() => handleRevisionTimelineClick(latestRevision)}
                                 className="text-sm font-semibold text-amber-700 hover:text-amber-900"
                             >
                                 Return to latest
@@ -1357,7 +1357,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                             ↻ Reload Draft
                         </button>
                     )}
-                    {latestVersion?.is_published && canEditInProject && !isArchived && (
+                    {latestRevision?.is_published && canEditInProject && !isArchived && (
                         <button
                             type="button"
                             onClick={createDraft}
@@ -1371,7 +1371,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                         onClick={publishCurrent}
                         disabled={
                             !canPublishWorkflows ||
-                            latestVersion?.is_published === true ||
+                            latestRevision?.is_published === true ||
                             isArchived
                         }
                         className="btn-secondary workflow-action-button"
@@ -2173,7 +2173,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                     <div className="workflow-metric">
                         <p className="eyebrow">Revision</p>
                         <p className="mt-2 text-xl font-bold text-slate-950">
-                            {latestVersion ? `rev. ${latestVersion.version_number}` : 'N/A'}
+                            {latestRevision ? `rev. ${latestRevision.revision_number}` : 'N/A'}
                         </p>
                     </div>
                     <div className="workflow-metric">
@@ -2198,22 +2198,22 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                 <div className="mt-6">
                     <div className="flex items-center justify-between gap-3">
                         <p className="panel-title">Revision Timeline</p>
-                        {selectedRollbackVersion && (
+                        {selectedRollbackRevision && (
                             <StatusBadge tone="warning">
-                                Selected rev. {selectedRollbackVersion.version_number}
+                                Selected rev. {selectedRollbackRevision.revision_number}
                             </StatusBadge>
                         )}
                     </div>
                     <div className="mt-4 space-y-3">
-                        {versions.map(version => {
-                            const isSelected = rollbackVersionId === version.id;
-                            const isCurrent = latestVersion?.id === version.id;
+                        {revisions.map(revision => {
+                            const isSelected = rollbackRevisionId === revision.id;
+                            const isCurrent = latestRevision?.id === revision.id;
 
                             return (
                                 <button
-                                    key={version.id}
+                                    key={revision.id}
                                     type="button"
-                                    onClick={() => handleVersionTimelineClick(version)}
+                                    onClick={() => handleRevisionTimelineClick(revision)}
                                     className={`version-card w-full text-left ${
                                         isSelected ? 'version-card-active' : ''
                                     }`.trim()}
@@ -2221,39 +2221,39 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                                     <div className="flex items-start justify-between gap-3">
                                         <div>
                                             <p className="text-sm font-semibold text-slate-950">
-                                                rev. {version.version_number}
+                                                rev. {revision.revision_number}
                                             </p>
                                             <p className="mt-1 text-sm text-slate-500">
-                                                {version.creator?.name ?? 'Unknown actor'}
+                                                {revision.creator?.name ?? 'Unknown actor'}
                                             </p>
                                         </div>
                                         <div className="flex flex-wrap items-start justify-end gap-2">
                                             {isCurrent && (
                                                 <StatusBadge tone="brand">Current</StatusBadge>
                                             )}
-                                            {version.is_published && (
+                                            {revision.is_published && (
                                                 <StatusBadge tone="success">Published</StatusBadge>
                                             )}
-                                            {version.rollback_from_version_id && (
+                                            {revision.rollback_from_revision_id && (
                                                 <StatusBadge tone="warning">
                                                     Rollback from rev.{' '}
-                                                    {workflow.versions.find(
+                                                    {workflow.revisions.find(
                                                         v =>
                                                             v.id ===
-                                                            version.rollback_from_version_id
-                                                    )?.version_number ?? '?'}
+                                                            revision.rollback_from_revision_id
+                                                    )?.revision_number ?? '?'}
                                                 </StatusBadge>
                                             )}
-                                            {!version.is_published &&
+                                            {!revision.is_published &&
                                                 canPublishWorkflows &&
-                                                versions.length > 1 &&
+                                                revisions.length > 1 &&
                                                 !isArchived && (
                                                     <button
                                                         type="button"
                                                         disabled={isRunningAction}
                                                         onClick={e => {
                                                             e.stopPropagation();
-                                                            void deleteVersion(version);
+                                                            void deleteRevision(revision);
                                                         }}
                                                         className="text-xs text-slate-400 hover:text-red-600 disabled:opacity-40"
                                                         title="Delete revision"
@@ -2264,7 +2264,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                                         </div>
                                     </div>
                                     <p className="mt-3 text-xs uppercase tracking-[0.16em] text-slate-400">
-                                        {formatTimestamp(version.created_at)}
+                                        {formatTimestamp(revision.created_at)}
                                     </p>
                                 </button>
                             );
@@ -2275,11 +2275,11 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                 <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50/80 p-4">
                     <p className="text-sm font-semibold text-amber-950">Rollback target</p>
                     <p className="mt-2 text-sm text-amber-800">
-                        {selectedRollbackVersion
-                            ? `Create a new draft from revision ${selectedRollbackVersion.version_number}.`
+                        {selectedRollbackRevision
+                            ? `Create a new draft from revision ${selectedRollbackRevision.revision_number}.`
                             : 'Select a revision from the timeline to prepare rollback.'}
                     </p>
-                    {rollbackVersionId && canPublishWorkflows && !isArchived && (
+                    {rollbackRevisionId && canPublishWorkflows && !isArchived && (
                         <button
                             type="button"
                             onClick={rollback}

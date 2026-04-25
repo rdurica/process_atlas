@@ -16,6 +16,7 @@ final readonly class ScreenResponse implements JsonSerializable
         public ?string $subtitle,
         public ?string $description,
         public ?string $imagePath,
+        /** @var array<string, mixed>|null */
         public ?array $customFields,
     ) {}
 

@@ -14,7 +14,7 @@ final class ProjectMemberQueryService
      */
     public function list(Project $project): array
     {
-        return $project->members()
+        $result = $project->members()
             ->get()
             ->map(function (User $user): ProjectMemberResponse
             {
@@ -25,6 +25,8 @@ final class ProjectMemberQueryService
             })
             ->values()
             ->all();
+
+        return array_values($result);
     }
 
     public function findByEmail(string $email): User

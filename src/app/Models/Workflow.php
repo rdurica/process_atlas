@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Database\Factories\WorkflowFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,14 +11,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Workflow extends Model
 {
+    /** @use HasFactory<WorkflowFactory> */
     use HasFactory;
 
     protected $fillable = [
         'project_id',
         'name',
         'status',
-        'latest_version_id',
-        'published_version_id',
+        'latest_revision_id',
+        'published_revision_id',
         'archived_at',
     ];
 
@@ -30,12 +33,18 @@ class Workflow extends Model
         ];
     }
 
-    public function scopeArchived($query): void
+    /**
+     * @param  Builder<static>  $query
+     */
+    public function scopeArchived(Builder $query): void
     {
         $query->whereNotNull('archived_at');
     }
 
-    public function scopeNotArchived($query): void
+    /**
+     * @param  Builder<static>  $query
+     */
+    public function scopeNotArchived(Builder $query): void
     {
         $query->whereNull('archived_at');
     }
@@ -54,26 +63,26 @@ class Workflow extends Model
     }
 
     /**
-     * @return HasMany<WorkflowVersion, $this>
+     * @return HasMany<WorkflowRevision, $this>
      */
-    public function versions(): HasMany
+    public function revisions(): HasMany
     {
-        return $this->hasMany(WorkflowVersion::class);
+        return $this->hasMany(WorkflowRevision::class);
     }
 
     /**
-     * @return BelongsTo<WorkflowVersion, $this>
+     * @return BelongsTo<WorkflowRevision, $this>
      */
-    public function latestVersion(): BelongsTo
+    public function latestRevision(): BelongsTo
     {
-        return $this->belongsTo(WorkflowVersion::class, 'latest_version_id');
+        return $this->belongsTo(WorkflowRevision::class, 'latest_revision_id');
     }
 
     /**
-     * @return BelongsTo<WorkflowVersion, $this>
+     * @return BelongsTo<WorkflowRevision, $this>
      */
-    public function publishedVersion(): BelongsTo
+    public function publishedRevision(): BelongsTo
     {
-        return $this->belongsTo(WorkflowVersion::class, 'published_version_id');
+        return $this->belongsTo(WorkflowRevision::class, 'published_revision_id');
     }
 }

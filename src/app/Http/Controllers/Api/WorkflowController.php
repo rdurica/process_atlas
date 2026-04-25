@@ -40,7 +40,7 @@ class WorkflowController extends Controller
     {
         $this->authorize('editWorkflows', $project);
 
-        $response = $this->createWorkflow->execute($request->user(), $project, $request->toDto());
+        $response = $this->createWorkflow->execute($this->user(), $project, $request->toDto());
 
         return response()->json(['data' => $response->jsonSerialize()], 201);
     }
@@ -56,7 +56,7 @@ class WorkflowController extends Controller
     {
         $this->authorize('update', $workflow);
 
-        $response = $this->updateWorkflow->execute($request->user(), $workflow, $request->toDto());
+        $response = $this->updateWorkflow->execute($this->user(), $workflow, $request->toDto());
 
         return response()->json(['data' => $response->jsonSerialize()]);
     }
@@ -65,7 +65,7 @@ class WorkflowController extends Controller
     {
         $this->authorize('archive', $workflow);
 
-        $response = $this->archiveWorkflow->execute($request->user(), $workflow);
+        $response = $this->archiveWorkflow->execute($this->user(), $workflow);
 
         return response()->json(['data' => ['archived_at' => $response->archivedAt]]);
     }
@@ -74,7 +74,7 @@ class WorkflowController extends Controller
     {
         $this->authorize('archive', $workflow);
 
-        $response = $this->unarchiveWorkflow->execute($request->user(), $workflow);
+        $response = $this->unarchiveWorkflow->execute($this->user(), $workflow);
 
         return response()->json(['data' => ['archived_at' => $response->archivedAt]]);
     }

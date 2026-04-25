@@ -66,6 +66,16 @@ export default function AuthenticatedLayout({
                         <span className="sidebar-glyph">OV</span>
                         <span>Dashboard</span>
                     </Link>
+                    {(user as { is_admin?: boolean } | null)?.is_admin && (
+                        <Link
+                            href={route('admin.users')}
+                            className={`sidebar-link ${route().current('admin.users') ? 'sidebar-link-active' : ''}`.trim()}
+                            onClick={() => setMobileNavOpen(false)}
+                        >
+                            <span className="sidebar-glyph">AD</span>
+                            <span>Administration</span>
+                        </Link>
+                    )}
                 </nav>
             </div>
 

@@ -13,12 +13,12 @@ class McpController extends Controller
 {
     public function __invoke(Request $request, McpServer $mcpServer): JsonResponse|Response
     {
-        abort_unless($request->user()->can(PermissionList::MCP_USE), 403, 'Forbidden.');
+        abort_unless($this->user()->can(PermissionList::MCP_USE), 403, 'Forbidden.');
 
         $payload = $request->json()->all();
         $response = $mcpServer->handle(
             McpRequest::fromArray($payload),
-            $request->user(),
+            $this->user(),
         );
 
         if ($response === null)

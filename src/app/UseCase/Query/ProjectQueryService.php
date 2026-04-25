@@ -34,6 +34,6 @@ final class ProjectQueryService
 
     public function detailForApi(Project $project): Project
     {
-        return $project->load('workflows.latestVersion');
+        return $project->load('workflows.latestRevision');
     }
 }

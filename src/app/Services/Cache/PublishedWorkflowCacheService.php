@@ -15,11 +15,17 @@ final class PublishedWorkflowCacheService
         $this->ttlSeconds = (int) config('cache.ttl.published_workflow', 3600);
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function get(int $workflowId): ?array
     {
         return Cache::get($this->key($workflowId));
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function put(int $workflowId, array $data): void
     {
         Cache::put($this->key($workflowId), $data, $this->ttlSeconds);

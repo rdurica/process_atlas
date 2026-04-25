@@ -23,7 +23,7 @@ class WorkflowEditorController extends Controller
         return Inertia::render('WorkflowEditor', [
             'workflow'         => $this->workflows->detailForEditor($workflow),
             'projectWorkflows' => $this->workflows->projectWorkflowsForEditor($workflow),
-            'currentUserRole'  => $this->workflows->currentUserRoleForWorkflow($request->user(), $workflow),
+            'currentUserRole'  => $this->workflows->currentUserRoleForWorkflow($this->user(), $workflow),
             'recentActivity'   => $this->activity->latestForWorkflow($workflow),
         ]);
     }

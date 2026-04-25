@@ -18,28 +18,26 @@ class ProjectController extends Controller
 
     public function show(Request $request, Project $project): Response
     {
-        $this->authorize('view', $project);
-
-        $user = $request->user();
+        $user = $this->user();
         $isAdmin = $user->can(PermissionList::PROJECTS_ADMIN);
         $currentUserRole = $isAdmin ? 'process_owner' : $user->projectRoleIn($project);
 
         $workflows = $project->workflows()
             ->notArchived()
-            ->with(['latestVersion', 'publishedVersion'])
+            ->with(['latestRevision', 'publishedRevision'])
             ->orderBy('name')
             ->get()
             ->map(fn (Workflow $workflow): array => [
-                'id'             => $workflow->id,
-                'name'           => $workflow->name,
-                'status'         => $workflow->status,
-                'latest_version' => $workflow->latestVersion ? [
-                    'id'             => $workflow->latestVersion->id,
-                    'version_number' => $workflow->latestVersion->version_number,
-                    'is_published'   => $workflow->latestVersion->is_published,
+                'id'              => $workflow->id,
+                'name'            => $workflow->name,
+                'status'          => $workflow->status,
+                'latest_revision' => $workflow->latestRevision ? [
+                    'id'              => $workflow->latestRevision->id,
+                    'revision_number' => $workflow->latestRevision->revision_number,
+                    'is_published'    => $workflow->latestRevision->is_published,
                 ] : null,
-                'published_version_id' => $workflow->published_version_id,
-                'updated_at'           => $workflow->updated_at?->toIso8601String(),
+                'published_revision_id' => $workflow->published_revision_id,
+                'updated_at'            => $workflow->updated_at?->toIso8601String(),
             ])
             ->values()
             ->all();

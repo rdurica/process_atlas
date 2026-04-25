@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\DTO\Mcp\McpRequest;
 use App\DTO\Mcp\McpResponse;
+use App\Exceptions\McpProtocolException;
 use App\Models\User;
 use App\Services\Mcp\McpServer;
 use App\Support\PermissionList;
@@ -140,7 +141,12 @@ class McpServeStdioCommand extends Command
             $body = '';
             while (strlen($body) < $contentLength)
             {
-                $chunk = fread(STDIN, $contentLength - strlen($body));
+                $toRead = $contentLength - strlen($body);
+                if ($toRead <= 0)
+                {
+                    throw new McpProtocolException('Remaining bytes to read must be positive.');
+                }
+                $chunk = fread(STDIN, $toRead);
 
                 if ($chunk === false || $chunk === '')
                 {

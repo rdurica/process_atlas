@@ -12,7 +12,7 @@ class McpTokenController extends Controller
 {
     public function store(Request $request): RedirectResponse
     {
-        $user = $request->user();
+        $user = $this->user();
 
         abort_unless($user->can(PermissionList::MCP_USE), 403);
 
@@ -28,7 +28,7 @@ class McpTokenController extends Controller
 
     public function destroy(Request $request): RedirectResponse
     {
-        $user = $request->user();
+        $user = $this->user();
 
         abort_unless($user->can(PermissionList::MCP_USE), 403);
 

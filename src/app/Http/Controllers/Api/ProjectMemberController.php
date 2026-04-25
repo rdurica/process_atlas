@@ -44,7 +44,7 @@ class ProjectMemberController extends Controller
 
         $command = $request->toDto();
         $member = $this->members->findByEmail($command->email);
-        $response = $this->addMember->execute($request->user(), $project, $member, $command);
+        $response = $this->addMember->execute($this->user(), $project, $member, $command);
 
         return response()->json(['data' => $response->toArray()], 201);
     }
@@ -54,7 +54,7 @@ class ProjectMemberController extends Controller
         $this->authorize('manageMembers', $project);
 
         $response = $this->updateMemberRole->execute(
-            $request->user(),
+            $this->user(),
             $project,
             $user,
             $request->toDto(),
@@ -67,7 +67,7 @@ class ProjectMemberController extends Controller
     {
         $this->authorize('manageMembers', $project);
 
-        $this->removeMember->execute($request->user(), $project, $user);
+        $this->removeMember->execute($this->user(), $project, $user);
 
         return response()->json(status: 204);
     }

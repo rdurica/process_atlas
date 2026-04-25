@@ -11,7 +11,7 @@ use App\Models\Screen;
 use App\UseCase\Command\UpdateScreenCommand;
 use App\UseCase\Command\UpsertScreenCommand;
 use App\UseCase\Query\ScreenQueryService;
-use App\UseCase\Query\WorkflowVersionQueryService;
+use App\UseCase\Query\WorkflowRevisionQueryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -19,7 +19,7 @@ class ScreenController extends Controller
 {
     public function __construct(
         private readonly ScreenQueryService $screens,
-        private readonly WorkflowVersionQueryService $versions,
+        private readonly WorkflowRevisionQueryService $revisions,
         private readonly UpsertScreenCommand $upsertScreen,
         private readonly UpdateScreenCommand $updateScreen,
     ) {}
@@ -34,13 +34,13 @@ class ScreenController extends Controller
     public function upsert(UpsertScreenRequest $request): JsonResponse
     {
         $command = $request->toDto();
-        $workflowVersion = $this->versions->findForUpsert($command->workflowVersionId);
+        $workflowRevision = $this->revisions->findForUpsert($command->workflowRevisionId);
 
-        $this->authorize('updateGraph', $workflowVersion);
+        $this->authorize('updateGraph', $workflowRevision);
 
         $response = $this->upsertScreen->execute(
-            $request->user(),
-            $workflowVersion,
+            $this->user(),
+            $workflowRevision,
             $command,
         );
 
@@ -51,7 +51,7 @@ class ScreenController extends Controller
     {
         $this->authorize('update', $screen);
 
-        $response = $this->updateScreen->execute($request->user(), $screen, $request->toDto());
+        $response = $this->updateScreen->execute($this->user(), $screen, $request->toDto());
 
         return response()->json(['data' => $response->jsonSerialize()]);
     }

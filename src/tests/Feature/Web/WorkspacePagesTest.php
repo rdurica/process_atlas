@@ -35,7 +35,7 @@ it('renders dashboard with enterprise summary and activity props', function (): 
             ->where('summary.workflows', 1)
             ->has('projects', 1)
             ->where('projects.0.name', 'Checkout Platform')
-            ->where('projects.0.latest_version_label', 'rev. 1')
+            ->where('projects.0.latest_revision_label', 'rev. 1')
             ->has('projects.0.workflows', 1)
             ->has('recentActivity')
             ->where('recentActivity', fn ($activities): bool => collect($activities)->contains(
@@ -78,9 +78,9 @@ it('renders workflow editor with recent activity and version metadata', function
     $workflowId = $workflowResponse->json('data.id');
 
     $workflowShow = $this->getJson("/api/v1/workflows/{$workflowId}")->assertOk();
-    $versionId = (int) $workflowShow->json('data.latest_version.id');
+    $versionId = (int) $workflowShow->json('data.latest_revision.id');
 
-    $this->patchJson("/api/v1/workflow-versions/{$versionId}/graph", [
+    $this->patchJson("/api/v1/workflow-revisions/{$versionId}/graph", [
         'graph_json' => [
             'nodes' => [
                 ['id' => 'screen-1', 'data' => ['label' => 'Start'], 'position' => ['x' => 80, 'y' => 80]],
@@ -95,8 +95,8 @@ it('renders workflow editor with recent activity and version metadata', function
         ->assertInertia(fn (Assert $page) => $page
             ->component('WorkflowEditor')
             ->where('workflow.name', 'Claims Intake')
-            ->has('workflow.versions', 1)
-            ->where('workflow.versions.0.creator.name', 'Owner')
+            ->has('workflow.revisions', 1)
+            ->where('workflow.revisions.0.creator.name', 'Owner')
             ->has('recentActivity')
             ->where('recentActivity', fn ($activities): bool => collect($activities)->contains(
                 fn ($activity): bool => ($activity['subject_label'] ?? null) === 'rev. 1',

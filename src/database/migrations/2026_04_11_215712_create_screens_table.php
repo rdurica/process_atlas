@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('screens', function (Blueprint $table): void
         {
             $table->id();
-            $table->foreignId('workflow_version_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('workflow_revision_id')->constrained()->cascadeOnDelete();
             $table->string('node_id');
             $table->string('title')->nullable();
             $table->text('description')->nullable();
@@ -22,7 +22,7 @@ return new class extends Migration
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
-            $table->unique(['workflow_version_id', 'node_id']);
+            $table->unique(['workflow_revision_id', 'node_id']);
         });
     }
 

@@ -7,7 +7,7 @@ use App\Models\Screen;
 use App\Models\ScreenCustomField;
 use App\Models\User;
 use App\Models\Workflow;
-use App\Models\WorkflowVersion;
+use App\Models\WorkflowRevision;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Spatie\Activitylog\Models\Activity;
@@ -35,13 +35,13 @@ final class ActivityFeed
      */
     public function latestForWorkflow(Workflow $workflow, int $limit = 12): array
     {
-        $versionIds = $workflow->versions()->pluck('id');
-        $screenIds = Screen::query()->whereIn('workflow_version_id', $versionIds)->pluck('id');
+        $revisionIds = $workflow->revisions()->pluck('id');
+        $screenIds = Screen::query()->whereIn('workflow_revision_id', $revisionIds)->pluck('id');
         $customFieldIds = ScreenCustomField::query()->whereIn('screen_id', $screenIds)->pluck('id');
 
         $activities = Activity::query()
             ->where('log_name', 'process_atlas')
-            ->where(function ($query) use ($workflow, $versionIds, $screenIds, $customFieldIds): void
+            ->where(function ($query) use ($workflow, $revisionIds, $screenIds, $customFieldIds): void
             {
                 $query->where(function ($inner) use ($workflow): void
                 {
@@ -49,12 +49,12 @@ final class ActivityFeed
                         ->where('subject_id', $workflow->id);
                 });
 
-                if ($versionIds->isNotEmpty())
+                if ($revisionIds->isNotEmpty())
                 {
-                    $query->orWhere(function ($inner) use ($versionIds): void
+                    $query->orWhere(function ($inner) use ($revisionIds): void
                     {
-                        $inner->where('subject_type', WorkflowVersion::class)
-                            ->whereIn('subject_id', $versionIds);
+                        $inner->where('subject_type', WorkflowRevision::class)
+                            ->whereIn('subject_id', $revisionIds);
                     });
                 }
 
@@ -91,7 +91,7 @@ final class ActivityFeed
      */
     private function formatActivities(Collection $activities): array
     {
-        return $activities
+        $result = $activities
             ->map(function (Activity $activity): array
             {
                 $causer = $activity->causer;
@@ -108,6 +108,8 @@ final class ActivityFeed
             })
             ->values()
             ->all();
+
+        return array_values($result);
     }
 
     private function resolveSubjectLabel(Activity $activity): string
@@ -116,10 +118,10 @@ final class ActivityFeed
 
         return match ($activity->subject_type)
         {
-            Project::class         => $subject instanceof Project ? $subject->name : 'Project',
-            Workflow::class        => $subject instanceof Workflow ? $subject->name : 'Workflow',
-            WorkflowVersion::class => $subject instanceof WorkflowVersion
-                ? 'rev. ' . $subject->version_number
+            Project::class          => $subject instanceof Project ? $subject->name : 'Project',
+            Workflow::class         => $subject instanceof Workflow ? $subject->name : 'Workflow',
+            WorkflowRevision::class => $subject instanceof WorkflowRevision
+                ? 'rev. ' . $subject->revision_number
                 : 'Workflow revision',
             Screen::class => $subject instanceof Screen
                 ? ($subject->title ?: $subject->node_id)

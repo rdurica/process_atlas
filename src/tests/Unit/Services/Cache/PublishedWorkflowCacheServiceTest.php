@@ -6,6 +6,11 @@ use Tests\TestCase;
 
 uses(TestCase::class);
 
+beforeEach(function (): void
+{
+    Cache::flush();
+});
+
 it('stores and retrieves published workflow data', function (): void
 {
     $service = new PublishedWorkflowCacheService;
@@ -13,13 +18,13 @@ it('stores and retrieves published workflow data', function (): void
     expect($service->get(1))->toBeNull();
 
     $data = [
-        'id'                => 1,
-        'name'              => 'Test Workflow',
-        'published_version' => [
-            'id'             => 10,
-            'version_number' => 1,
-            'graph_json'     => ['nodes' => [], 'edges' => []],
-            'screens'        => [],
+        'id'                 => 1,
+        'name'               => 'Test Workflow',
+        'published_revision' => [
+            'id'              => 10,
+            'revision_number' => 1,
+            'graph_json'      => ['nodes' => [], 'edges' => []],
+            'screens'         => [],
         ],
     ];
 

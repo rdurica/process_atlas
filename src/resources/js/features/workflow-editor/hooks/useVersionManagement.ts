@@ -1,42 +1,42 @@
 import { useCallback, useState } from 'react';
 import { router } from '@inertiajs/react';
-import type { WorkflowVersionSummary } from '@/types/processAtlas';
+import type { WorkflowRevisionSummary } from '@/types/processAtlas';
 
 interface UseVersionManagementOptions {
     workflowId: number;
-    versions: WorkflowVersionSummary[];
-    latestVersion: WorkflowVersionSummary | null;
+    revisions: WorkflowRevisionSummary[];
+    latestRevision: WorkflowRevisionSummary | null;
     canEditInProject: boolean;
     canPublish: boolean;
 }
 
 interface UseVersionManagementReturn {
-    versions: WorkflowVersionSummary[];
-    previewVersion: WorkflowVersionSummary | null;
-    rollbackVersionId: number | null;
+    revisions: WorkflowRevisionSummary[];
+    previewRevision: WorkflowRevisionSummary | null;
+    rollbackRevisionId: number | null;
     isRunningAction: boolean;
-    setPreviewVersion: (version: WorkflowVersionSummary | null) => void;
-    setRollbackVersionId: (id: number | null) => void;
+    setPreviewRevision: (revision: WorkflowRevisionSummary | null) => void;
+    setRollbackRevisionId: (id: number | null) => void;
     createDraft: () => Promise<void>;
     publishCurrent: () => Promise<void>;
     rollback: () => Promise<void>;
-    deleteVersion: (version: WorkflowVersionSummary) => Promise<void>;
-    handleVersionTimelineClick: (version: WorkflowVersionSummary) => Promise<void>;
-    selectedRollbackVersion: WorkflowVersionSummary | null;
+    deleteRevision: (revision: WorkflowRevisionSummary) => Promise<void>;
+    handleRevisionTimelineClick: (revision: WorkflowRevisionSummary) => Promise<void>;
+    selectedRollbackRevision: WorkflowRevisionSummary | null;
     reloadWorkflow: () => void;
     runWorkflowAction: (task: () => Promise<void>, _successMessage: string) => Promise<void>;
 }
 
 export function useVersionManagement({
     workflowId,
-    versions,
-    latestVersion,
+    revisions,
+    latestRevision,
     canEditInProject,
     canPublish,
 }: UseVersionManagementOptions): UseVersionManagementReturn {
-    const [previewVersion, setPreviewVersion] = useState<WorkflowVersionSummary | null>(null);
-    const [rollbackVersionId, setRollbackVersionId] = useState<number | null>(
-        versions.find(v => v.id !== latestVersion?.id)?.id ?? null
+    const [previewRevision, setPreviewRevision] = useState<WorkflowRevisionSummary | null>(null);
+    const [rollbackRevisionId, setRollbackRevisionId] = useState<number | null>(
+        revisions.find(r => r.id !== latestRevision?.id)?.id ?? null
     );
     const [isRunningAction, setIsRunningAction] = useState(false);
 
@@ -60,71 +60,71 @@ export function useVersionManagement({
     const createDraft = useCallback(async () => {
         if (!canEditInProject) return;
         await runWorkflowAction(async () => {
-            await window.axios.post(`/api/v1/workflows/${workflowId}/versions`);
+            await window.axios.post(`/api/v1/workflows/${workflowId}/revisions`);
         }, 'A new draft revision was created.');
     }, [workflowId, canEditInProject, runWorkflowAction]);
 
     const publishCurrent = useCallback(async () => {
-        if (!latestVersion || !canPublish) return;
+        if (!latestRevision || !canPublish) return;
         await runWorkflowAction(async () => {
-            await window.axios.post(`/api/v1/workflow-versions/${latestVersion.id}/publish`);
+            await window.axios.post(`/api/v1/workflow-revisions/${latestRevision.id}/publish`);
         }, 'The current revision was published.');
-    }, [latestVersion, canPublish, runWorkflowAction]);
+    }, [latestRevision, canPublish, runWorkflowAction]);
 
     const rollback = useCallback(async () => {
-        if (!rollbackVersionId || !canPublish) return;
+        if (!rollbackRevisionId || !canPublish) return;
         await runWorkflowAction(async () => {
             await window.axios.post(`/api/v1/workflows/${workflowId}/rollback`, {
-                to_version_id: rollbackVersionId,
+                to_version_id: rollbackRevisionId,
             });
         }, 'A rollback draft was created from the selected revision.');
-    }, [workflowId, rollbackVersionId, canPublish, runWorkflowAction]);
+    }, [workflowId, rollbackRevisionId, canPublish, runWorkflowAction]);
 
-    const deleteVersion = useCallback(
-        async (version: WorkflowVersionSummary) => {
+    const deleteRevision = useCallback(
+        async (revision: WorkflowRevisionSummary) => {
             await runWorkflowAction(async () => {
-                await window.axios.delete(`/api/v1/workflow-versions/${version.id}`);
-            }, `rev. ${version.version_number} was deleted.`);
+                await window.axios.delete(`/api/v1/workflow-revisions/${revision.id}`);
+            }, `rev. ${revision.revision_number} was deleted.`);
         },
         [runWorkflowAction]
     );
 
-    const handleVersionTimelineClick = useCallback(
-        async (version: WorkflowVersionSummary) => {
-            setRollbackVersionId(version.id);
+    const handleRevisionTimelineClick = useCallback(
+        async (revision: WorkflowRevisionSummary) => {
+            setRollbackRevisionId(revision.id);
 
-            if (latestVersion && version.id === latestVersion.id) {
-                setPreviewVersion(null);
+            if (latestRevision && revision.id === latestRevision.id) {
+                setPreviewRevision(null);
                 return;
             }
 
             try {
-                const response = await window.axios.get<{ data: WorkflowVersionSummary }>(
-                    `/api/v1/workflow-versions/${version.id}`
+                const response = await window.axios.get<{ data: WorkflowRevisionSummary }>(
+                    `/api/v1/workflow-revisions/${revision.id}`
                 );
-                setPreviewVersion(response.data.data);
+                setPreviewRevision(response.data.data);
             } catch {
                 // silently ignore preview fetch errors
             }
         },
-        [latestVersion]
+        [latestRevision]
     );
 
-    const selectedRollbackVersion = versions.find(v => v.id === rollbackVersionId) ?? null;
+    const selectedRollbackRevision = revisions.find(r => r.id === rollbackRevisionId) ?? null;
 
     return {
-        versions,
-        previewVersion,
-        rollbackVersionId,
+        revisions,
+        previewRevision,
+        rollbackRevisionId,
         isRunningAction,
-        setPreviewVersion,
-        setRollbackVersionId,
+        setPreviewRevision,
+        setRollbackRevisionId,
         createDraft,
         publishCurrent,
         rollback,
-        deleteVersion,
-        handleVersionTimelineClick,
-        selectedRollbackVersion,
+        deleteRevision,
+        handleRevisionTimelineClick,
+        selectedRollbackRevision,
         reloadWorkflow,
         runWorkflowAction,
     };

@@ -26,14 +26,14 @@ class ProjectController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        return response()->json(['data' => $this->projects->listForApi($request->user())]);
+        return response()->json(['data' => $this->projects->listForApi($this->user())]);
     }
 
     public function store(StoreProjectRequest $request): JsonResponse
     {
         $this->authorize('create', Project::class);
 
-        $response = $this->createProject->execute($request->user(), $request->toDto());
+        $response = $this->createProject->execute($this->user(), $request->toDto());
 
         return response()->json(['data' => $response->jsonSerialize()], 201);
     }
@@ -49,7 +49,7 @@ class ProjectController extends Controller
     {
         $this->authorize('update', $project);
 
-        $response = $this->updateProject->execute($request->user(), $project, $request->toDto());
+        $response = $this->updateProject->execute($this->user(), $project, $request->toDto());
 
         return response()->json(['data' => $response->jsonSerialize()]);
     }
@@ -58,7 +58,7 @@ class ProjectController extends Controller
     {
         $this->authorize('delete', $project);
 
-        $this->deleteProject->execute($request->user(), $project);
+        $this->deleteProject->execute($this->user(), $project);
 
         return response()->json(status: 204);
     }

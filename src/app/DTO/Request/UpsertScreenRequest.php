@@ -7,7 +7,7 @@ use Illuminate\Http\UploadedFile;
 final readonly class UpsertScreenRequest
 {
     public function __construct(
-        public int $workflowVersionId,
+        public int $workflowRevisionId,
         public string $nodeId,
         public ?string $title,
         public bool $hasTitle,
@@ -24,7 +24,7 @@ final readonly class UpsertScreenRequest
     public static function fromArray(array $payload, ?UploadedFile $image = null): self
     {
         return new self(
-            workflowVersionId: (int) ($payload['workflow_version_id'] ?? 0),
+            workflowRevisionId: (int) ($payload['workflow_revision_id'] ?? 0),
             nodeId: (string) ($payload['node_id'] ?? ''),
             title: array_key_exists('title', $payload) ? self::nullableString($payload['title']) : null,
             hasTitle: array_key_exists('title', $payload),
@@ -42,7 +42,7 @@ final readonly class UpsertScreenRequest
     public static function fromMcpArray(array $payload): self
     {
         return new self(
-            workflowVersionId: 0,
+            workflowRevisionId: 0,
             nodeId: (string) ($payload['node_id'] ?? ''),
             title: self::nullableString($payload['title'] ?? null),
             hasTitle: true,

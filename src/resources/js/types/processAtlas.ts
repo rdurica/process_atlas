@@ -14,12 +14,12 @@ export interface WorkflowSummary {
     id: number;
     name: string;
     status: 'draft' | 'published';
-    latest_version?: {
+    latest_revision?: {
         id: number;
-        version_number: number;
+        revision_number: number;
         is_published: boolean;
     } | null;
-    published_version_id?: number | null;
+    published_revision_id?: number | null;
     updated_at?: string | null;
     archived_at?: string | null;
 }
@@ -38,7 +38,7 @@ export interface ProjectSummary {
     name: string;
     description?: string | null;
     workflows_count: number;
-    latest_version_label: string;
+    latest_revision_label: string;
     status_summary: string;
     current_user_role: ProjectRole | null;
     workflows: WorkflowSummary[];
@@ -47,7 +47,7 @@ export interface ProjectSummary {
 export interface DashboardSummary {
     projects: number;
     workflows: number;
-    draft_versions: number;
+    draft_revisions: number;
     published_workflows: number;
 }
 
@@ -69,12 +69,12 @@ export interface Screen {
     custom_fields: ScreenCustomField[];
 }
 
-export interface WorkflowVersionSummary {
+export interface WorkflowRevisionSummary {
     id: number;
-    version_number: number;
+    revision_number: number;
     lock_version: number;
     is_published: boolean;
-    rollback_from_version_id?: number | null;
+    rollback_from_revision_id?: number | null;
     graph_json?: {
         nodes?: Node[];
         edges?: Edge[];
@@ -96,6 +96,6 @@ export interface WorkflowData {
         id: number;
         name: string;
     };
-    latest_version?: WorkflowVersionSummary | null;
-    versions: WorkflowVersionSummary[];
+    latest_revision?: WorkflowRevisionSummary | null;
+    revisions: WorkflowRevisionSummary[];
 }
