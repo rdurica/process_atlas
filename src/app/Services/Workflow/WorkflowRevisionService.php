@@ -20,6 +20,7 @@ final class WorkflowRevisionService
             'created_by'      => $actor->id,
             'revision_number' => 1,
             'is_published'    => false,
+            'is_locked'       => false,
             'graph_json'      => ['nodes' => [], 'edges' => []],
             'lock_version'    => 0,
         ]);
@@ -51,6 +52,7 @@ final class WorkflowRevisionService
             'created_by'      => $actor->id,
             'revision_number' => $nextRevisionNumber,
             'is_published'    => false,
+            'is_locked'       => false,
             'graph_json'      => $source->graph_json,
             'lock_version'    => 0,
         ]);
@@ -71,7 +73,7 @@ final class WorkflowRevisionService
         $revision = $workflow->revisions()->whereKey($revision->id)->firstOrFail();
 
         $workflow->revisions()->update(['is_published' => false]);
-        $revision->update(['is_published' => true]);
+        $revision->update(['is_published' => true, 'is_locked' => true]);
 
         $workflow->update([
             'published_revision_id' => $revision->id,
@@ -119,7 +121,7 @@ final class WorkflowRevisionService
         $workflow = $this->lockWorkflow($workflow);
         $revision = $workflow->revisions()->whereKey($revision->id)->firstOrFail();
 
-        abort_if($revision->is_published, 422, 'Cannot delete a published revision.');
+        abort_if($revision->is_locked, 422, 'Cannot delete a locked revision.');
         abort_if($workflow->revisions()->count() <= 1, 422, 'Cannot delete the only remaining revision.');
 
         $isLatest = $workflow->latest_revision_id === $revision->id;

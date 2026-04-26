@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['workflow_id', 'created_by', 'revision_number', 'is_published', 'graph_json', 'lock_version', 'rollback_from_revision_id'])]
+#[Fillable(['workflow_id', 'created_by', 'revision_number', 'is_published', 'is_locked', 'graph_json', 'lock_version', 'rollback_from_revision_id'])]
 class WorkflowRevision extends Model
 {
     /** @use HasFactory<WorkflowRevisionFactory> */
@@ -22,6 +22,7 @@ class WorkflowRevision extends Model
     {
         return [
             'is_published' => 'boolean',
+            'is_locked'    => 'boolean',
             'graph_json'   => 'array',
         ];
     }

@@ -2378,10 +2378,10 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                                                     )?.revision_number ?? '?'}
                                                 </StatusBadge>
                                             )}
-                                            {!revision.is_published &&
-                                                canPublishWorkflows &&
+                                            {canPublishWorkflows &&
                                                 revisions.length > 1 &&
-                                                !isArchived && (
+                                                !isArchived &&
+                                                !revision.is_locked && (
                                                     <button
                                                         type="button"
                                                         disabled={isRunningAction}
@@ -2389,7 +2389,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                                                             e.stopPropagation();
                                                             void deleteRevision(revision);
                                                         }}
-                                                        className="text-xs text-slate-400 hover:text-red-600 disabled:opacity-40"
+                                                        className="text-xs text-slate-400 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
                                                         title="Delete revision"
                                                     >
                                                         Delete

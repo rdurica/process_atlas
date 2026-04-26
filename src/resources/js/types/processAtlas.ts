@@ -74,6 +74,7 @@ export interface WorkflowRevisionSummary {
     revision_number: number;
     lock_version: number;
     is_published: boolean;
+    is_locked: boolean;
     rollback_from_revision_id?: number | null;
     graph_json?: {
         nodes?: Node[];
