@@ -914,6 +914,10 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
         nodeKind: Exclude<WorkflowNodeKind, 'screen' | 'if'>,
         position?: { x: number; y: number }
     ) => {
+        if (nodeKind === 'start') {
+            return;
+        }
+
         const nextId = `${nodeKind}-${Date.now()}`;
         const labelIndex =
             nodes.filter(
@@ -930,15 +934,13 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                   ? {
                         condition: `Condition ${labelIndex}`,
                     }
-                  : nodeKind === 'start'
-                    ? { label: 'Start', security_rule: null }
-                    : nodeKind === 'end'
-                      ? { label: 'End', linked_workflow_id: null, linked_workflow_name: null }
-                      : {
-                            title: `Action ${labelIndex}`,
-                            description: '',
-                            security_rule: null,
-                        };
+                  : nodeKind === 'end'
+                    ? { label: 'End', linked_workflow_id: null, linked_workflow_name: null }
+                    : {
+                          title: `Action ${labelIndex}`,
+                          description: '',
+                          security_rule: null,
+                      };
 
         setNodes(currentNodes => [
             ...currentNodes,
@@ -957,6 +959,10 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
     };
 
     const handleDropNode = (nodeKind: WorkflowNodeKind, position: { x: number; y: number }) => {
+        if (nodeKind === 'start') {
+            return;
+        }
+
         if (nodeKind === 'screen') {
             const nextId = `screen-${Date.now()}`;
             setNodes(currentNodes => [
@@ -977,7 +983,6 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
             nodeKind === 'flash' ||
             nodeKind === 'condition' ||
             nodeKind === 'action' ||
-            nodeKind === 'start' ||
             nodeKind === 'end'
         ) {
             addWorkflowNode(nodeKind, position);
@@ -2391,13 +2396,20 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                                     const isCurrent = latestRevision?.id === revision.id;
 
                                     return (
-                                        <button
+                                        <div
                                             key={revision.id}
-                                            type="button"
                                             onClick={() => handleRevisionTimelineClick(revision)}
                                             className={`revision-timeline-item ${
                                                 isActive ? 'revision-timeline-item-active' : ''
                                             }`.trim()}
+                                            role="button"
+                                            tabIndex={0}
+                                            onKeyDown={e => {
+                                                if (e.key === 'Enter' || e.key === ' ') {
+                                                    e.preventDefault();
+                                                    handleRevisionTimelineClick(revision);
+                                                }
+                                            }}
                                         >
                                             <span className="revision-timeline-dot" />
                                             <div className="min-w-0 flex-1">
@@ -2463,7 +2475,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                                                     </p>
                                                 )}
                                             </div>
-                                        </button>
+                                        </div>
                                     );
                                 })
                         )}
@@ -2485,13 +2497,20 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                                     const isCurrent = latestRevision?.id === revision.id;
 
                                     return (
-                                        <button
+                                        <div
                                             key={revision.id}
-                                            type="button"
                                             onClick={() => handleRevisionTimelineClick(revision)}
                                             className={`revision-timeline-item ${
                                                 isActive ? 'revision-timeline-item-active' : ''
                                             }`.trim()}
+                                            role="button"
+                                            tabIndex={0}
+                                            onKeyDown={e => {
+                                                if (e.key === 'Enter' || e.key === ' ') {
+                                                    e.preventDefault();
+                                                    handleRevisionTimelineClick(revision);
+                                                }
+                                            }}
                                         >
                                             <span className="revision-timeline-dot revision-timeline-dot-published" />
                                             <div className="min-w-0 flex-1">
@@ -2538,7 +2557,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                                                     </p>
                                                 )}
                                             </div>
-                                        </button>
+                                        </div>
                                     );
                                 })
                         )}

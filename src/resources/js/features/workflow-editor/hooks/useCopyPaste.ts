@@ -22,13 +22,14 @@ export function useCopyPaste({ setNodes }: UseCopyPasteOptions) {
     }, []);
 
     const copyNodes = useCallback((nodesToCopy: Node[]) => {
-        setCopiedNodes(nodesToCopy);
+        setCopiedNodes(nodesToCopy.filter(node => node.type !== 'start'));
     }, []);
 
     const pasteNodes = useCallback(() => {
-        if (copiedNodes.length === 0) return [];
+        const nodesToPaste = copiedNodes.filter(node => node.type !== 'start');
+        if (nodesToPaste.length === 0) return [];
 
-        const newNodes: Node[] = copiedNodes.map((node, index) => {
+        const newNodes: Node[] = nodesToPaste.map((node, index) => {
             const newId = `${node.type}-${Date.now()}-${index}`;
             return {
                 ...node,
