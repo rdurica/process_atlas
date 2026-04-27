@@ -20,14 +20,14 @@ class WorkflowRevisionFactory extends Factory
     public function definition(): array
     {
         return [
-            'workflow_id'               => Workflow::factory(),
-            'created_by'                => User::factory(),
-            'revision_number'           => fake()->numberBetween(1, 100),
-            'is_published'              => false,
-            'is_locked'                 => false,
-            'graph_json'                => null,
-            'lock_version'              => 0,
-            'rollback_from_revision_id' => null,
+            'workflow_id'        => Workflow::factory(),
+            'created_by'         => User::factory(),
+            'revision_number'    => fake()->numberBetween(1, 100),
+            'is_published'       => false,
+            'is_locked'          => false,
+            'graph_json'         => null,
+            'lock_version'       => 0,
+            'source_revision_id' => null,
         ];
     }
 }

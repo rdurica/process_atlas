@@ -50,19 +50,6 @@ final class WorkflowPolicy
         return $this->access->canEdit($user, $project);
     }
 
-    public function rollback(User $user, Workflow $workflow): bool
-    {
-        $workflow->loadMissing('project');
-
-        $project = $workflow->project;
-        if (! $project instanceof Project)
-        {
-            return false;
-        }
-
-        return $this->access->canPublish($user, $project);
-    }
-
     public function archive(User $user, Workflow $workflow): bool
     {
         $workflow->loadMissing('project');

@@ -6,7 +6,6 @@ use App\Exceptions\ConsistencyException;
 use App\Models\Project;
 use App\Models\User;
 use App\Models\Workflow;
-use App\Models\WorkflowRevision;
 use App\Services\Cache\PublishedWorkflowCacheService;
 use Illuminate\Support\Collection;
 
@@ -70,6 +69,7 @@ final class WorkflowQueryService
             'project',
             'latestRevision.creator',
             'latestRevision.screens.customFields',
+            'publishedRevision',
             'revisions' => fn ($query) => $query->with('creator')->orderByRaw('revision_number IS NULL DESC, revision_number DESC, created_at DESC'),
         ]);
     }
@@ -108,10 +108,5 @@ final class WorkflowQueryService
         return $user->isAdmin()
             ? 'process_owner'
             : (string) $user->projectRoleIn($project);
-    }
-
-    public function findRollbackTarget(int $workflowRevisionId): WorkflowRevision
-    {
-        return WorkflowRevision::query()->findOrFail($workflowRevisionId);
     }
 }

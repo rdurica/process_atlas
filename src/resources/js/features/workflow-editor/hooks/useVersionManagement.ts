@@ -13,16 +13,12 @@ interface UseVersionManagementOptions {
 interface UseVersionManagementReturn {
     revisions: WorkflowRevisionSummary[];
     previewRevision: WorkflowRevisionSummary | null;
-    rollbackRevisionId: number | null;
     isRunningAction: boolean;
     setPreviewRevision: (revision: WorkflowRevisionSummary | null) => void;
-    setRollbackRevisionId: (id: number | null) => void;
-    createDraft: (draftName?: string) => Promise<void>;
-    publishCurrent: () => Promise<void>;
-    rollback: () => Promise<void>;
+    createDraft: (draftName?: string, sourceRevisionId?: number) => Promise<void>;
+    publishCurrent: (force?: boolean) => Promise<void>;
     deleteRevision: (revision: WorkflowRevisionSummary) => Promise<void>;
     handleRevisionTimelineClick: (revision: WorkflowRevisionSummary) => Promise<void>;
-    selectedRollbackRevision: WorkflowRevisionSummary | null;
     reloadWorkflow: () => void;
     runWorkflowAction: (task: () => Promise<void>, _successMessage: string) => Promise<void>;
 }
@@ -35,9 +31,6 @@ export function useVersionManagement({
     canPublish,
 }: UseVersionManagementOptions): UseVersionManagementReturn {
     const [previewRevision, setPreviewRevision] = useState<WorkflowRevisionSummary | null>(null);
-    const [rollbackRevisionId, setRollbackRevisionId] = useState<number | null>(
-        revisions.find(r => r.id !== latestRevision?.id)?.id ?? null
-    );
     const [isRunningAction, setIsRunningAction] = useState(false);
 
     const reloadWorkflow = useCallback(() => {
@@ -58,32 +51,29 @@ export function useVersionManagement({
     );
 
     const createDraft = useCallback(
-        async (draftName?: string) => {
+        async (draftName?: string, sourceRevisionId?: number) => {
             if (!canEditInProject) return;
             await runWorkflowAction(async () => {
                 await window.axios.post(`/api/v1/workflows/${workflowId}/revisions`, {
                     draft_name: draftName || undefined,
+                    source_revision_id: sourceRevisionId,
                 });
             }, 'A new draft was created.');
         },
         [workflowId, canEditInProject, runWorkflowAction]
     );
 
-    const publishCurrent = useCallback(async () => {
-        if (!latestRevision || !canPublish) return;
-        await runWorkflowAction(async () => {
-            await window.axios.post(`/api/v1/workflow-revisions/${latestRevision.id}/publish`);
-        }, 'The current draft was published.');
-    }, [latestRevision, canPublish, runWorkflowAction]);
-
-    const rollback = useCallback(async () => {
-        if (!rollbackRevisionId || !canPublish) return;
-        await runWorkflowAction(async () => {
-            await window.axios.post(`/api/v1/workflows/${workflowId}/rollback`, {
-                to_version_id: rollbackRevisionId,
-            });
-        }, 'A rollback draft was created from the selected revision.');
-    }, [workflowId, rollbackRevisionId, canPublish, runWorkflowAction]);
+    const publishCurrent = useCallback(
+        async (force = false) => {
+            if (!latestRevision || !canPublish) return;
+            await runWorkflowAction(async () => {
+                await window.axios.post(`/api/v1/workflow-revisions/${latestRevision.id}/publish`, {
+                    force,
+                });
+            }, 'The current draft was published.');
+        },
+        [latestRevision, canPublish, runWorkflowAction]
+    );
 
     const deleteRevision = useCallback(
         async (revision: WorkflowRevisionSummary) => {
@@ -97,12 +87,27 @@ export function useVersionManagement({
         [runWorkflowAction]
     );
 
+    const switchToDraft = useCallback(
+        async (revision: WorkflowRevisionSummary) => {
+            if (!canEditInProject) return;
+            await runWorkflowAction(async () => {
+                await window.axios.post(
+                    `/api/v1/workflow-revisions/${revision.id}/switch-to-draft`
+                );
+            }, 'Switched to draft.');
+        },
+        [canEditInProject, runWorkflowAction]
+    );
+
     const handleRevisionTimelineClick = useCallback(
         async (revision: WorkflowRevisionSummary) => {
-            setRollbackRevisionId(revision.id);
-
             if (latestRevision && revision.id === latestRevision.id) {
                 setPreviewRevision(null);
+                return;
+            }
+
+            if (!revision.is_published) {
+                await switchToDraft(revision);
                 return;
             }
 
@@ -115,24 +120,18 @@ export function useVersionManagement({
                 // silently ignore preview fetch errors
             }
         },
-        [latestRevision]
+        [latestRevision, switchToDraft]
     );
-
-    const selectedRollbackRevision = revisions.find(r => r.id === rollbackRevisionId) ?? null;
 
     return {
         revisions,
         previewRevision,
-        rollbackRevisionId,
         isRunningAction,
         setPreviewRevision,
-        setRollbackRevisionId,
         createDraft,
         publishCurrent,
-        rollback,
         deleteRevision,
         handleRevisionTimelineClick,
-        selectedRollbackRevision,
         reloadWorkflow,
         runWorkflowAction,
     };

@@ -34,13 +34,27 @@ final class WorkflowRevisionService
         return $revision;
     }
 
-    public function createDraftFromLatest(Workflow $workflow, User $actor, ?string $draftName = null): WorkflowRevision
+    public function createDraftFromSource(Workflow $workflow, User $actor, ?string $draftName = null, ?int $sourceRevisionId = null): WorkflowRevision
     {
         $workflow = $this->lockWorkflow($workflow);
-        $source = $workflow
-            ->latestRevision()
-            ->with(['screens.customFields'])
-            ->first();
+
+        if ($sourceRevisionId !== null)
+        {
+            $source = $workflow
+                ->revisions()
+                ->with(['screens.customFields'])
+                ->whereKey($sourceRevisionId)
+                ->first();
+
+            abort_if($source === null, 422, 'Source revision does not belong to this workflow.');
+        }
+        else
+        {
+            $source = $workflow
+                ->latestRevision()
+                ->with(['screens.customFields'])
+                ->first();
+        }
 
         if (! $source)
         {
@@ -48,13 +62,14 @@ final class WorkflowRevisionService
         }
 
         $newRevision = $workflow->revisions()->create([
-            'created_by'      => $actor->id,
-            'revision_number' => null,
-            'draft_name'      => $draftName ?? $this->generateDraftName($workflow),
-            'is_published'    => false,
-            'is_locked'       => false,
-            'graph_json'      => $source->graph_json,
-            'lock_version'    => 0,
+            'created_by'         => $actor->id,
+            'revision_number'    => null,
+            'draft_name'         => $draftName ?? $this->generateDraftName($workflow),
+            'is_published'       => false,
+            'is_locked'          => false,
+            'graph_json'         => $source->graph_json,
+            'lock_version'       => 0,
+            'source_revision_id' => $source->source_revision_id ?? $source->id,
         ]);
 
         $this->cloneScreens($source, $newRevision);
@@ -67,10 +82,17 @@ final class WorkflowRevisionService
         return $newRevision;
     }
 
-    public function publishRevision(WorkflowRevision $revision): Workflow
+    public function publishRevision(WorkflowRevision $revision, bool $force = false): Workflow
     {
         $workflow = $revision->workflow()->lockForUpdate()->firstOrFail();
         $revision = $workflow->revisions()->whereKey($revision->id)->firstOrFail();
+
+        if (! $force
+            && $workflow->published_revision_id !== null
+            && $revision->source_revision_id !== $workflow->published_revision_id)
+        {
+            abort(422, 'This draft does not originate from the latest published revision.');
+        }
 
         $revisionNumber = $revision->revision_number;
         if ($revisionNumber === null)
@@ -79,10 +101,11 @@ final class WorkflowRevisionService
         }
 
         $revision->update([
-            'is_published'    => true,
-            'is_locked'       => true,
-            'revision_number' => $revisionNumber,
-            'draft_name'      => null,
+            'is_published'       => true,
+            'is_locked'          => true,
+            'revision_number'    => $revisionNumber,
+            'draft_name'         => null,
+            'source_revision_id' => null,
         ]);
 
         $workflow->update([
@@ -92,37 +115,6 @@ final class WorkflowRevisionService
         ]);
 
         return $workflow;
-    }
-
-    public function rollbackToRevision(Workflow $workflow, WorkflowRevision $target, User $actor, ?string $draftName = null): WorkflowRevision
-    {
-        abort_unless($target->workflow_id === $workflow->id, 422, 'Target revision does not belong to this workflow.');
-
-        $workflow = $this->lockWorkflow($workflow);
-        $target = $workflow
-            ->revisions()
-            ->with(['screens.customFields'])
-            ->whereKey($target->id)
-            ->firstOrFail();
-
-        $newRevision = $workflow->revisions()->create([
-            'created_by'                => $actor->id,
-            'revision_number'           => null,
-            'draft_name'                => $draftName ?? $this->generateDraftName($workflow),
-            'is_published'              => false,
-            'graph_json'                => $target->graph_json,
-            'lock_version'              => 0,
-            'rollback_from_revision_id' => $target->id,
-        ]);
-
-        $this->cloneScreens($target, $newRevision);
-
-        $workflow->update([
-            'latest_revision_id' => $newRevision->id,
-            'status'             => 'draft',
-        ]);
-
-        return $newRevision;
     }
 
     public function deleteRevision(Workflow $workflow, WorkflowRevision $revision): Workflow

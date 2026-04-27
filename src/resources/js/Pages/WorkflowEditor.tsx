@@ -432,8 +432,8 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
         initialNodes[0]?.id ?? null
     );
     const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
-    const [rollbackRevisionId, setRollbackVersionId] = useState<number | null>(
-        workflow.revisions.find(revision => revision.id !== latestRevision?.id)?.id ?? null
+    const [activeRevisionId, setActiveRevisionId] = useState<number | null>(
+        latestRevision?.id ?? null
     );
     const [title, setTitle] = useState('');
     const [subtitle, setSubtitle] = useState('');
@@ -458,7 +458,11 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
         useState<ScreenCustomField['field_type']>('text');
     const [draftModalOpen, setDraftModalOpen] = useState(false);
     const [draftNameInput, setDraftNameInput] = useState('');
+    const [draftSourceRevisionId, setDraftSourceRevisionId] = useState<number | undefined>(
+        undefined
+    );
     const [editingDraftName, setEditingDraftName] = useState(latestRevision?.draft_name ?? '');
+    const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
     const graphInitialized = useRef(false);
     const contextMenuFlowPosition = useRef({ x: 0, y: 0 });
     const clearScreenAutosaveRef = useRef<(() => void) | null>(null);
@@ -555,7 +559,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
         }
     }, [inspectorTab, selectedNode, selectedNodeKind]);
 
-    // Sync canvas state when latestRevision changes (e.g. after rollback draft is created)
+    // Sync canvas state when latestRevision changes (e.g. after switching drafts)
     useEffect(() => {
         if (!latestRevision) return;
         graphInitialized.current = false;
@@ -1294,7 +1298,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
         }
     };
 
-    const createDraft = async (draftName?: string) => {
+    const createDraft = async (draftName?: string, sourceRevisionId?: number) => {
         if (!canEditInProject) {
             return;
         }
@@ -1302,22 +1306,40 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
         await runWorkflowAction(async () => {
             await window.axios.post(`/api/v1/workflows/${workflow.id}/revisions`, {
                 draft_name: draftName || undefined,
+                source_revision_id: sourceRevisionId,
             });
         }, 'A new draft was created.');
     };
 
-    const publishCurrent = async () => {
+    const publishCurrent = async (force = false) => {
         if (!latestRevision || !canPublishWorkflows) {
             return;
         }
 
         await runWorkflowAction(async () => {
-            await window.axios.post(`/api/v1/workflow-revisions/${latestRevision.id}/publish`);
+            await window.axios.post(`/api/v1/workflow-revisions/${latestRevision.id}/publish`, {
+                force,
+            });
         }, 'The current revision was published.');
     };
 
+    const handlePublishClick = () => {
+        if (!latestRevision || !canPublishWorkflows) return;
+
+        const publishedRevisionId = workflow.published_revision?.id ?? null;
+        const isFromLatestPublished =
+            publishedRevisionId === null ||
+            latestRevision.source_revision_id === publishedRevisionId;
+
+        if (isFromLatestPublished) {
+            void publishCurrent();
+        } else {
+            setPublishConfirmOpen(true);
+        }
+    };
+
     const handleRevisionTimelineClick = async (revision: WorkflowRevisionSummary) => {
-        setRollbackVersionId(revision.id);
+        setActiveRevisionId(revision.id);
 
         if (latestRevision && revision.id === latestRevision.id) {
             graphInitialized.current = false;
@@ -1336,6 +1358,15 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                     },
                 }))
             );
+            return;
+        }
+
+        if (!revision.is_published) {
+            await runWorkflowAction(async () => {
+                await window.axios.post(
+                    `/api/v1/workflow-revisions/${revision.id}/switch-to-draft`
+                );
+            }, 'Switched to draft.');
             return;
         }
 
@@ -1372,26 +1403,12 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
         );
     };
 
-    const rollback = async () => {
-        if (!rollbackRevisionId || !canPublishWorkflows) {
-            return;
-        }
-
-        await runWorkflowAction(async () => {
-            await window.axios.post(`/api/v1/workflows/${workflow.id}/rollback`, {
-                to_version_id: rollbackRevisionId,
-            });
-        }, 'A rollback draft was created from the selected revision.');
-    };
-
-    const selectedRollbackRevision = revisions.find(revision => revision.id === rollbackRevisionId);
-
     return (
         <div className="workflow-fullscreen">
             <Head title={`${workflow.name} Editor`} />
 
             <div className="workflow-canvas-layer">
-                {previewRevision && (
+                {previewRevision && previewRevision.is_published && (
                     <div className="pointer-events-auto absolute inset-x-0 top-0 z-10 flex items-center justify-between gap-4 border-b border-amber-200 bg-amber-50 px-5 py-2.5">
                         <p className="text-sm font-medium text-amber-900">
                             Viewing rev. {previewRevision.revision_number} (read-only)
@@ -1402,11 +1419,22 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                                 onClick={() => handleRevisionTimelineClick(latestRevision)}
                                 className="text-sm font-semibold text-amber-700 hover:text-amber-900"
                             >
-                                Return to latest
+                                Return to current draft
                             </button>
                         )}
                     </div>
                 )}
+                {latestRevision &&
+                    !latestRevision.is_published &&
+                    workflow.published_revision != null &&
+                    latestRevision.source_revision_id !== workflow.published_revision.id && (
+                        <div className="pointer-events-auto absolute inset-x-0 top-0 z-10 flex items-center justify-center gap-4 border-b border-red-200 bg-red-50 px-5 py-2.5">
+                            <p className="text-sm font-medium text-red-900">
+                                Warning – this draft does not originate from the latest published
+                                revision.
+                            </p>
+                        </div>
+                    )}
                 {isArchived && (
                     <div className="pointer-events-auto absolute inset-x-0 top-0 z-10 flex items-center justify-center gap-4 border-b border-slate-200 bg-slate-100 px-5 py-2.5">
                         <p className="text-sm font-medium text-slate-700">
@@ -1457,9 +1485,6 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                         {workflow.status}
                     </StatusBadge>
                     {isArchived && <StatusBadge tone="neutral">Archived</StatusBadge>}
-                    <span className="hidden text-xs text-slate-500 sm:inline">
-                        {nodes.length} screens · {edges.length} links
-                    </span>
                     <StatusBadge tone={graphTone(graphState)}>{graphLabel(graphState)}</StatusBadge>
                 </div>
 
@@ -1499,33 +1524,12 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                             ↻ Reload Draft
                         </button>
                     )}
-                    {canEditInProject && !isArchived && (
-                        <button
-                            type="button"
-                            onClick={() => setDraftModalOpen(true)}
-                            className="btn-secondary workflow-action-button"
-                        >
-                            New Draft
-                        </button>
-                    )}
-                    <button
-                        type="button"
-                        onClick={publishCurrent}
-                        disabled={
-                            !canPublishWorkflows ||
-                            latestRevision?.is_published === true ||
-                            isArchived
-                        }
-                        className="btn-secondary workflow-action-button"
-                    >
-                        Publish
-                    </button>
                     <button
                         type="button"
                         onClick={() => setRevisionsPanelOpen(true)}
                         className="btn-secondary workflow-action-button"
                     >
-                        Revisions
+                        Detail
                     </button>
                 </div>
             </header>
@@ -2304,7 +2308,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                 <div className="flex items-start justify-between gap-3">
                     <div>
                         <p className="eyebrow">Workflow</p>
-                        <h2 className="panel-title mt-2">Revisions</h2>
+                        <h2 className="panel-title mt-2">Detail</h2>
                     </div>
                     <button
                         type="button"
@@ -2315,17 +2319,21 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                     </button>
                 </div>
 
-                {canEditInProject && !isArchived && (
-                    <div className="mt-4">
-                        <button
-                            type="button"
-                            onClick={() => setDraftModalOpen(true)}
-                            className="btn-primary workflow-wide-button text-sm"
-                        >
-                            + New Draft
-                        </button>
-                    </div>
-                )}
+                {canPublishWorkflows &&
+                    latestRevision &&
+                    !latestRevision.is_published &&
+                    !isArchived && (
+                        <div className="mt-4">
+                            <button
+                                type="button"
+                                onClick={handlePublishClick}
+                                disabled={isRunningAction}
+                                className="btn-primary workflow-wide-button text-sm"
+                            >
+                                Publish
+                            </button>
+                        </div>
+                    )}
 
                 {latestRevision &&
                     !latestRevision.is_published &&
@@ -2378,14 +2386,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
 
                 {/* Drafts */}
                 <div className="mt-5">
-                    <div className="flex items-center justify-between gap-3">
-                        <p className="panel-title">Drafts</p>
-                        {selectedRollbackRevision && !selectedRollbackRevision.is_published && (
-                            <StatusBadge tone="warning">
-                                Selected {selectedRollbackRevision.draft_name ?? 'Draft'}
-                            </StatusBadge>
-                        )}
-                    </div>
+                    <p className="panel-title">Drafts</p>
 
                     <div className="revision-timeline mt-3">
                         {revisions.filter(r => !r.is_published).length === 0 ? (
@@ -2394,7 +2395,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                             revisions
                                 .filter(r => !r.is_published)
                                 .map(revision => {
-                                    const isSelected = rollbackRevisionId === revision.id;
+                                    const isActive = activeRevisionId === revision.id;
                                     const isCurrent = latestRevision?.id === revision.id;
 
                                     return (
@@ -2403,7 +2404,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                                             type="button"
                                             onClick={() => handleRevisionTimelineClick(revision)}
                                             className={`revision-timeline-item ${
-                                                isSelected ? 'revision-timeline-item-active' : ''
+                                                isActive ? 'revision-timeline-item-active' : ''
                                             }`.trim()}
                                         >
                                             <span className="revision-timeline-dot" />
@@ -2421,6 +2422,23 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                                                         <StatusBadge tone="warning">
                                                             Draft
                                                         </StatusBadge>
+                                                        {canEditInProject && !isArchived && (
+                                                            <button
+                                                                type="button"
+                                                                disabled={isRunningAction}
+                                                                onClick={e => {
+                                                                    e.stopPropagation();
+                                                                    setDraftSourceRevisionId(
+                                                                        revision.id
+                                                                    );
+                                                                    setDraftModalOpen(true);
+                                                                }}
+                                                                className="text-xs text-slate-400 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
+                                                                title="New draft from this revision"
+                                                            >
+                                                                New Draft
+                                                            </button>
+                                                        )}
                                                         {canPublishWorkflows &&
                                                             revisions.length > 1 &&
                                                             !isArchived &&
@@ -2446,13 +2464,12 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                                                     {revision.creator?.name ?? 'Unknown actor'} ·{' '}
                                                     {formatTimestamp(revision.created_at)}
                                                 </p>
-                                                {revision.rollback_from_revision_id && (
+                                                {revision.source_revision_id && (
                                                     <p className="revision-timeline-meta">
                                                         From rev.{' '}
                                                         {workflow.revisions.find(
                                                             v =>
-                                                                v.id ===
-                                                                revision.rollback_from_revision_id
+                                                                v.id === revision.source_revision_id
                                                         )?.revision_number ?? '?'}
                                                     </p>
                                                 )}
@@ -2466,14 +2483,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
 
                 {/* Published Revisions */}
                 <div className="mt-5">
-                    <div className="flex items-center justify-between gap-3">
-                        <p className="panel-title">Published Revisions</p>
-                        {selectedRollbackRevision && selectedRollbackRevision.is_published && (
-                            <StatusBadge tone="warning">
-                                Selected rev. {selectedRollbackRevision.revision_number}
-                            </StatusBadge>
-                        )}
-                    </div>
+                    <p className="panel-title">Published Revisions</p>
 
                     <div className="revision-timeline mt-3">
                         {revisions.filter(r => r.is_published).length === 0 ? (
@@ -2482,7 +2492,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                             revisions
                                 .filter(r => r.is_published)
                                 .map(revision => {
-                                    const isSelected = rollbackRevisionId === revision.id;
+                                    const isActive = activeRevisionId === revision.id;
                                     const isCurrent = latestRevision?.id === revision.id;
 
                                     return (
@@ -2491,7 +2501,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                                             type="button"
                                             onClick={() => handleRevisionTimelineClick(revision)}
                                             className={`revision-timeline-item ${
-                                                isSelected ? 'revision-timeline-item-active' : ''
+                                                isActive ? 'revision-timeline-item-active' : ''
                                             }`.trim()}
                                         >
                                             <span className="revision-timeline-dot revision-timeline-dot-published" />
@@ -2506,19 +2516,35 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                                                                 Current
                                                             </StatusBadge>
                                                         )}
+                                                        {canEditInProject && !isArchived && (
+                                                            <button
+                                                                type="button"
+                                                                disabled={isRunningAction}
+                                                                onClick={e => {
+                                                                    e.stopPropagation();
+                                                                    setDraftSourceRevisionId(
+                                                                        revision.id
+                                                                    );
+                                                                    setDraftModalOpen(true);
+                                                                }}
+                                                                className="text-xs text-slate-400 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
+                                                                title="New draft from this revision"
+                                                            >
+                                                                New Draft
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 <p className="revision-timeline-meta">
                                                     {revision.creator?.name ?? 'Unknown actor'} ·{' '}
                                                     {formatTimestamp(revision.created_at)}
                                                 </p>
-                                                {revision.rollback_from_revision_id && (
+                                                {revision.source_revision_id && (
                                                     <p className="revision-timeline-meta">
                                                         From rev.{' '}
                                                         {workflow.revisions.find(
                                                             v =>
-                                                                v.id ===
-                                                                revision.rollback_from_revision_id
+                                                                v.id === revision.source_revision_id
                                                         )?.revision_number ?? '?'}
                                                     </p>
                                                 )}
@@ -2528,24 +2554,6 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                                 })
                         )}
                     </div>
-                </div>
-
-                <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50/80 p-4">
-                    <p className="text-sm font-semibold text-amber-950">Rollback target</p>
-                    <p className="mt-2 text-sm text-amber-800">
-                        {selectedRollbackRevision
-                            ? `Create a new draft from revision ${selectedRollbackRevision.revision_number}.`
-                            : 'Select a revision from the timeline to prepare rollback.'}
-                    </p>
-                    {rollbackRevisionId && canPublishWorkflows && !isArchived && (
-                        <button
-                            type="button"
-                            onClick={rollback}
-                            className="btn-primary mt-4 px-4 py-3 text-sm"
-                        >
-                            Create Rollback Draft
-                        </button>
-                    )}
                 </div>
             </aside>
 
@@ -2605,6 +2613,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                 onClose={() => {
                     setDraftModalOpen(false);
                     setDraftNameInput('');
+                    setDraftSourceRevisionId(undefined);
                 }}
             >
                 <div className="p-6">
@@ -2621,9 +2630,13 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                             placeholder="e.g. Variant with approval"
                             onKeyDown={event => {
                                 if (event.key === 'Enter') {
-                                    void createDraft(draftNameInput || undefined);
+                                    void createDraft(
+                                        draftNameInput || undefined,
+                                        draftSourceRevisionId
+                                    );
                                     setDraftModalOpen(false);
                                     setDraftNameInput('');
+                                    setDraftSourceRevisionId(undefined);
                                 }
                             }}
                         />
@@ -2634,6 +2647,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                             onClick={() => {
                                 setDraftModalOpen(false);
                                 setDraftNameInput('');
+                                setDraftSourceRevisionId(undefined);
                             }}
                             className="btn-secondary workflow-action-button"
                         >
@@ -2642,14 +2656,54 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                         <button
                             type="button"
                             onClick={() => {
-                                void createDraft(draftNameInput || undefined);
+                                void createDraft(
+                                    draftNameInput || undefined,
+                                    draftSourceRevisionId
+                                );
                                 setDraftModalOpen(false);
                                 setDraftNameInput('');
+                                setDraftSourceRevisionId(undefined);
                             }}
                             disabled={isRunningAction}
                             className="btn-primary workflow-action-button"
                         >
                             Create Draft
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+
+            <Modal
+                show={publishConfirmOpen}
+                maxWidth="md"
+                onClose={() => setPublishConfirmOpen(false)}
+            >
+                <div className="p-6">
+                    <h3 className="text-lg font-semibold text-slate-950">
+                        Publish draft from a different revision?
+                    </h3>
+                    <p className="mt-2 text-sm text-slate-600">
+                        Tento draft nevychází z poslední publikované revize. Přejete si ho přesto
+                        publikovat?
+                    </p>
+                    <div className="mt-6 flex justify-end gap-3">
+                        <button
+                            type="button"
+                            onClick={() => setPublishConfirmOpen(false)}
+                            className="btn-secondary workflow-action-button"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                void publishCurrent(true);
+                                setPublishConfirmOpen(false);
+                            }}
+                            disabled={isRunningAction}
+                            className="btn-primary workflow-action-button"
+                        >
+                            Publish
                         </button>
                     </div>
                 </div>

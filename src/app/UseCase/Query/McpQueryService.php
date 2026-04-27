@@ -243,7 +243,7 @@ final class McpQueryService
     public function revisionResourceById(int $revisionId): WorkflowRevision
     {
         return WorkflowRevision::query()
-            ->with(['workflow.project', 'screens.customFields', 'creator', 'rollbackSource'])
+            ->with(['workflow.project', 'screens.customFields', 'creator', 'sourceRevision'])
             ->findOrFail($revisionId);
     }
 

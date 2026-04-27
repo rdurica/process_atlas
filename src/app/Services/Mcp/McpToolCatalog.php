@@ -99,19 +99,7 @@ final class McpToolCatalog
                     'additionalProperties' => false,
                 ],
             ),
-            new McpToolDefinition(
-                name: 'process_atlas.rollback_revision',
-                description: 'Create a new draft revision from a selected historical revision.',
-                inputSchema: [
-                    'type'       => 'object',
-                    'properties' => [
-                        'workflow_id'    => ['type' => 'integer', 'minimum' => 1],
-                        'to_revision_id' => ['type' => 'integer', 'minimum' => 1],
-                    ],
-                    'required'             => ['workflow_id', 'to_revision_id'],
-                    'additionalProperties' => false,
-                ],
-            ),
+
         ];
     }
 }

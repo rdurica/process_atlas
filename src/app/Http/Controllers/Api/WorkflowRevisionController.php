@@ -7,7 +7,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\CreateWorkflowDraftRequest;
 use App\Http\Requests\Api\RenameWorkflowDraftRequest;
-use App\Http\Requests\Api\RollbackWorkflowRequest;
 use App\Http\Requests\Api\UpdateWorkflowGraphRequest;
 use App\Models\Workflow;
 use App\Models\WorkflowRevision;
@@ -15,9 +14,8 @@ use App\UseCase\Command\CreateWorkflowDraftCommand;
 use App\UseCase\Command\DeleteWorkflowRevisionCommand;
 use App\UseCase\Command\PublishWorkflowRevisionCommand;
 use App\UseCase\Command\RenameWorkflowDraftCommand;
-use App\UseCase\Command\RollbackWorkflowRevisionCommand;
+use App\UseCase\Command\SwitchToDraftCommand;
 use App\UseCase\Command\UpdateWorkflowGraphCommand;
-use App\UseCase\Query\WorkflowQueryService;
 use App\UseCase\Query\WorkflowRevisionQueryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -26,13 +24,12 @@ class WorkflowRevisionController extends Controller
 {
     public function __construct(
         private readonly WorkflowRevisionQueryService $revisions,
-        private readonly WorkflowQueryService $workflows,
         private readonly CreateWorkflowDraftCommand $createDraft,
         private readonly UpdateWorkflowGraphCommand $updateGraph,
         private readonly PublishWorkflowRevisionCommand $publish,
-        private readonly RollbackWorkflowRevisionCommand $rollback,
         private readonly RenameWorkflowDraftCommand $renameDraft,
         private readonly DeleteWorkflowRevisionCommand $deleteRevision,
+        private readonly SwitchToDraftCommand $switchToDraft,
     ) {}
 
     public function show(Request $request, WorkflowRevision $workflowRevision): JsonResponse
@@ -50,6 +47,7 @@ class WorkflowRevisionController extends Controller
             $this->user(),
             $workflow,
             $request->input('draft_name'),
+            $request->input('source_revision_id') ? (int) $request->input('source_revision_id') : null,
         );
 
         return response()->json(['data' => $response->jsonSerialize()], 201);
@@ -75,24 +73,26 @@ class WorkflowRevisionController extends Controller
     {
         $this->authorize('publish', $workflowRevision);
 
-        $response = $this->publish->execute($this->user(), $workflowRevision);
+        $response = $this->publish->execute(
+            $this->user(),
+            $workflowRevision,
+            $request->boolean('force'),
+        );
 
         return response()->json(['data' => $response->jsonSerialize()]);
     }
 
-    public function rollback(RollbackWorkflowRequest $request, Workflow $workflow): JsonResponse
+    public function switchToDraft(Request $request, WorkflowRevision $workflowRevision): JsonResponse
     {
-        $this->authorize('rollback', $workflow);
+        $this->authorize('updateGraph', $workflowRevision);
 
-        $target = $this->workflows->findRollbackTarget($request->integer('to_version_id'));
-        $response = $this->rollback->execute(
+        $response = $this->switchToDraft->execute(
             $this->user(),
-            $workflow,
-            $target,
-            $request->input('draft_name'),
+            $workflowRevision->workflow()->firstOrFail(),
+            $workflowRevision,
         );
 
-        return response()->json(['data' => $response->jsonSerialize()], 201);
+        return response()->json(['data' => $response->jsonSerialize()]);
     }
 
     public function renameDraft(RenameWorkflowDraftRequest $request, WorkflowRevision $workflowRevision): JsonResponse

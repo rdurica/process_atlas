@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::table('workflow_revisions', function (Blueprint $table): void
         {
-            $table->foreignId('rollback_from_revision_id')
+            $table->foreignId('source_revision_id')
                 ->nullable()
                 ->constrained('workflow_revisions')
                 ->nullOnDelete()
@@ -22,8 +22,8 @@ return new class extends Migration
     {
         Schema::table('workflow_revisions', function (Blueprint $table): void
         {
-            $table->dropForeign(['rollback_from_revision_id']);
-            $table->dropColumn('rollback_from_revision_id');
+            $table->dropForeign(['source_revision_id']);
+            $table->dropColumn('source_revision_id');
         });
     }
 };

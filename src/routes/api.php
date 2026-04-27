@@ -31,11 +31,11 @@ Route::middleware(['auth:sanctum', 'verified', 'throttle:api'])->prefix('v1')->g
     Route::post('/workflows/{workflow}/archive', [WorkflowController::class, 'archive']);
     Route::post('/workflows/{workflow}/unarchive', [WorkflowController::class, 'unarchive']);
     Route::post('/workflows/{workflow}/revisions', [WorkflowRevisionController::class, 'createDraft']);
-    Route::post('/workflows/{workflow}/rollback', [WorkflowRevisionController::class, 'rollback']);
 
     Route::get('/workflow-revisions/{workflowRevision}', [WorkflowRevisionController::class, 'show']);
     Route::patch('/workflow-revisions/{workflowRevision}/graph', [WorkflowRevisionController::class, 'updateGraph']);
     Route::post('/workflow-revisions/{workflowRevision}/publish', [WorkflowRevisionController::class, 'publish']);
+    Route::post('/workflow-revisions/{workflowRevision}/switch-to-draft', [WorkflowRevisionController::class, 'switchToDraft']);
     Route::patch('/workflow-revisions/{workflowRevision}/draft-name', [WorkflowRevisionController::class, 'renameDraft']);
     Route::delete('/workflow-revisions/{workflowRevision}', [WorkflowRevisionController::class, 'destroy']);
 

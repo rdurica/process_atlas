@@ -16,7 +16,7 @@ final readonly class WorkflowRevisionResponse implements JsonSerializable
         public ?string $draftName,
         public bool $isPublished,
         public bool $isLocked,
-        public ?int $rollbackFromRevisionId,
+        public ?int $sourceRevisionId,
         public ?string $createdAt,
     ) {}
 
@@ -29,7 +29,7 @@ final readonly class WorkflowRevisionResponse implements JsonSerializable
             draftName: $revision->draft_name,
             isPublished: $revision->is_published,
             isLocked: $revision->is_locked ?? false,
-            rollbackFromRevisionId: $revision->rollback_from_revision_id,
+            sourceRevisionId: $revision->source_revision_id,
             createdAt: $revision->created_at?->toIso8601String(),
         );
     }
@@ -40,14 +40,14 @@ final readonly class WorkflowRevisionResponse implements JsonSerializable
     public function jsonSerialize(): array
     {
         return [
-            'id'                        => $this->id,
-            'workflow_id'               => $this->workflowId,
-            'revision_number'           => $this->revisionNumber,
-            'draft_name'                => $this->draftName,
-            'is_published'              => $this->isPublished,
-            'is_locked'                 => $this->isLocked,
-            'rollback_from_revision_id' => $this->rollbackFromRevisionId,
-            'created_at'                => $this->createdAt,
+            'id'                 => $this->id,
+            'workflow_id'        => $this->workflowId,
+            'revision_number'    => $this->revisionNumber,
+            'draft_name'         => $this->draftName,
+            'is_published'       => $this->isPublished,
+            'is_locked'          => $this->isLocked,
+            'source_revision_id' => $this->sourceRevisionId,
+            'created_at'         => $this->createdAt,
         ];
     }
 }

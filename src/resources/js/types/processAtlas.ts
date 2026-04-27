@@ -79,7 +79,7 @@ export interface WorkflowRevisionSummary {
     lock_version: number;
     is_published: boolean;
     is_locked: boolean;
-    rollback_from_revision_id?: number | null;
+    source_revision_id?: number | null;
     graph_json?: {
         nodes?: Node[];
         edges?: Edge[];
@@ -102,5 +102,9 @@ export interface WorkflowData {
         name: string;
     };
     latest_revision?: WorkflowRevisionSummary | null;
+    published_revision?: {
+        id: number;
+        revision_number: number;
+    } | null;
     revisions: WorkflowRevisionSummary[];
 }

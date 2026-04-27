@@ -19,9 +19,9 @@ final class PublishWorkflowRevisionCommand
         private readonly PublishedWorkflowCacheService $cache,
     ) {}
 
-    public function execute(User $actor, WorkflowRevision $workflowRevision): WorkflowRevisionResponse
+    public function execute(User $actor, WorkflowRevision $workflowRevision, bool $force = false): WorkflowRevisionResponse
     {
-        $workflow = $this->revisionService->publishRevision($workflowRevision);
+        $workflow = $this->revisionService->publishRevision($workflowRevision, $force);
 
         $this->cache->forget($workflow->id);
 

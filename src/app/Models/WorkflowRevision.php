@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['workflow_id', 'created_by', 'revision_number', 'draft_name', 'is_published', 'is_locked', 'graph_json', 'lock_version', 'rollback_from_revision_id'])]
+#[Fillable(['workflow_id', 'created_by', 'revision_number', 'draft_name', 'is_published', 'is_locked', 'graph_json', 'lock_version', 'source_revision_id'])]
 class WorkflowRevision extends Model
 {
     /** @use HasFactory<WorkflowRevisionFactory> */
@@ -55,8 +55,8 @@ class WorkflowRevision extends Model
     /**
      * @return BelongsTo<WorkflowRevision, $this>
      */
-    public function rollbackSource(): BelongsTo
+    public function sourceRevision(): BelongsTo
     {
-        return $this->belongsTo(WorkflowRevision::class, 'rollback_from_revision_id');
+        return $this->belongsTo(WorkflowRevision::class, 'source_revision_id');
     }
 }

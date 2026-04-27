@@ -12,7 +12,7 @@ use App\DTO\Mcp\ToolArguments\CreateWorkflowRevisionArguments;
 use App\DTO\Mcp\ToolArguments\GetScreenArguments;
 use App\DTO\Mcp\ToolArguments\GetWorkflowArguments;
 use App\DTO\Mcp\ToolArguments\PublishRevisionArguments;
-use App\DTO\Mcp\ToolArguments\RollbackRevisionArguments;
+
 use App\DTO\Mcp\ToolArguments\UpdateGraphArguments;
 use App\DTO\Mcp\ToolArguments\UpdateScreenArguments;
 use App\DTO\Request\UpdateWorkflowGraphRequest;
@@ -23,7 +23,7 @@ use App\Services\Audit\AuditLogger;
 use App\Support\PermissionList;
 use App\UseCase\Command\CreateWorkflowDraftCommand;
 use App\UseCase\Command\PublishWorkflowRevisionCommand;
-use App\UseCase\Command\RollbackWorkflowRevisionCommand;
+
 use App\UseCase\Command\UpdateWorkflowGraphCommand;
 use App\UseCase\Command\UpsertScreenCommand;
 use App\UseCase\Query\McpQueryService;
@@ -38,7 +38,6 @@ final class ToolsCallMethodHandler implements McpMethodHandler
         private readonly UpdateWorkflowGraphCommand $updateGraph,
         private readonly CreateWorkflowDraftCommand $createDraft,
         private readonly PublishWorkflowRevisionCommand $publish,
-        private readonly RollbackWorkflowRevisionCommand $rollback,
     ) {}
 
     public function method(): string
@@ -63,12 +62,8 @@ final class ToolsCallMethodHandler implements McpMethodHandler
                 $actor,
                 CreateWorkflowRevisionArguments::fromParams($call->arguments),
             ),
-            'process_atlas.publish_revision'  => $this->publishRevision($actor, PublishRevisionArguments::fromParams($call->arguments)),
-            'process_atlas.rollback_revision' => $this->rollbackRevision(
-                $actor,
-                RollbackRevisionArguments::fromParams($call->arguments),
-            ),
-            default => throw ValidationException::withMessages(['name' => 'Unknown tool name.']),
+            'process_atlas.publish_revision' => $this->publishRevision($actor, PublishRevisionArguments::fromParams($call->arguments)),
+            default                          => throw ValidationException::withMessages(['name' => 'Unknown tool name.']),
         };
 
         return McpToolResult::fromStructuredContent($result)->toMethodResult();
@@ -215,26 +210,6 @@ final class ToolsCallMethodHandler implements McpMethodHandler
             'workflow_id'           => $response->workflowId,
             'published_revision_id' => $response->id,
         ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function rollbackRevision(User $actor, RollbackRevisionArguments $arguments): array
-    {
-        $workflow = $this->queries->workflowWithProject($arguments->workflowId);
-
-        Gate::forUser($actor)->authorize('rollback', $workflow);
-
-        $target = $this->queries->findRevision($arguments->toRevisionId);
-        $response = $this->rollback->execute($actor, $workflow, $target);
-
-        AuditLogger::log($actor, $workflow, 'created', 'Workflow rollback draft revision created by MCP', [
-            'workflow_id'        => $workflow->id,
-            'source_revision_id' => $target->id,
-        ], source: 'mcp');
-
-        return ['workflow_revision' => $response->jsonSerialize()];
     }
 
     private function authorizeMcpUsage(User $actor): void
