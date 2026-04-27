@@ -295,7 +295,7 @@ export default function ProjectWorkflows({ project, workflows }: ProjectWorkflow
                                             Name
                                         </th>
                                         <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
-                                            Version
+                                            Revision
                                         </th>
                                         <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
                                             Status
@@ -335,16 +335,10 @@ export default function ProjectWorkflows({ project, workflows }: ProjectWorkflow
                                                         <StatusBadge
                                                             tone={isArchived ? 'neutral' : 'brand'}
                                                         >
-                                                            {workflow.latest_revision
-                                                                ? `rev. ${workflow.latest_revision.revision_number}`
+                                                            {workflow.published_revision
+                                                                ? `rev. ${workflow.published_revision.revision_number}`
                                                                 : 'No revision'}
                                                         </StatusBadge>
-                                                        {workflow.published_revision_id &&
-                                                            !isArchived && (
-                                                                <StatusBadge tone="success">
-                                                                    Live
-                                                                </StatusBadge>
-                                                            )}
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-4">

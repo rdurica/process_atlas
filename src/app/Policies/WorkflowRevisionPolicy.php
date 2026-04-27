@@ -62,4 +62,17 @@ final class WorkflowRevisionPolicy
 
         return $this->access->canPublish($user, $project);
     }
+
+    public function renameDraft(User $user, WorkflowRevision $workflowRevision): bool
+    {
+        $workflowRevision->loadMissing('workflow.project');
+
+        $project = $workflowRevision->workflow?->project;
+        if (! $project instanceof Project)
+        {
+            return false;
+        }
+
+        return $this->access->canEdit($user, $project);
+    }
 }

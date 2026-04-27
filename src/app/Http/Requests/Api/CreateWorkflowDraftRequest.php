@@ -5,7 +5,7 @@ namespace App\Http\Requests\Api;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class RollbackWorkflowRequest extends FormRequest
+class CreateWorkflowDraftRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -18,8 +18,7 @@ class RollbackWorkflowRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'to_version_id' => ['required', 'integer', 'exists:workflow_revisions,id'],
-            'draft_name'    => ['nullable', 'string', 'max:255'],
+            'draft_name' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

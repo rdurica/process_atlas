@@ -16,10 +16,13 @@ export interface WorkflowSummary {
     status: 'draft' | 'published';
     latest_revision?: {
         id: number;
-        revision_number: number;
+        revision_number: number | null;
         is_published: boolean;
     } | null;
-    published_revision_id?: number | null;
+    published_revision?: {
+        id: number;
+        revision_number: number;
+    } | null;
     updated_at?: string | null;
     archived_at?: string | null;
 }
@@ -71,7 +74,8 @@ export interface Screen {
 
 export interface WorkflowRevisionSummary {
     id: number;
-    revision_number: number;
+    revision_number: number | null;
+    draft_name: string | null;
     lock_version: number;
     is_published: boolean;
     is_locked: boolean;

@@ -35,7 +35,7 @@ it('renders dashboard with enterprise summary and activity props', function (): 
             ->where('summary.workflows', 1)
             ->has('projects', 1)
             ->where('projects.0.name', 'Checkout Platform')
-            ->where('projects.0.latest_revision_label', 'rev. 1')
+            ->where('projects.0.latest_revision_label', 'Draft#1')
             ->has('projects.0.workflows', 1)
             ->has('recentActivity')
             ->where('recentActivity', fn ($activities): bool => collect($activities)->contains(
@@ -99,7 +99,7 @@ it('renders workflow editor with recent activity and version metadata', function
             ->where('workflow.revisions.0.creator.name', 'Owner')
             ->has('recentActivity')
             ->where('recentActivity', fn ($activities): bool => collect($activities)->contains(
-                fn ($activity): bool => ($activity['subject_label'] ?? null) === 'rev. 1',
+                fn ($activity): bool => ($activity['subject_label'] ?? null) === 'Draft#1',
             ),
             ));
 });

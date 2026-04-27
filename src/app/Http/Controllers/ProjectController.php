@@ -38,8 +38,11 @@ class ProjectController extends Controller
                     'revision_number' => $workflow->latestRevision->revision_number,
                     'is_published'    => $workflow->latestRevision->is_published,
                 ] : null,
-                'published_revision_id' => $workflow->published_revision_id,
-                'updated_at'            => $workflow->updated_at?->toIso8601String(),
+                'published_revision' => $workflow->publishedRevision ? [
+                    'id'              => $workflow->publishedRevision->id,
+                    'revision_number' => $workflow->publishedRevision->revision_number,
+                ] : null,
+                'updated_at' => $workflow->updated_at?->toIso8601String(),
             ])
             ->values()
             ->all();

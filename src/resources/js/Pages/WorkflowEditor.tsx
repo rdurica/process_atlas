@@ -448,7 +448,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
     const [isRunningAction, setIsRunningAction] = useState(false);
     const [actionError, setActionError] = useState<string | null>(null);
     const [actionNotice, setActionNotice] = useState<string | null>(null);
-    const [infoPanelOpen, setInfoPanelOpen] = useState(false);
+    const [revisionsPanelOpen, setRevisionsPanelOpen] = useState(false);
     const [edgeDraftLabel, setEdgeDraftLabel] = useState('');
     const [fieldEditorMode, setFieldEditorMode] = useState<FieldEditorMode>('hidden');
     const [editingFieldId, setEditingFieldId] = useState<number | null>(null);
@@ -456,6 +456,9 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
     const [newCustomValue, setNewCustomValue] = useState('');
     const [newCustomFieldType, setNewCustomFieldType] =
         useState<ScreenCustomField['field_type']>('text');
+    const [draftModalOpen, setDraftModalOpen] = useState(false);
+    const [draftNameInput, setDraftNameInput] = useState('');
+    const [editingDraftName, setEditingDraftName] = useState(latestRevision?.draft_name ?? '');
     const graphInitialized = useRef(false);
     const contextMenuFlowPosition = useRef({ x: 0, y: 0 });
     const clearScreenAutosaveRef = useRef<(() => void) | null>(null);
@@ -473,10 +476,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
 
     const selectedNodes = useMemo(() => nodes.filter(node => node.selected), [nodes]);
 
-    const revisions = useMemo(
-        () => [...workflow.revisions].sort((a, b) => b.revision_number - a.revision_number),
-        [workflow.revisions]
-    );
+    const revisions = useMemo(() => workflow.revisions, [workflow.revisions]);
 
     const selectedScreen = useMemo(
         () => screens.find(screen => screen.node_id === selectedNodeId) ?? null,
@@ -535,6 +535,10 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
     useEffect(() => {
         setEdgeDraftLabel(String(selectedEdge?.label ?? ''));
     }, [selectedEdge]);
+
+    useEffect(() => {
+        setEditingDraftName(latestRevision?.draft_name ?? '');
+    }, [latestRevision?.draft_name]);
 
     useEffect(() => {
         if (!selectedNode) {
@@ -1290,14 +1294,16 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
         }
     };
 
-    const createDraft = async () => {
+    const createDraft = async (draftName?: string) => {
         if (!canEditInProject) {
             return;
         }
 
         await runWorkflowAction(async () => {
-            await window.axios.post(`/api/v1/workflows/${workflow.id}/revisions`);
-        }, 'A new draft revision was created.');
+            await window.axios.post(`/api/v1/workflows/${workflow.id}/revisions`, {
+                draft_name: draftName || undefined,
+            });
+        }, 'A new draft was created.');
     };
 
     const publishCurrent = async () => {
@@ -1358,9 +1364,12 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
     };
 
     const deleteRevision = async (version: WorkflowRevisionSummary) => {
-        await runWorkflowAction(async () => {
-            await window.axios.delete(`/api/v1/workflow-revisions/${version.id}`);
-        }, `rev. ${version.revision_number} was deleted.`);
+        await runWorkflowAction(
+            async () => {
+                await window.axios.delete(`/api/v1/workflow-revisions/${version.id}`);
+            },
+            version.draft_name ?? `rev. ${version.revision_number} was deleted.`
+        );
     };
 
     const rollback = async () => {
@@ -1448,6 +1457,9 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                         {workflow.status}
                     </StatusBadge>
                     {isArchived && <StatusBadge tone="neutral">Archived</StatusBadge>}
+                    <span className="hidden text-xs text-slate-500 sm:inline">
+                        {nodes.length} screens · {edges.length} links
+                    </span>
                     <StatusBadge tone={graphTone(graphState)}>{graphLabel(graphState)}</StatusBadge>
                 </div>
 
@@ -1487,10 +1499,10 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                             ↻ Reload Draft
                         </button>
                     )}
-                    {latestRevision?.is_published && canEditInProject && !isArchived && (
+                    {canEditInProject && !isArchived && (
                         <button
                             type="button"
-                            onClick={createDraft}
+                            onClick={() => setDraftModalOpen(true)}
                             className="btn-secondary workflow-action-button"
                         >
                             New Draft
@@ -1510,10 +1522,10 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                     </button>
                     <button
                         type="button"
-                        onClick={() => setInfoPanelOpen(true)}
+                        onClick={() => setRevisionsPanelOpen(true)}
                         className="btn-secondary workflow-action-button"
                     >
-                        Details
+                        Revisions
                     </button>
                 </div>
             </header>
@@ -2274,135 +2286,247 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                 </aside>
             )}
 
-            {infoPanelOpen && (
+            {revisionsPanelOpen && (
                 <button
                     type="button"
                     className="workflow-panel-backdrop"
-                    onClick={() => setInfoPanelOpen(false)}
-                    aria-label="Close workflow details"
+                    onClick={() => setRevisionsPanelOpen(false)}
+                    aria-label="Close revisions panel"
                 />
             )}
 
             <aside
                 className={`workflow-info-panel ${
-                    infoPanelOpen ? 'workflow-info-panel-open' : ''
+                    revisionsPanelOpen ? 'workflow-info-panel-open' : ''
                 }`.trim()}
-                aria-hidden={!infoPanelOpen}
+                aria-hidden={!revisionsPanelOpen}
             >
                 <div className="flex items-start justify-between gap-3">
                     <div>
-                        <p className="eyebrow">Workflow Metadata</p>
-                        <h2 className="panel-title mt-2">Revisions & Activity</h2>
+                        <p className="eyebrow">Workflow</p>
+                        <h2 className="panel-title mt-2">Revisions</h2>
                     </div>
                     <button
                         type="button"
                         className="workflow-panel-close"
-                        onClick={() => setInfoPanelOpen(false)}
+                        onClick={() => setRevisionsPanelOpen(false)}
                     >
                         Close
                     </button>
                 </div>
 
-                <div className="mt-5 grid grid-cols-3 gap-3">
-                    <div className="workflow-metric">
-                        <p className="eyebrow">Revision</p>
-                        <p className="mt-2 text-xl font-bold text-slate-950">
-                            {latestRevision ? `rev. ${latestRevision.revision_number}` : 'N/A'}
-                        </p>
+                {canEditInProject && !isArchived && (
+                    <div className="mt-4">
+                        <button
+                            type="button"
+                            onClick={() => setDraftModalOpen(true)}
+                            className="btn-primary workflow-wide-button text-sm"
+                        >
+                            + New Draft
+                        </button>
                     </div>
-                    <div className="workflow-metric">
-                        <p className="eyebrow">Screens</p>
-                        <p className="mt-2 text-xl font-bold text-slate-950">{nodes.length}</p>
-                    </div>
-                    <div className="workflow-metric">
-                        <p className="eyebrow">Links</p>
-                        <p className="mt-2 text-xl font-bold text-slate-950">{edges.length}</p>
-                    </div>
-                </div>
+                )}
 
-                <div className="mt-5 rounded-lg border border-slate-200 bg-white/85 p-4 text-sm text-slate-600">
+                {latestRevision &&
+                    !latestRevision.is_published &&
+                    canEditInProject &&
+                    !isArchived && (
+                        <div className="mt-4">
+                            <label className="block text-sm font-medium text-slate-700">
+                                Draft name
+                                <input
+                                    value={editingDraftName}
+                                    onChange={event => setEditingDraftName(event.target.value)}
+                                    onBlur={async () => {
+                                        if (
+                                            editingDraftName !== (latestRevision.draft_name ?? '')
+                                        ) {
+                                            try {
+                                                await window.axios.patch(
+                                                    `/api/v1/workflow-revisions/${latestRevision.id}/draft-name`,
+                                                    { draft_name: editingDraftName }
+                                                );
+                                                router.reload({ only: ['workflow'] });
+                                            } catch {
+                                                setEditingDraftName(
+                                                    latestRevision.draft_name ?? ''
+                                                );
+                                            }
+                                        }
+                                    }}
+                                    onKeyDown={async event => {
+                                        if (event.key === 'Enter') {
+                                            event.currentTarget.blur();
+                                        }
+                                    }}
+                                    disabled={isRunningAction}
+                                    className="input-shell mt-2"
+                                    placeholder="Draft name"
+                                />
+                            </label>
+                        </div>
+                    )}
+
+                <div className="mt-4 rounded-lg border border-slate-200 bg-white/85 p-3 text-sm text-slate-600">
                     <p>{graphMessage}</p>
-                    <p className="mt-2 text-xs uppercase tracking-[0.16em] text-slate-400">
+                    <p className="mt-1 text-xs uppercase tracking-[0.16em] text-slate-400">
                         {lastSavedAt
                             ? `Last graph save ${formatTimestamp(lastSavedAt)}`
                             : 'No graph save recorded in this session'}
                     </p>
                 </div>
 
-                <div className="mt-6">
+                {/* Drafts */}
+                <div className="mt-5">
                     <div className="flex items-center justify-between gap-3">
-                        <p className="panel-title">Revision Timeline</p>
-                        {selectedRollbackRevision && (
+                        <p className="panel-title">Drafts</p>
+                        {selectedRollbackRevision && !selectedRollbackRevision.is_published && (
+                            <StatusBadge tone="warning">
+                                Selected {selectedRollbackRevision.draft_name ?? 'Draft'}
+                            </StatusBadge>
+                        )}
+                    </div>
+
+                    <div className="revision-timeline mt-3">
+                        {revisions.filter(r => !r.is_published).length === 0 ? (
+                            <p className="empty-state py-4 text-sm">No drafts yet</p>
+                        ) : (
+                            revisions
+                                .filter(r => !r.is_published)
+                                .map(revision => {
+                                    const isSelected = rollbackRevisionId === revision.id;
+                                    const isCurrent = latestRevision?.id === revision.id;
+
+                                    return (
+                                        <button
+                                            key={revision.id}
+                                            type="button"
+                                            onClick={() => handleRevisionTimelineClick(revision)}
+                                            className={`revision-timeline-item ${
+                                                isSelected ? 'revision-timeline-item-active' : ''
+                                            }`.trim()}
+                                        >
+                                            <span className="revision-timeline-dot" />
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <p className="text-sm font-semibold text-slate-950">
+                                                        {revision.draft_name ?? 'Draft'}
+                                                    </p>
+                                                    <div className="revision-timeline-actions">
+                                                        {isCurrent && (
+                                                            <StatusBadge tone="brand">
+                                                                Current
+                                                            </StatusBadge>
+                                                        )}
+                                                        <StatusBadge tone="warning">
+                                                            Draft
+                                                        </StatusBadge>
+                                                        {canPublishWorkflows &&
+                                                            revisions.length > 1 &&
+                                                            !isArchived &&
+                                                            !revision.is_locked && (
+                                                                <button
+                                                                    type="button"
+                                                                    disabled={isRunningAction}
+                                                                    onClick={e => {
+                                                                        e.stopPropagation();
+                                                                        void deleteRevision(
+                                                                            revision
+                                                                        );
+                                                                    }}
+                                                                    className="text-xs text-slate-400 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
+                                                                    title="Delete draft"
+                                                                >
+                                                                    Delete
+                                                                </button>
+                                                            )}
+                                                    </div>
+                                                </div>
+                                                <p className="revision-timeline-meta">
+                                                    {revision.creator?.name ?? 'Unknown actor'} ·{' '}
+                                                    {formatTimestamp(revision.created_at)}
+                                                </p>
+                                                {revision.rollback_from_revision_id && (
+                                                    <p className="revision-timeline-meta">
+                                                        From rev.{' '}
+                                                        {workflow.revisions.find(
+                                                            v =>
+                                                                v.id ===
+                                                                revision.rollback_from_revision_id
+                                                        )?.revision_number ?? '?'}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </button>
+                                    );
+                                })
+                        )}
+                    </div>
+                </div>
+
+                {/* Published Revisions */}
+                <div className="mt-5">
+                    <div className="flex items-center justify-between gap-3">
+                        <p className="panel-title">Published Revisions</p>
+                        {selectedRollbackRevision && selectedRollbackRevision.is_published && (
                             <StatusBadge tone="warning">
                                 Selected rev. {selectedRollbackRevision.revision_number}
                             </StatusBadge>
                         )}
                     </div>
-                    <div className="mt-4 space-y-3">
-                        {revisions.map(revision => {
-                            const isSelected = rollbackRevisionId === revision.id;
-                            const isCurrent = latestRevision?.id === revision.id;
 
-                            return (
-                                <button
-                                    key={revision.id}
-                                    type="button"
-                                    onClick={() => handleRevisionTimelineClick(revision)}
-                                    className={`version-card w-full text-left ${
-                                        isSelected ? 'version-card-active' : ''
-                                    }`.trim()}
-                                >
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div>
-                                            <p className="text-sm font-semibold text-slate-950">
-                                                rev. {revision.revision_number}
-                                            </p>
-                                            <p className="mt-1 text-sm text-slate-500">
-                                                {revision.creator?.name ?? 'Unknown actor'}
-                                            </p>
-                                        </div>
-                                        <div className="flex flex-wrap items-start justify-end gap-2">
-                                            {isCurrent && (
-                                                <StatusBadge tone="brand">Current</StatusBadge>
-                                            )}
-                                            {revision.is_published && (
-                                                <StatusBadge tone="success">Published</StatusBadge>
-                                            )}
-                                            {revision.rollback_from_revision_id && (
-                                                <StatusBadge tone="warning">
-                                                    Rollback from rev.{' '}
-                                                    {workflow.revisions.find(
-                                                        v =>
-                                                            v.id ===
-                                                            revision.rollback_from_revision_id
-                                                    )?.revision_number ?? '?'}
-                                                </StatusBadge>
-                                            )}
-                                            {canPublishWorkflows &&
-                                                revisions.length > 1 &&
-                                                !isArchived &&
-                                                !revision.is_locked && (
-                                                    <button
-                                                        type="button"
-                                                        disabled={isRunningAction}
-                                                        onClick={e => {
-                                                            e.stopPropagation();
-                                                            void deleteRevision(revision);
-                                                        }}
-                                                        className="text-xs text-slate-400 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
-                                                        title="Delete revision"
-                                                    >
-                                                        Delete
-                                                    </button>
+                    <div className="revision-timeline mt-3">
+                        {revisions.filter(r => r.is_published).length === 0 ? (
+                            <p className="empty-state py-4 text-sm">No published revisions</p>
+                        ) : (
+                            revisions
+                                .filter(r => r.is_published)
+                                .map(revision => {
+                                    const isSelected = rollbackRevisionId === revision.id;
+                                    const isCurrent = latestRevision?.id === revision.id;
+
+                                    return (
+                                        <button
+                                            key={revision.id}
+                                            type="button"
+                                            onClick={() => handleRevisionTimelineClick(revision)}
+                                            className={`revision-timeline-item ${
+                                                isSelected ? 'revision-timeline-item-active' : ''
+                                            }`.trim()}
+                                        >
+                                            <span className="revision-timeline-dot revision-timeline-dot-published" />
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <p className="text-sm font-semibold text-slate-950">
+                                                        rev. {revision.revision_number}
+                                                    </p>
+                                                    <div className="revision-timeline-actions">
+                                                        {isCurrent && (
+                                                            <StatusBadge tone="brand">
+                                                                Current
+                                                            </StatusBadge>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <p className="revision-timeline-meta">
+                                                    {revision.creator?.name ?? 'Unknown actor'} ·{' '}
+                                                    {formatTimestamp(revision.created_at)}
+                                                </p>
+                                                {revision.rollback_from_revision_id && (
+                                                    <p className="revision-timeline-meta">
+                                                        From rev.{' '}
+                                                        {workflow.revisions.find(
+                                                            v =>
+                                                                v.id ===
+                                                                revision.rollback_from_revision_id
+                                                        )?.revision_number ?? '?'}
+                                                    </p>
                                                 )}
-                                        </div>
-                                    </div>
-                                    <p className="mt-3 text-xs uppercase tracking-[0.16em] text-slate-400">
-                                        {formatTimestamp(revision.created_at)}
-                                    </p>
-                                </button>
-                            );
-                        })}
+                                            </div>
+                                        </button>
+                                    );
+                                })
+                        )}
                     </div>
                 </div>
 
@@ -2473,6 +2597,62 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                         />
                     </div>
                 )}
+            </Modal>
+
+            <Modal
+                show={draftModalOpen}
+                maxWidth="md"
+                onClose={() => {
+                    setDraftModalOpen(false);
+                    setDraftNameInput('');
+                }}
+            >
+                <div className="p-6">
+                    <h3 className="text-lg font-semibold text-slate-950">New Draft</h3>
+                    <p className="mt-2 text-sm text-slate-600">
+                        Create a new draft to explore a different direction for this workflow.
+                    </p>
+                    <label className="mt-4 block text-sm font-medium text-slate-700">
+                        Draft name (optional)
+                        <input
+                            value={draftNameInput}
+                            onChange={event => setDraftNameInput(event.target.value)}
+                            className="input-shell mt-2"
+                            placeholder="e.g. Variant with approval"
+                            onKeyDown={event => {
+                                if (event.key === 'Enter') {
+                                    void createDraft(draftNameInput || undefined);
+                                    setDraftModalOpen(false);
+                                    setDraftNameInput('');
+                                }
+                            }}
+                        />
+                    </label>
+                    <div className="mt-6 flex justify-end gap-3">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setDraftModalOpen(false);
+                                setDraftNameInput('');
+                            }}
+                            className="btn-secondary workflow-action-button"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                void createDraft(draftNameInput || undefined);
+                                setDraftModalOpen(false);
+                                setDraftNameInput('');
+                            }}
+                            disabled={isRunningAction}
+                            className="btn-primary workflow-action-button"
+                        >
+                            Create Draft
+                        </button>
+                    </div>
+                </div>
             </Modal>
 
             {isContextMenuOpen && (

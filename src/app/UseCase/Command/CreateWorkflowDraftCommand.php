@@ -16,9 +16,9 @@ final class CreateWorkflowDraftCommand
         private readonly WorkflowRevisionService $revisionService,
     ) {}
 
-    public function execute(User $actor, Workflow $workflow): WorkflowRevisionResponse
+    public function execute(User $actor, Workflow $workflow, ?string $draftName = null): WorkflowRevisionResponse
     {
-        $revision = $this->revisionService->createDraftFromLatest($workflow, $actor);
+        $revision = $this->revisionService->createDraftFromLatest($workflow, $actor, $draftName);
 
         AuditLogger::log($actor, $revision, 'created', 'Draft workflow revision created', [
             'workflow_id' => $workflow->id,

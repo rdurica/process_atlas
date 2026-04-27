@@ -19,9 +19,9 @@ final class RollbackWorkflowRevisionCommand
         private readonly PublishedWorkflowCacheService $cache,
     ) {}
 
-    public function execute(User $actor, Workflow $workflow, WorkflowRevision $target): WorkflowRevisionResponse
+    public function execute(User $actor, Workflow $workflow, WorkflowRevision $target, ?string $draftName = null): WorkflowRevisionResponse
     {
-        $newRevision = $this->revisionService->rollbackToRevision($workflow, $target, $actor);
+        $newRevision = $this->revisionService->rollbackToRevision($workflow, $target, $actor, $draftName);
 
         $this->cache->forget($workflow->id);
 

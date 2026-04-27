@@ -36,6 +36,7 @@ Route::middleware(['auth:sanctum', 'verified', 'throttle:api'])->prefix('v1')->g
     Route::get('/workflow-revisions/{workflowRevision}', [WorkflowRevisionController::class, 'show']);
     Route::patch('/workflow-revisions/{workflowRevision}/graph', [WorkflowRevisionController::class, 'updateGraph']);
     Route::post('/workflow-revisions/{workflowRevision}/publish', [WorkflowRevisionController::class, 'publish']);
+    Route::patch('/workflow-revisions/{workflowRevision}/draft-name', [WorkflowRevisionController::class, 'renameDraft']);
     Route::delete('/workflow-revisions/{workflowRevision}', [WorkflowRevisionController::class, 'destroy']);
 
     Route::post('/screens/upsert', [ScreenController::class, 'upsert']);

@@ -51,21 +51,30 @@ final class DashboardQueryService
         {
             $publishedCount = $project->workflows->where('status', 'published')->count();
             $draftCount = $project->workflows->where('status', 'draft')->count();
-            $latestRevisionNumber = $project->workflows
-                ->pluck('latestRevision.revision_number')
+            $latestRevision = $project->workflows
+                ->pluck('latestRevision')
                 ->filter()
-                ->max();
+                ->sortByDesc(fn (?WorkflowRevision $r) => $r?->created_at)
+                ->first();
 
             $currentUserRole = $isAdmin
                 ? 'process_owner'
                 : $user->projectRoleIn($project);
+
+            $latestRevisionLabel = 'Not started';
+            if ($latestRevision instanceof WorkflowRevision)
+            {
+                $latestRevisionLabel = $latestRevision->revision_number !== null
+                    ? 'rev. ' . $latestRevision->revision_number
+                    : ($latestRevision->draft_name ?? 'Draft');
+            }
 
             return [
                 'id'                    => $project->id,
                 'name'                  => $project->name,
                 'description'           => $project->description,
                 'workflows_count'       => $project->workflows_count,
-                'latest_revision_label' => $latestRevisionNumber ? 'rev. ' . $latestRevisionNumber : 'Not started',
+                'latest_revision_label' => $latestRevisionLabel,
                 'status_summary'        => match (true)
                 {
                     $project->workflows_count === 0        => 'No workflows',
@@ -83,8 +92,11 @@ final class DashboardQueryService
                         'revision_number' => $workflow->latestRevision->revision_number,
                         'is_published'    => $workflow->latestRevision->is_published,
                     ] : null,
-                    'published_revision_id' => $workflow->published_revision_id,
-                    'updated_at'            => $workflow->updated_at?->toIso8601String(),
+                    'published_revision' => $workflow->publishedRevision ? [
+                        'id'              => $workflow->publishedRevision->id,
+                        'revision_number' => $workflow->publishedRevision->revision_number,
+                    ] : null,
+                    'updated_at' => $workflow->updated_at?->toIso8601String(),
                 ])->values()->all(),
             ];
         })->values()->all();

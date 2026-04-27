@@ -17,7 +17,7 @@ interface UseVersionManagementReturn {
     isRunningAction: boolean;
     setPreviewRevision: (revision: WorkflowRevisionSummary | null) => void;
     setRollbackRevisionId: (id: number | null) => void;
-    createDraft: () => Promise<void>;
+    createDraft: (draftName?: string) => Promise<void>;
     publishCurrent: () => Promise<void>;
     rollback: () => Promise<void>;
     deleteRevision: (revision: WorkflowRevisionSummary) => Promise<void>;
@@ -57,18 +57,23 @@ export function useVersionManagement({
         [reloadWorkflow]
     );
 
-    const createDraft = useCallback(async () => {
-        if (!canEditInProject) return;
-        await runWorkflowAction(async () => {
-            await window.axios.post(`/api/v1/workflows/${workflowId}/revisions`);
-        }, 'A new draft revision was created.');
-    }, [workflowId, canEditInProject, runWorkflowAction]);
+    const createDraft = useCallback(
+        async (draftName?: string) => {
+            if (!canEditInProject) return;
+            await runWorkflowAction(async () => {
+                await window.axios.post(`/api/v1/workflows/${workflowId}/revisions`, {
+                    draft_name: draftName || undefined,
+                });
+            }, 'A new draft was created.');
+        },
+        [workflowId, canEditInProject, runWorkflowAction]
+    );
 
     const publishCurrent = useCallback(async () => {
         if (!latestRevision || !canPublish) return;
         await runWorkflowAction(async () => {
             await window.axios.post(`/api/v1/workflow-revisions/${latestRevision.id}/publish`);
-        }, 'The current revision was published.');
+        }, 'The current draft was published.');
     }, [latestRevision, canPublish, runWorkflowAction]);
 
     const rollback = useCallback(async () => {
@@ -82,9 +87,12 @@ export function useVersionManagement({
 
     const deleteRevision = useCallback(
         async (revision: WorkflowRevisionSummary) => {
-            await runWorkflowAction(async () => {
-                await window.axios.delete(`/api/v1/workflow-revisions/${revision.id}`);
-            }, `rev. ${revision.revision_number} was deleted.`);
+            await runWorkflowAction(
+                async () => {
+                    await window.axios.delete(`/api/v1/workflow-revisions/${revision.id}`);
+                },
+                revision.draft_name ?? `rev. ${revision.revision_number} was deleted.`
+            );
         },
         [runWorkflowAction]
     );

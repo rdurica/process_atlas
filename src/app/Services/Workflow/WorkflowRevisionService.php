@@ -12,13 +12,14 @@ use App\Models\WorkflowRevision;
 
 final class WorkflowRevisionService
 {
-    public function createInitialRevision(Workflow $workflow, User $actor): WorkflowRevision
+    public function createInitialRevision(Workflow $workflow, User $actor, ?string $draftName = null): WorkflowRevision
     {
         $workflow = $this->lockWorkflow($workflow);
 
         $revision = $workflow->revisions()->create([
             'created_by'      => $actor->id,
-            'revision_number' => 1,
+            'revision_number' => null,
+            'draft_name'      => $draftName ?? $this->generateDraftName($workflow),
             'is_published'    => false,
             'is_locked'       => false,
             'graph_json'      => ['nodes' => [], 'edges' => []],
@@ -33,7 +34,7 @@ final class WorkflowRevisionService
         return $revision;
     }
 
-    public function createDraftFromLatest(Workflow $workflow, User $actor): WorkflowRevision
+    public function createDraftFromLatest(Workflow $workflow, User $actor, ?string $draftName = null): WorkflowRevision
     {
         $workflow = $this->lockWorkflow($workflow);
         $source = $workflow
@@ -43,14 +44,13 @@ final class WorkflowRevisionService
 
         if (! $source)
         {
-            return $this->createInitialRevision($workflow, $actor);
+            return $this->createInitialRevision($workflow, $actor, $draftName);
         }
-
-        $nextRevisionNumber = ((int) $workflow->revisions()->max('revision_number')) + 1;
 
         $newRevision = $workflow->revisions()->create([
             'created_by'      => $actor->id,
-            'revision_number' => $nextRevisionNumber,
+            'revision_number' => null,
+            'draft_name'      => $draftName ?? $this->generateDraftName($workflow),
             'is_published'    => false,
             'is_locked'       => false,
             'graph_json'      => $source->graph_json,
@@ -72,8 +72,18 @@ final class WorkflowRevisionService
         $workflow = $revision->workflow()->lockForUpdate()->firstOrFail();
         $revision = $workflow->revisions()->whereKey($revision->id)->firstOrFail();
 
-        $workflow->revisions()->update(['is_published' => false]);
-        $revision->update(['is_published' => true, 'is_locked' => true]);
+        $revisionNumber = $revision->revision_number;
+        if ($revisionNumber === null)
+        {
+            $revisionNumber = ((int) $workflow->revisions()->max('revision_number')) + 1;
+        }
+
+        $revision->update([
+            'is_published'    => true,
+            'is_locked'       => true,
+            'revision_number' => $revisionNumber,
+            'draft_name'      => null,
+        ]);
 
         $workflow->update([
             'published_revision_id' => $revision->id,
@@ -84,7 +94,7 @@ final class WorkflowRevisionService
         return $workflow;
     }
 
-    public function rollbackToRevision(Workflow $workflow, WorkflowRevision $target, User $actor): WorkflowRevision
+    public function rollbackToRevision(Workflow $workflow, WorkflowRevision $target, User $actor, ?string $draftName = null): WorkflowRevision
     {
         abort_unless($target->workflow_id === $workflow->id, 422, 'Target revision does not belong to this workflow.');
 
@@ -95,11 +105,10 @@ final class WorkflowRevisionService
             ->whereKey($target->id)
             ->firstOrFail();
 
-        $nextRevisionNumber = ((int) $workflow->revisions()->max('revision_number')) + 1;
-
         $newRevision = $workflow->revisions()->create([
             'created_by'                => $actor->id,
-            'revision_number'           => $nextRevisionNumber,
+            'revision_number'           => null,
+            'draft_name'                => $draftName ?? $this->generateDraftName($workflow),
             'is_published'              => false,
             'graph_json'                => $target->graph_json,
             'lock_version'              => 0,
@@ -130,7 +139,9 @@ final class WorkflowRevisionService
 
         if ($isLatest)
         {
-            $newLatest = $workflow->revisions()->orderByDesc('revision_number')->firstOrFail();
+            $newLatest = $workflow->revisions()
+                ->orderByRaw('revision_number IS NULL, revision_number DESC, created_at DESC')
+                ->firstOrFail();
             $workflow->update([
                 'latest_revision_id' => $newLatest->id,
                 'status'             => $newLatest->is_published ? 'published' : 'draft',
@@ -138,6 +149,13 @@ final class WorkflowRevisionService
         }
 
         return $workflow;
+    }
+
+    public function renameDraft(WorkflowRevision $revision, string $name): void
+    {
+        abort_if($revision->is_published, 422, 'Cannot rename a published revision.');
+
+        $revision->update(['draft_name' => $name]);
     }
 
     private function cloneScreens(WorkflowRevision $sourceRevision, WorkflowRevision $newRevision): void
@@ -166,6 +184,25 @@ final class WorkflowRevisionService
                 ]);
             }
         }
+    }
+
+    private function generateDraftName(Workflow $workflow): string
+    {
+        $drafts = $workflow->revisions()
+            ->whereNull('revision_number')
+            ->whereNotNull('draft_name')
+            ->pluck('draft_name');
+
+        $maxNumber = 0;
+        foreach ($drafts as $name)
+        {
+            if (preg_match('/^Draft#(\d+)$/', $name, $matches))
+            {
+                $maxNumber = max($maxNumber, (int) $matches[1]);
+            }
+        }
+
+        return 'Draft#' . ($maxNumber + 1);
     }
 
     private function lockWorkflow(Workflow $workflow): Workflow

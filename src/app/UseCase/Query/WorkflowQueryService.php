@@ -48,7 +48,7 @@ final class WorkflowQueryService
                 'project',
                 'latestRevision.screens.customFields',
                 'publishedRevision.screens.customFields',
-                'revisions' => fn ($query) => $query->orderByDesc('revision_number'),
+                'revisions' => fn ($query) => $query->orderByRaw('revision_number IS NULL DESC, revision_number DESC, created_at DESC'),
             ]);
 
             $this->cache->put($workflow->id, $workflow->toArray());
@@ -60,7 +60,7 @@ final class WorkflowQueryService
             'project',
             'latestRevision.screens.customFields',
             'publishedRevision',
-            'revisions' => fn ($query) => $query->orderByDesc('revision_number'),
+            'revisions' => fn ($query) => $query->orderByRaw('revision_number IS NULL DESC, revision_number DESC, created_at DESC'),
         ]);
     }
 
@@ -70,7 +70,7 @@ final class WorkflowQueryService
             'project',
             'latestRevision.creator',
             'latestRevision.screens.customFields',
-            'revisions' => fn ($query) => $query->with('creator')->orderByDesc('revision_number'),
+            'revisions' => fn ($query) => $query->with('creator')->orderByRaw('revision_number IS NULL DESC, revision_number DESC, created_at DESC'),
         ]);
     }
 

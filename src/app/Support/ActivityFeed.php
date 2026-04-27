@@ -121,7 +121,9 @@ final class ActivityFeed
             Project::class          => $subject instanceof Project ? $subject->name : 'Project',
             Workflow::class         => $subject instanceof Workflow ? $subject->name : 'Workflow',
             WorkflowRevision::class => $subject instanceof WorkflowRevision
-                ? 'rev. ' . $subject->revision_number
+                ? ($subject->revision_number !== null
+                    ? 'rev. ' . $subject->revision_number
+                    : ($subject->draft_name ?? 'Draft'))
                 : 'Workflow revision',
             Screen::class => $subject instanceof Screen
                 ? ($subject->title ?: $subject->node_id)
