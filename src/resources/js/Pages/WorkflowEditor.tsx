@@ -463,6 +463,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
     );
     const [editingDraftName, setEditingDraftName] = useState(latestRevision?.draft_name ?? '');
     const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
+    const [publishConfirmInput, setPublishConfirmInput] = useState('');
     const graphInitialized = useRef(false);
     const contextMenuFlowPosition = useRef({ x: 0, y: 0 });
     const clearScreenAutosaveRef = useRef<(() => void) | null>(null);
@@ -1429,17 +1430,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                         )}
                     </div>
                 )}
-                {latestRevision &&
-                    !latestRevision.is_published &&
-                    workflow.published_revision != null &&
-                    latestRevision.source_revision_id !== workflow.published_revision.id && (
-                        <div className="pointer-events-auto absolute inset-x-0 top-0 z-10 flex items-center justify-center gap-4 border-b border-red-200 bg-red-50 px-5 py-2.5">
-                            <p className="text-sm font-medium text-red-900">
-                                Warning – this draft does not originate from the latest published
-                                revision.
-                            </p>
-                        </div>
-                    )}
+
                 {isArchived && (
                     <div className="pointer-events-auto absolute inset-x-0 top-0 z-10 flex items-center justify-center gap-4 border-b border-slate-200 bg-slate-100 px-5 py-2.5">
                         <p className="text-sm font-medium text-slate-700">
@@ -1447,6 +1438,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                         </p>
                     </div>
                 )}
+
                 <FlowCanvas
                     nodes={nodes}
                     edges={edges}
@@ -1537,6 +1529,17 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                         Detail
                     </button>
                 </div>
+                {latestRevision &&
+                    !latestRevision.is_published &&
+                    workflow.published_revision != null &&
+                    latestRevision.source_revision_id !== workflow.published_revision.id && (
+                        <div className="absolute inset-x-0 top-full flex items-center justify-center rounded-b-lg border-x border-b border-red-200 bg-red-50 px-5 py-2">
+                            <p className="text-sm font-medium text-red-900">
+                                Warning – this draft does not originate from the latest published
+                                revision.
+                            </p>
+                        </div>
+                    )}
             </header>
 
             {(selectedEdge || selectedNode) && (
@@ -2666,20 +2669,44 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
             <Modal
                 show={publishConfirmOpen}
                 maxWidth="md"
-                onClose={() => setPublishConfirmOpen(false)}
+                onClose={() => {
+                    setPublishConfirmOpen(false);
+                    setPublishConfirmInput('');
+                }}
             >
                 <div className="border border-red-200 bg-red-50 p-6">
                     <h3 className="text-lg font-semibold text-red-800">
                         Publish draft from a different revision?
                     </h3>
                     <p className="mt-2 text-sm text-red-700">
-                        This draft does not originate from the latest published revision. Do you
-                        still want to publish it?
+                        This draft was not created from the currently published revision. Publishing
+                        it will overwrite the live version with this draft. Please confirm that you
+                        are doing this deliberately.
                     </p>
+                    <div className="mt-4">
+                        <label
+                            htmlFor="publish-confirm-input"
+                            className="block text-sm font-medium text-red-800"
+                        >
+                            Type &quot;I agree&quot; to confirm
+                        </label>
+                        <input
+                            id="publish-confirm-input"
+                            type="text"
+                            value={publishConfirmInput}
+                            onChange={e => setPublishConfirmInput(e.target.value)}
+                            className="mt-1 block w-full rounded-md border-red-300 shadow-sm focus:border-red-500 focus:ring-red-500 sm:text-sm"
+                            placeholder="I agree"
+                            autoFocus
+                        />
+                    </div>
                     <div className="mt-6 flex justify-end gap-3">
                         <button
                             type="button"
-                            onClick={() => setPublishConfirmOpen(false)}
+                            onClick={() => {
+                                setPublishConfirmOpen(false);
+                                setPublishConfirmInput('');
+                            }}
                             className="btn-secondary workflow-action-button"
                         >
                             Cancel
@@ -2689,8 +2716,9 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                             onClick={() => {
                                 void publishCurrent(true);
                                 setPublishConfirmOpen(false);
+                                setPublishConfirmInput('');
                             }}
-                            disabled={isRunningAction}
+                            disabled={isRunningAction || publishConfirmInput.trim() !== 'I agree'}
                             className="btn-danger workflow-action-button"
                         >
                             Publish
