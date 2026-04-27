@@ -482,6 +482,11 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
 
     const revisions = useMemo(() => workflow.revisions, [workflow.revisions]);
 
+    const activeRevision = useMemo(
+        () => revisions.find(r => r.id === activeRevisionId),
+        [revisions, activeRevisionId]
+    );
+
     const selectedScreen = useMemo(
         () => screens.find(screen => screen.node_id === selectedNodeId) ?? null,
         [screens, selectedNodeId]
@@ -2305,38 +2310,14 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                 }`.trim()}
                 aria-hidden={!revisionsPanelOpen}
             >
-                <div className="flex items-start justify-between gap-3">
-                    <div>
-                        <p className="eyebrow">Workflow</p>
-                        <h2 className="panel-title mt-2">Detail</h2>
-                    </div>
-                    <button
-                        type="button"
-                        className="workflow-panel-close"
-                        onClick={() => setRevisionsPanelOpen(false)}
-                    >
-                        Close
-                    </button>
+                <div>
+                    <p className="eyebrow">Workflow</p>
+                    <h2 className="panel-title mt-2">Detail</h2>
                 </div>
-
-                {canPublishWorkflows &&
-                    latestRevision &&
-                    !latestRevision.is_published &&
-                    !isArchived && (
-                        <div className="mt-4">
-                            <button
-                                type="button"
-                                onClick={handlePublishClick}
-                                disabled={isRunningAction}
-                                className="btn-primary workflow-wide-button text-sm"
-                            >
-                                Publish
-                            </button>
-                        </div>
-                    )}
 
                 {latestRevision &&
                     !latestRevision.is_published &&
+                    !activeRevision?.is_published &&
                     canEditInProject &&
                     !isArchived && (
                         <div className="mt-4">
@@ -2375,14 +2356,22 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                         </div>
                     )}
 
-                <div className="mt-4 rounded-lg border border-slate-200 bg-white/85 p-3 text-sm text-slate-600">
-                    <p>{graphMessage}</p>
-                    <p className="mt-1 text-xs uppercase tracking-[0.16em] text-slate-400">
-                        {lastSavedAt
-                            ? `Last graph save ${formatTimestamp(lastSavedAt)}`
-                            : 'No graph save recorded in this session'}
-                    </p>
-                </div>
+                {canPublishWorkflows &&
+                    latestRevision &&
+                    !latestRevision.is_published &&
+                    !activeRevision?.is_published &&
+                    !isArchived && (
+                        <div className="mt-4">
+                            <button
+                                type="button"
+                                onClick={handlePublishClick}
+                                disabled={isRunningAction}
+                                className="btn-primary workflow-wide-button text-sm"
+                            >
+                                Publish
+                            </button>
+                        </div>
+                    )}
 
                 {/* Drafts */}
                 <div className="mt-5">
@@ -2419,9 +2408,6 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                                                                 Current
                                                             </StatusBadge>
                                                         )}
-                                                        <StatusBadge tone="warning">
-                                                            Draft
-                                                        </StatusBadge>
                                                         {canEditInProject && !isArchived && (
                                                             <button
                                                                 type="button"
@@ -2433,7 +2419,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                                                                     );
                                                                     setDraftModalOpen(true);
                                                                 }}
-                                                                className="text-xs text-slate-400 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
+                                                                className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-600 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
                                                                 title="New draft from this revision"
                                                             >
                                                                 New Draft
@@ -2452,7 +2438,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                                                                             revision
                                                                         );
                                                                     }}
-                                                                    className="text-xs text-slate-400 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
+                                                                    className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-600 hover:border-red-300 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-40"
                                                                     title="Delete draft"
                                                                 >
                                                                     Delete
@@ -2527,7 +2513,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                                                                     );
                                                                     setDraftModalOpen(true);
                                                                 }}
-                                                                className="text-xs text-slate-400 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
+                                                                className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-600 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
                                                                 title="New draft from this revision"
                                                             >
                                                                 New Draft
@@ -2555,6 +2541,10 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                         )}
                     </div>
                 </div>
+
+                <p className="mt-auto pt-4 text-xs text-slate-400">
+                    {lastSavedAt ? formatTimestamp(lastSavedAt) : 'Not saved yet'}
+                </p>
             </aside>
 
             {(actionError || actionNotice) && (
