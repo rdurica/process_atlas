@@ -2678,13 +2678,13 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                 maxWidth="md"
                 onClose={() => setPublishConfirmOpen(false)}
             >
-                <div className="p-6">
-                    <h3 className="text-lg font-semibold text-slate-950">
+                <div className="border border-red-200 bg-red-50 p-6">
+                    <h3 className="text-lg font-semibold text-red-800">
                         Publish draft from a different revision?
                     </h3>
-                    <p className="mt-2 text-sm text-slate-600">
-                        Tento draft nevychází z poslední publikované revize. Přejete si ho přesto
-                        publikovat?
+                    <p className="mt-2 text-sm text-red-700">
+                        This draft does not originate from the latest published revision. Do you
+                        still want to publish it?
                     </p>
                     <div className="mt-6 flex justify-end gap-3">
                         <button
@@ -2701,7 +2701,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                                 setPublishConfirmOpen(false);
                             }}
                             disabled={isRunningAction}
-                            className="btn-primary workflow-action-button"
+                            className="btn-danger workflow-action-button"
                         >
                             Publish
                         </button>
