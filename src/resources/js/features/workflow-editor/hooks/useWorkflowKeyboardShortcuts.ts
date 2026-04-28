@@ -1,8 +1,10 @@
 import { useEffect } from 'react';
 import type { Node } from '@xyflow/react';
+import type { GraphState } from '../types';
 
 interface UseWorkflowKeyboardShortcutsOptions {
     enabled: boolean;
+    graphState: GraphState;
     selectedNodes: Node[];
     copiedNodes: Node[];
     copyNodes: (nodes: Node[]) => void;
@@ -10,11 +12,13 @@ interface UseWorkflowKeyboardShortcutsOptions {
     deleteNodes: (nodeIds: string[]) => void;
     undo: () => void;
     redo: () => void;
+    saveGraph: () => Promise<void>;
     clearSelection: () => void;
 }
 
 export function useWorkflowKeyboardShortcuts({
     enabled,
+    graphState,
     selectedNodes,
     copiedNodes,
     copyNodes,
@@ -22,32 +26,44 @@ export function useWorkflowKeyboardShortcuts({
     deleteNodes,
     undo,
     redo,
+    saveGraph,
     clearSelection,
 }: UseWorkflowKeyboardShortcutsOptions) {
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
+            const isCtrlOrCmd = event.ctrlKey || event.metaKey;
+            const key = event.key.toLowerCase();
+
+            if (isCtrlOrCmd && key === 's') {
+                event.preventDefault();
+
+                if (enabled && graphState !== 'saving') {
+                    void saveGraph();
+                }
+
+                return;
+            }
+
             if (!enabled) {
                 return;
             }
 
-            const isCtrlOrCmd = event.ctrlKey || event.metaKey;
-
-            if (isCtrlOrCmd && event.key === 'c' && selectedNodes.length > 0) {
+            if (isCtrlOrCmd && key === 'c' && selectedNodes.length > 0) {
                 event.preventDefault();
                 copyNodes(selectedNodes);
             }
 
-            if (isCtrlOrCmd && event.key === 'v' && copiedNodes.length > 0) {
+            if (isCtrlOrCmd && key === 'v' && copiedNodes.length > 0) {
                 event.preventDefault();
                 pasteNodes();
             }
 
-            if (isCtrlOrCmd && event.key === 'z' && !event.shiftKey) {
+            if (isCtrlOrCmd && key === 'z' && !event.shiftKey) {
                 event.preventDefault();
                 undo();
             }
 
-            if (isCtrlOrCmd && event.key === 'z' && event.shiftKey) {
+            if (isCtrlOrCmd && key === 'z' && event.shiftKey) {
                 event.preventDefault();
                 redo();
             }
@@ -70,6 +86,7 @@ export function useWorkflowKeyboardShortcuts({
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [
         enabled,
+        graphState,
         selectedNodes,
         copiedNodes,
         copyNodes,
@@ -77,6 +94,7 @@ export function useWorkflowKeyboardShortcuts({
         deleteNodes,
         undo,
         redo,
+        saveGraph,
         clearSelection,
     ]);
 }

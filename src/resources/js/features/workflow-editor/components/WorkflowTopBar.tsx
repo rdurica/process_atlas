@@ -74,6 +74,7 @@ export default function WorkflowTopBar({
                     onClick={() => saveGraph('ui')}
                     disabled={!canEditWorkflows || graphState === 'saving'}
                     className="btn-primary workflow-action-button"
+                    title="Save (Ctrl/Cmd+S)"
                 >
                     Save
                 </button>

@@ -34,6 +34,8 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
         copyNodes,
         pasteNodes,
         deleteNodes,
+        graphState,
+        saveGraph,
         undo,
         redo,
         clearSelection,
@@ -60,6 +62,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
 
     useWorkflowKeyboardShortcuts({
         enabled: canEditWorkflows,
+        graphState,
         selectedNodes,
         copiedNodes,
         copyNodes,
@@ -67,6 +70,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
         deleteNodes,
         undo,
         redo,
+        saveGraph,
         clearSelection,
     });
 
