@@ -5,6 +5,8 @@ import { useCallback, useEffect, useRef } from 'react';
 import FlowCanvas from '@/features/workflow-editor/components/FlowCanvas';
 import { nodeTypes } from '@/features/workflow-editor/components/nodes';
 import { useWorkflowEditor } from '@/features/workflow-editor/hooks/useWorkflowEditor';
+import { useDirtyGraphUnload } from '@/features/workflow-editor/hooks/useDirtyGraphUnload';
+import { useWorkflowKeyboardShortcuts } from '@/features/workflow-editor/hooks/useWorkflowKeyboardShortcuts';
 import { isWorkflowNodeKind } from '@/features/workflow-editor/lib/utils';
 import '@xyflow/react/dist/style.css';
 import ContextMenu from '../features/workflow-editor/components/ContextMenu';
@@ -56,49 +58,8 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
         selectEdgeRef.current(edge.id);
     }, []);
 
-    // Keyboard shortcuts
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (!canEditWorkflows) return;
-
-            const isCtrlOrCmd = e.ctrlKey || e.metaKey;
-
-            if (isCtrlOrCmd && e.key === 'c' && selectedNodes.length > 0) {
-                e.preventDefault();
-                copyNodes(selectedNodes);
-            }
-
-            if (isCtrlOrCmd && e.key === 'v' && copiedNodes.length > 0) {
-                e.preventDefault();
-                pasteNodes();
-            }
-
-            if (isCtrlOrCmd && e.key === 'z' && !e.shiftKey) {
-                e.preventDefault();
-                undo();
-            }
-
-            if (isCtrlOrCmd && e.key === 'z' && e.shiftKey) {
-                e.preventDefault();
-                redo();
-            }
-
-            if ((e.key === 'Delete' || e.key === 'Backspace') && selectedNodes.length > 0) {
-                e.preventDefault();
-                const idsToDelete = selectedNodes
-                    .filter((n: { type?: string }) => n.type !== 'start')
-                    .map((n: { id: string }) => n.id);
-                if (idsToDelete.length > 0) {
-                    deleteNodes(idsToDelete);
-                }
-                clearSelection();
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [
-        canEditWorkflows,
+    useWorkflowKeyboardShortcuts({
+        enabled: canEditWorkflows,
         selectedNodes,
         copiedNodes,
         copyNodes,
@@ -107,7 +68,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
         undo,
         redo,
         clearSelection,
-    ]);
+    });
 
     // Context menu click-outside
     useEffect(() => {
@@ -123,47 +84,13 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
         }
     }, [isContextMenuOpen, closeContextMenu]);
 
-    // Flush autosave on page hide / before unload
-    useEffect(() => {
-        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-            if (editor.graphState === 'dirty') {
-                e.preventDefault();
-                // Modern browsers ignore the return value but still show a generic dialog
-                e.returnValue = '';
-            }
-        };
-
-        const handleVisibilityChange = () => {
-            if (document.visibilityState === 'hidden' && editor.graphState === 'dirty') {
-                const url = editor.latestRevision
-                    ? `/api/v1/workflow-revisions/${editor.latestRevision.id}/graph`
-                    : null;
-                if (url) {
-                    void fetch(url, {
-                        method: 'PATCH',
-                        keepalive: true,
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest',
-                        },
-                        body: JSON.stringify({
-                            graph_json: { nodes: editor.nodes, edges: editor.edges },
-                            lock_version: editor.lockVersion,
-                            source: 'autosave',
-                        }),
-                    });
-                }
-            }
-        };
-
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-
-        return () => {
-            window.removeEventListener('beforeunload', handleBeforeUnload);
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
-        };
-    }, [editor]);
+    useDirtyGraphUnload({
+        graphState: editor.graphState,
+        revisionId: editor.latestRevision?.id ?? null,
+        nodes: editor.nodes,
+        edges: editor.edges,
+        lockVersion: editor.lockVersion,
+    });
 
     return (
         <div className="workflow-fullscreen">

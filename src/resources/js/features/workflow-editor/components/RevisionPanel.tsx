@@ -1,6 +1,6 @@
 import StatusBadge from '@/Components/StatusBadge';
 import type { WorkflowRevisionSummary } from '@/types/processAtlas';
-import { formatTimestamp } from '../lib/utils';
+import { formatDateTime } from '@/shared/lib/dates';
 
 interface RevisionPanelProps {
     revisions: WorkflowRevisionSummary[];
@@ -195,7 +195,7 @@ export default function RevisionPanel({
                                                 </div>
                                                 <p className="revision-timeline-meta">
                                                     {revision.creator?.name ?? 'Unknown actor'} ·{' '}
-                                                    {formatTimestamp(revision.created_at)}
+                                                    {formatDateTime(revision.created_at)}
                                                 </p>
                                                 {revision.source_revision_id && (
                                                     <p className="revision-timeline-meta">
@@ -277,7 +277,7 @@ export default function RevisionPanel({
                                                 </div>
                                                 <p className="revision-timeline-meta">
                                                     {revision.creator?.name ?? 'Unknown actor'} ·{' '}
-                                                    {formatTimestamp(revision.created_at)}
+                                                    {formatDateTime(revision.created_at)}
                                                 </p>
                                                 {revision.source_revision_id && (
                                                     <p className="revision-timeline-meta">
@@ -297,7 +297,7 @@ export default function RevisionPanel({
                 </div>
 
                 <p className="mt-auto pt-4 text-xs text-slate-400">
-                    {lastSavedAt ? formatTimestamp(lastSavedAt) : 'Not saved yet'}
+                    {lastSavedAt ? formatDateTime(lastSavedAt) : 'Not saved yet'}
                 </p>
             </aside>
         </>

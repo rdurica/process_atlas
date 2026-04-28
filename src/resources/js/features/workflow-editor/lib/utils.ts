@@ -2,6 +2,8 @@ import type { Node } from '@xyflow/react';
 import type { Screen } from '@/types/processAtlas';
 import type { GraphState, InspectorTab, WorkflowNodeKind } from '../types';
 
+export const conditionOutputHandles = ['out-1', 'out-2', 'out-3', 'out-4', 'out-5'];
+
 export function buildInitialNodes(nodes: Node[] | undefined, screens: Screen[] = []): Node[] {
     const screenByNodeId = new Map(screens.map(screen => [screen.node_id, screen]));
 
@@ -35,54 +37,6 @@ export function buildInitialNodes(nodes: Node[] | undefined, screens: Screen[] =
             },
         };
     });
-}
-
-export function resolveApiError(error: unknown, fallback: string): string {
-    const response = (
-        error as {
-            response?: {
-                status?: number;
-                data?: { message?: string; errors?: Record<string, string[]> };
-            };
-        }
-    )?.response;
-
-    if (!response) {
-        return fallback;
-    }
-
-    if (response.status === 409) {
-        return response.data?.message ?? 'A revision conflict occurred. Refresh and retry.';
-    }
-
-    if (response.status === 403) {
-        return 'You do not have permission to perform this action.';
-    }
-
-    if (response.status === 422) {
-        const validationErrors = response.data?.errors;
-        if (validationErrors) {
-            const first = Object.values(validationErrors)[0]?.[0];
-            if (first) {
-                return first;
-            }
-        }
-    }
-
-    return response.data?.message ?? fallback;
-}
-
-export function formatTimestamp(value?: string | null): string {
-    if (!value) {
-        return 'Unknown time';
-    }
-
-    return new Intl.DateTimeFormat('en', {
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-    }).format(new Date(value));
 }
 
 export function graphTone(graphState: GraphState) {

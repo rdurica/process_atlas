@@ -1,17 +1,5 @@
 import { ActivityItem } from '@/types/processAtlas';
-
-function formatTimestamp(value?: string | null): string {
-    if (!value) {
-        return 'Unknown time';
-    }
-
-    return new Intl.DateTimeFormat('en', {
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-    }).format(new Date(value));
-}
+import { formatDateTime } from '@/shared/lib/dates';
 
 export default function ActivityFeed({
     title = 'Recent Activity',
@@ -52,7 +40,7 @@ export default function ActivityFeed({
                                 <span className="badge badge-neutral">{item.event}</span>
                             </div>
                             <p className="mt-2 text-xs uppercase tracking-[0.16em] text-slate-400">
-                                {formatTimestamp(item.created_at)}
+                                {formatDateTime(item.created_at)}
                             </p>
                         </article>
                     ))}

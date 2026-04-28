@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import type { WorkflowRevisionSummary } from '@/types/processAtlas';
+import { processAtlasApi } from '@/shared/api/processAtlasApi';
 
 interface UseVersionManagementOptions {
     latestRevision: WorkflowRevisionSummary | null;
@@ -23,7 +24,7 @@ export function useVersionManagement({
     const switchToDraft = useCallback(
         async (revision: WorkflowRevisionSummary) => {
             if (!canEditInProject) return;
-            await window.axios.post(`/api/v1/workflow-revisions/${revision.id}/switch-to-draft`);
+            await processAtlasApi.revisions.switchToDraft(revision.id);
         },
         [canEditInProject]
     );
@@ -41,9 +42,7 @@ export function useVersionManagement({
             }
 
             try {
-                const response = await window.axios.get<{ data: WorkflowRevisionSummary }>(
-                    `/api/v1/workflow-revisions/${revision.id}`
-                );
+                const response = await processAtlasApi.revisions.get(revision.id);
                 setPreviewRevision(response.data.data);
             } catch {
                 // silently ignore preview fetch errors

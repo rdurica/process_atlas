@@ -1,7 +1,6 @@
 import { Handle, Node, NodeProps, Position } from '@xyflow/react';
 import type { ConditionNodeData } from '../../types';
-
-const conditionOutputHandles = ['out-1', 'out-2', 'out-3', 'out-4', 'out-5'];
+import { conditionOutputHandles } from '../../lib/utils';
 
 export default function ConditionNode({ data }: NodeProps<Node<ConditionNodeData>>) {
     return (

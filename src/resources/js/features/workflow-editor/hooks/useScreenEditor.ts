@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Screen, ScreenCustomField } from '@/types/processAtlas';
 import type { FieldEditorMode, WorkflowNodeData } from '../types';
-import { resolveApiError } from '../lib/utils';
+import { resolveApiError } from '@/shared/lib/apiErrors';
 import { useAutosave } from '@/hooks/useAutosave';
+import { processAtlasApi } from '@/shared/api/processAtlasApi';
 
 interface UseScreenEditorOptions {
     screens: Screen[];
@@ -147,9 +148,7 @@ export function useScreenEditor({
         form.append('description', description);
         if (imageFile) form.append('image', imageFile);
 
-        const response = await window.axios.post('/api/v1/screens/upsert', form, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        const response = await processAtlasApi.screens.upsert(form);
 
         const updatedScreen: Screen = response.data.data;
 
@@ -253,14 +252,11 @@ export function useScreenEditor({
                 return;
             }
 
-            const response = await window.axios.post(
-                `/api/v1/screens/${screen.id}/custom-fields/upsert`,
-                {
-                    key: newCustomKey,
-                    value: newCustomValue || null,
-                    field_type: newCustomFieldType,
-                }
-            );
+            const response = await processAtlasApi.screens.upsertCustomField(screen.id, {
+                key: newCustomKey,
+                value: newCustomValue || null,
+                field_type: newCustomFieldType,
+            });
 
             const field = response.data.data as ScreenCustomField;
 
@@ -315,8 +311,8 @@ export function useScreenEditor({
                 }
 
                 try {
-                    const response = await window.axios.post(
-                        `/api/v1/screens/${selectedScreen.id}/custom-fields/upsert`,
+                    const response = await processAtlasApi.screens.upsertCustomField(
+                        selectedScreen.id,
                         {
                             key: newCustomKey,
                             value: newCustomValue || null,
@@ -328,7 +324,7 @@ export function useScreenEditor({
                     const updated = response.data.data as ScreenCustomField;
 
                     if (updated.id !== editingField.id) {
-                        await window.axios.delete(`/api/v1/custom-fields/${editingField.id}`);
+                        await processAtlasApi.screens.deleteCustomField(editingField.id);
                     }
 
                     setScreens(current =>
@@ -373,7 +369,7 @@ export function useScreenEditor({
     const removeCustomField = useCallback(
         async (fieldId: number): Promise<boolean> => {
             try {
-                await window.axios.delete(`/api/v1/custom-fields/${fieldId}`);
+                await processAtlasApi.screens.deleteCustomField(fieldId);
 
                 setScreens(current =>
                     current.map(screen => ({

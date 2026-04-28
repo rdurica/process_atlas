@@ -1,4 +1,4 @@
-import type { DragEvent, ReactElement } from 'react';
+import type { DragEvent, MouseEvent as ReactMouseEvent, ReactElement } from 'react';
 import { useCallback } from 'react';
 import { Background, Controls, MiniMap, ReactFlow, useReactFlow } from '@xyflow/react';
 import type { FlowCanvasProps, WorkflowNodeKind } from '../types';
@@ -37,6 +37,13 @@ export default function FlowCanvas({
         [screenToFlowPosition, onDropNode]
     );
 
+    const handlePaneContextMenu = useCallback(
+        (event: MouseEvent | ReactMouseEvent<Element, MouseEvent>) => {
+            onPaneContextMenu?.(event as ReactMouseEvent<HTMLDivElement>);
+        },
+        [onPaneContextMenu]
+    );
+
     return (
         <ReactFlow
             nodes={nodes}
@@ -50,8 +57,7 @@ export default function FlowCanvas({
             onEdgeClick={onEdgeClick}
             onEdgeDoubleClick={editable ? onEdgeDoubleClick : undefined}
             onPaneClick={onPaneClick}
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            onPaneContextMenu={editable ? (onPaneContextMenu as any) : undefined}
+            onPaneContextMenu={editable ? handlePaneContextMenu : undefined}
             onDragOver={editable ? handleDragOver : undefined}
             onDrop={editable ? handleDrop : undefined}
             nodesDraggable={editable}

@@ -4,7 +4,9 @@ import { MarkerType, useReactFlow } from '@xyflow/react';
 import { useAutosave } from '@/hooks/useAutosave';
 import { useCanvasHistory } from '@/hooks/useCanvasHistory';
 import type { WorkflowData, WorkflowRevisionSummary, Screen } from '@/types/processAtlas';
-import { buildInitialNodes, resolveApiError } from '../lib/utils';
+import { buildInitialNodes } from '../lib/utils';
+import { processAtlasApi } from '@/shared/api/processAtlasApi';
+import { resolveApiError } from '@/shared/lib/apiErrors';
 import type { WorkflowNodeKind } from '../types';
 import { useCopyPaste } from './useCopyPaste';
 import { useNodeSelection } from './useNodeSelection';
@@ -198,7 +200,7 @@ export function useWorkflowEditor({
         async (draftName?: string, sourceRevisionId?: number) => {
             if (!canEditInProject) return;
             await runWorkflowAction(async () => {
-                await window.axios.post(`/api/v1/workflows/${workflow.id}/revisions`, {
+                await processAtlasApi.workflows.createRevision(workflow.id, {
                     draft_name: draftName || undefined,
                     source_revision_id: sourceRevisionId,
                 });
@@ -211,9 +213,7 @@ export function useWorkflowEditor({
         async (force = false) => {
             if (!latestRevision || !canPublishWorkflows) return;
             await runWorkflowAction(async () => {
-                await window.axios.post(`/api/v1/workflow-revisions/${latestRevision.id}/publish`, {
-                    force,
-                });
+                await processAtlasApi.revisions.publish(latestRevision.id, force);
             }, 'The current revision was published.');
         },
         [latestRevision, canPublishWorkflows, runWorkflowAction]
@@ -223,7 +223,7 @@ export function useWorkflowEditor({
         async (revision: WorkflowRevisionSummary) => {
             await runWorkflowAction(
                 async () => {
-                    await window.axios.delete(`/api/v1/workflow-revisions/${revision.id}`);
+                    await processAtlasApi.revisions.delete(revision.id);
                 },
                 revision.draft_name ?? `rev. ${revision.revision_number} was deleted.`
             );
@@ -374,10 +374,7 @@ export function useWorkflowEditor({
         async (name: string) => {
             if (!latestRevision || name === (latestRevision.draft_name ?? '')) return;
             try {
-                await window.axios.patch(
-                    `/api/v1/workflow-revisions/${latestRevision.id}/draft-name`,
-                    { draft_name: name }
-                );
+                await processAtlasApi.revisions.saveDraftName(latestRevision.id, name);
                 router.reload({ only: ['workflow'] });
             } catch {
                 setEditingDraftName(latestRevision.draft_name ?? '');

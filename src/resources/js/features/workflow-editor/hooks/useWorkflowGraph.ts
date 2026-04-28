@@ -12,20 +12,8 @@ import {
     useNodesState,
 } from '@xyflow/react';
 import type { WorkflowNodeData, WorkflowNodeKind, GraphState } from '../types';
-import { buildInitialNodes } from '../lib/utils';
-
-const conditionOutputHandles = ['out-1', 'out-2', 'out-3', 'out-4', 'out-5'];
-
-function isConditionNodeKind(value: string | undefined): boolean {
-    return value === 'condition' || value === 'if';
-}
-
-function conditionOutputLabel(sourceHandle?: string | null): string {
-    const handleNumber = Number(sourceHandle?.replace('out-', ''));
-    return Number.isInteger(handleNumber) && handleNumber >= 1 && handleNumber <= 5
-        ? `Output ${handleNumber}`
-        : 'Output';
-}
+import { buildInitialNodes, conditionOutputLabel, isConditionNodeKind } from '../lib/utils';
+import { processAtlasApi } from '@/shared/api/processAtlasApi';
 
 interface UseWorkflowGraphOptions {
     initialNodes: Node[];
@@ -261,17 +249,14 @@ export function useWorkflowGraph({
             );
 
             try {
-                const response = await window.axios.patch(
-                    `/api/v1/workflow-revisions/${latestRevisionId}/graph`,
-                    {
-                        graph_json: {
-                            nodes,
-                            edges,
-                        },
-                        lock_version: lockVersion,
-                        source,
-                    }
-                );
+                const response = await processAtlasApi.revisions.saveGraph(latestRevisionId, {
+                    graph_json: {
+                        nodes,
+                        edges,
+                    },
+                    lock_version: lockVersion,
+                    source,
+                });
 
                 setLockVersion(response.data.data.lock_version);
                 markGraphSaved(
@@ -364,4 +349,4 @@ export function useWorkflowGraph({
     };
 }
 
-export { conditionOutputHandles, isConditionNodeKind, conditionOutputLabel };
+export { isConditionNodeKind, conditionOutputLabel };
