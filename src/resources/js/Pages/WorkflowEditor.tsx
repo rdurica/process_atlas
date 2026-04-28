@@ -123,6 +123,48 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
         }
     }, [isContextMenuOpen, closeContextMenu]);
 
+    // Flush autosave on page hide / before unload
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (editor.graphState === 'dirty') {
+                e.preventDefault();
+                // Modern browsers ignore the return value but still show a generic dialog
+                e.returnValue = '';
+            }
+        };
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'hidden' && editor.graphState === 'dirty') {
+                const url = editor.latestRevision
+                    ? `/api/v1/workflow-revisions/${editor.latestRevision.id}/graph`
+                    : null;
+                if (url) {
+                    void fetch(url, {
+                        method: 'PATCH',
+                        keepalive: true,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: JSON.stringify({
+                            graph_json: { nodes: editor.nodes, edges: editor.edges },
+                            lock_version: editor.lockVersion,
+                            source: 'autosave',
+                        }),
+                    });
+                }
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [editor]);
+
     return (
         <div className="workflow-fullscreen">
             <Head title={`${workflow.name} Editor`} />

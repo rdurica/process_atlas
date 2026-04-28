@@ -418,7 +418,8 @@ export function useWorkflowEditor({
             await saveGraph('autosave');
         },
         dependencies: [nodes, edges],
-        delay: 2000,
+        delay: 5000,
+        minInterval: 15000,
         enabled: canEditWorkflows && graphState === 'dirty',
     });
 
