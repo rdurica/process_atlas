@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     addEdge,
     Connection,
@@ -12,6 +12,7 @@ import {
     useNodesState,
 } from '@xyflow/react';
 import type { WorkflowNodeData, WorkflowNodeKind, GraphState } from '../types';
+import { buildInitialNodes } from '../lib/utils';
 
 const conditionOutputHandles = ['out-1', 'out-2', 'out-3', 'out-4', 'out-5'];
 
@@ -37,22 +38,33 @@ interface UseWorkflowGraphOptions {
 interface UseWorkflowGraphReturn {
     nodes: Node[];
     edges: Edge[];
+    setNodes: React.Dispatch<React.SetStateAction<Node[]>>;
+    setEdges: React.Dispatch<React.SetStateAction<Edge[]>>;
     onNodesChange: OnNodesChange<Node>;
     onEdgesChange: OnEdgesChange<Edge>;
     onConnect: OnConnect;
-    addNode: (nodeKind: Exclude<WorkflowNodeKind, 'screen' | 'if'>) => void;
-    addScreenNode: () => void;
+    addNode: (
+        nodeKind: Exclude<WorkflowNodeKind, 'screen' | 'if'>,
+        position?: { x: number; y: number }
+    ) => string;
+    addScreenNode: (position?: { x: number; y: number }) => string;
     removeNode: (nodeId: string) => void;
     updateNodeData: (nodeId: string, patch: Partial<WorkflowNodeData>) => void;
     updateEdgeLabel: (edgeId: string, label: string | undefined) => void;
     removeEdge: (edgeId: string) => void;
-    saveGraph: () => Promise<void>;
+    saveGraph: (source?: 'ui' | 'autosave') => Promise<void>;
     graphState: GraphState;
     graphMessage: string;
     lockVersion: number;
     setGraphState: (state: GraphState) => void;
     setGraphMessage: (message: string) => void;
     markGraphSaved: (message: string) => void;
+    initializeGraph: (options: {
+        nodes?: Node[];
+        edges?: Edge[];
+        screens?: import('@/types/processAtlas').Screen[];
+        lockVersion?: number;
+    }) => void;
 }
 
 export function useWorkflowGraph({
@@ -72,11 +84,22 @@ export function useWorkflowGraph({
     const [graphState, setGraphState] = useState<GraphState>('saved');
     const [graphMessage, setGraphMessage] = useState<string>('No pending canvas changes.');
     const [lockVersion, setLockVersion] = useState(initialLockVersion);
+    const graphInitialized = useRef(false);
 
     const markGraphSaved = useCallback((message: string) => {
         setGraphState('saved');
         setGraphMessage(message);
     }, []);
+
+    useEffect(() => {
+        if (!graphInitialized.current) {
+            graphInitialized.current = true;
+            return;
+        }
+
+        setGraphState('dirty');
+        setGraphMessage('Canvas changes are waiting to be saved.');
+    }, [edges, nodes]);
 
     const onConnect: OnConnect = useCallback(
         (connection: Connection) => {
@@ -107,7 +130,10 @@ export function useWorkflowGraph({
     );
 
     const addNode = useCallback(
-        (nodeKind: Exclude<WorkflowNodeKind, 'screen' | 'if'>) => {
+        (
+            nodeKind: Exclude<WorkflowNodeKind, 'screen' | 'if'>,
+            position?: { x: number; y: number }
+        ) => {
             const nextId = `${nodeKind}-${Date.now()}`;
             const labelIndex =
                 nodes.filter(
@@ -141,36 +167,42 @@ export function useWorkflowGraph({
                 {
                     id: nextId,
                     type: nodeKind,
-                    position: {
+                    position: position ?? {
                         x: Math.max(160, currentNodes.length * 110),
                         y: Math.max(160, currentNodes.length * 90),
                     },
                     data,
                 },
             ]);
+
+            return nextId;
         },
         [nodes, setNodes]
     );
 
-    const addScreenNode = useCallback(() => {
-        const nextId = `screen-${Date.now()}`;
-        setNodes(currentNodes => [
-            ...currentNodes,
-            {
-                id: nextId,
-                position: {
-                    x: Math.max(120, currentNodes.length * 110),
-                    y: Math.max(120, currentNodes.length * 90),
+    const addScreenNode = useCallback(
+        (position?: { x: number; y: number }) => {
+            const nextId = `screen-${Date.now()}`;
+            setNodes(currentNodes => [
+                ...currentNodes,
+                {
+                    id: nextId,
+                    position: position ?? {
+                        x: Math.max(120, currentNodes.length * 110),
+                        y: Math.max(120, currentNodes.length * 90),
+                    },
+                    type: 'screen',
+                    data: {
+                        label: `Screen ${currentNodes.length + 1}`,
+                        subtitle: '',
+                        security_rule: null,
+                    },
                 },
-                type: 'screen',
-                data: {
-                    label: `Screen ${currentNodes.length + 1}`,
-                    subtitle: '',
-                    security_rule: null,
-                },
-            },
-        ]);
-    }, [setNodes]);
+            ]);
+            return nextId;
+        },
+        [setNodes]
+    );
 
     const removeNode = useCallback(
         (nodeId: string) => {
@@ -219,47 +251,99 @@ export function useWorkflowGraph({
         [setEdges]
     );
 
-    const saveGraph = useCallback(async () => {
-        if (!latestRevisionId || !canEdit) return;
+    const saveGraph = useCallback(
+        async (source: 'ui' | 'autosave' = 'ui') => {
+            if (!latestRevisionId || !canEdit) return;
 
-        setGraphState('saving');
-        setGraphMessage('Saving current canvas state.');
-
-        try {
-            const response = await window.axios.patch(
-                `/api/v1/workflow-revisions/${latestRevisionId}/graph`,
-                {
-                    graph_json: {
-                        nodes,
-                        edges,
-                    },
-                    lock_version: lockVersion,
-                }
+            setGraphState('saving');
+            setGraphMessage(
+                source === 'autosave' ? 'Autosaving canvas…' : 'Saving current canvas state.'
             );
 
-            setLockVersion(response.data.data.lock_version);
-            markGraphSaved('Canvas state saved to the current draft.');
-        } catch (error) {
-            const err = error as { response?: { status?: number; data?: { message?: string } } };
-            const message =
-                err.response?.status === 409
-                    ? 'A revision conflict occurred. Refresh and retry.'
-                    : 'Graph save failed. Refresh and retry.';
+            try {
+                const response = await window.axios.patch(
+                    `/api/v1/workflow-revisions/${latestRevisionId}/graph`,
+                    {
+                        graph_json: {
+                            nodes,
+                            edges,
+                        },
+                        lock_version: lockVersion,
+                        source,
+                    }
+                );
 
-            if (err.response?.status === 409) {
-                setGraphState('conflict');
-            } else {
-                setGraphState('error');
+                setLockVersion(response.data.data.lock_version);
+                markGraphSaved(
+                    source === 'autosave'
+                        ? 'Canvas autosaved.'
+                        : 'Canvas state saved to the current draft.'
+                );
+            } catch (error) {
+                const err = error as {
+                    response?: { status?: number; data?: { message?: string } };
+                };
+                const message =
+                    err.response?.status === 409
+                        ? 'A revision conflict occurred. Refresh and retry.'
+                        : 'Graph save failed. Refresh and retry.';
+
+                if (err.response?.status === 409) {
+                    setGraphState('conflict');
+                } else {
+                    setGraphState('error');
+                }
+
+                setGraphMessage(message);
+                throw error;
             }
+        },
+        [latestRevisionId, canEdit, nodes, edges, lockVersion, markGraphSaved]
+    );
 
-            setGraphMessage(message);
-            throw new Error(message);
-        }
-    }, [latestRevisionId, canEdit, nodes, edges, lockVersion, markGraphSaved]);
+    const initializeGraph = useCallback(
+        ({
+            nodes: newNodes,
+            edges: newEdges,
+            screens,
+            lockVersion: newLockVersion,
+        }: {
+            nodes?: Node[];
+            edges?: Edge[];
+            screens?: import('@/types/processAtlas').Screen[];
+            lockVersion?: number;
+        }) => {
+            graphInitialized.current = false;
+            if (newNodes !== undefined) {
+                setNodes(buildInitialNodes(newNodes, screens));
+            }
+            if (newEdges !== undefined) {
+                setEdges(
+                    newEdges.map(edge => ({
+                        ...edge,
+                        markerEnd: {
+                            type: MarkerType.ArrowClosed,
+                            color: '#0f5ef7',
+                            width: 10,
+                            height: 10,
+                        },
+                    }))
+                );
+            }
+            if (newLockVersion !== undefined) {
+                setLockVersion(newLockVersion);
+            }
+            setGraphState('saved');
+            setGraphMessage('No pending canvas changes.');
+        },
+        [setNodes, setEdges]
+    );
 
     return {
         nodes,
         edges,
+        setNodes,
+        setEdges,
         onNodesChange,
         onEdgesChange,
         onConnect,
@@ -276,6 +360,7 @@ export function useWorkflowGraph({
         setGraphState,
         setGraphMessage,
         markGraphSaved,
+        initializeGraph,
     };
 }
 

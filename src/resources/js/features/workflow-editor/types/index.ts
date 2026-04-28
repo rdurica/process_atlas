@@ -56,18 +56,22 @@ export interface WorkflowEditorProps {
     currentUserRole: 'process_owner' | 'editor' | 'viewer' | null;
 }
 
+import type React from 'react';
+import type { Node, Edge, OnConnect, OnNodesChange, OnEdgesChange, NodeProps } from '@xyflow/react';
+
 export interface FlowCanvasProps {
-    nodes: import('@xyflow/react').Node[];
-    edges: import('@xyflow/react').Edge[];
-    nodeTypes: Record<string, React.ComponentType<import('@xyflow/react').NodeProps>>;
-    onNodesChange: (...args: unknown[]) => void;
-    onEdgesChange: (...args: unknown[]) => void;
-    onConnect: import('@xyflow/react').OnConnect;
-    onNodeClick: (event: React.MouseEvent, node: import('@xyflow/react').Node) => void;
-    onNodeDoubleClick: (event: React.MouseEvent, node: import('@xyflow/react').Node) => void;
-    onEdgeClick: (event: React.MouseEvent, edge: import('@xyflow/react').Edge) => void;
-    onEdgeDoubleClick: (event: React.MouseEvent, edge: import('@xyflow/react').Edge) => void;
+    nodes: Node[];
+    edges: Edge[];
+    nodeTypes: Record<string, React.ComponentType<NodeProps>>;
+    onNodesChange: OnNodesChange<Node>;
+    onEdgesChange: OnEdgesChange<Edge>;
+    onConnect: OnConnect;
+    onNodeClick: (event: React.MouseEvent, node: Node) => void;
+    onNodeDoubleClick: (event: React.MouseEvent, node: Node) => void;
+    onEdgeClick: (event: React.MouseEvent, edge: Edge) => void;
+    onEdgeDoubleClick: (event: React.MouseEvent, edge: Edge) => void;
     onPaneClick: () => void;
+    onPaneContextMenu?: React.MouseEventHandler<HTMLDivElement>;
     onDropNode: (kind: WorkflowNodeKind, position: { x: number; y: number }) => void;
     editable: boolean;
 }

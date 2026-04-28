@@ -15,6 +15,7 @@ export default function FlowCanvas({
     onEdgeClick,
     onEdgeDoubleClick,
     onPaneClick,
+    onPaneContextMenu,
     onDropNode,
     editable,
 }: FlowCanvasProps): ReactElement {
@@ -49,6 +50,8 @@ export default function FlowCanvas({
             onEdgeClick={onEdgeClick}
             onEdgeDoubleClick={editable ? onEdgeDoubleClick : undefined}
             onPaneClick={onPaneClick}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            onPaneContextMenu={editable ? (onPaneContextMenu as any) : undefined}
             onDragOver={editable ? handleDragOver : undefined}
             onDrop={editable ? handleDrop : undefined}
             nodesDraggable={editable}
