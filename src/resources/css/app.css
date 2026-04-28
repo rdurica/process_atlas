@@ -214,9 +214,13 @@ select {
     }
 
     .btn-danger {
-        border: 1px solid rgba(248, 113, 113, 0.22);
-        background: rgba(255, 236, 233, 0.95);
-        color: #b42318;
+        background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+        color: white;
+        box-shadow: 0 8px 20px rgba(220, 38, 38, 0.28);
+    }
+
+    .btn-danger:hover {
+        box-shadow: 0 12px 24px rgba(220, 38, 38, 0.34);
     }
 
     .btn-primary:disabled,

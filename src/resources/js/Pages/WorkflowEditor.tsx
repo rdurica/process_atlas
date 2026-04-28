@@ -2693,11 +2693,27 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                     setPublishConfirmInput('');
                 }}
             >
-                <div className="border border-red-200 bg-red-50 p-6">
-                    <h3 className="text-lg font-semibold text-red-800">
+                <div className="p-6">
+                    <div className="flex justify-center">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={1.5}
+                            stroke="currentColor"
+                            className="h-14 w-14 text-red-600"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+                            />
+                        </svg>
+                    </div>
+                    <h3 className="mt-4 text-center text-lg font-semibold text-red-600">
                         Publish draft from a different revision?
                     </h3>
-                    <p className="mt-2 text-sm text-red-700">
+                    <p className="mt-3 text-sm text-slate-600">
                         This draft was not created from the currently published revision. Publishing
                         it will overwrite the live version with this draft. Please confirm that you
                         are doing this deliberately.
@@ -2705,7 +2721,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                     <div className="mt-4">
                         <label
                             htmlFor="publish-confirm-input"
-                            className="block text-sm font-medium text-red-800"
+                            className="block text-sm font-medium text-slate-700"
                         >
                             Type &quot;I agree&quot; to confirm
                         </label>
@@ -2714,7 +2730,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                             type="text"
                             value={publishConfirmInput}
                             onChange={e => setPublishConfirmInput(e.target.value)}
-                            className="mt-1 block w-full rounded-md border-red-300 shadow-sm focus:border-red-500 focus:ring-red-500 sm:text-sm"
+                            className="input-shell mt-2"
                             placeholder="I agree"
                             autoFocus
                         />
