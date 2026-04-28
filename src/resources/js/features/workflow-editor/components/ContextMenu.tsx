@@ -30,6 +30,7 @@ export default function ContextMenu({
             className="context-menu"
             style={{ left: position.x, top: position.y }}
             onClick={e => e.stopPropagation()}
+            data-testid="workflow-context-menu"
         >
             <div className="context-menu-section">
                 <div className="context-menu-header">Add Element</div>
@@ -38,6 +39,7 @@ export default function ContextMenu({
                         key={kind}
                         className="context-menu-item"
                         onClick={() => handleAddElement(kind)}
+                        data-testid={`add-${kind}-node`}
                     >
                         {label}
                     </div>

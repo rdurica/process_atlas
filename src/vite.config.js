@@ -27,7 +27,7 @@ export default defineConfig({
         port: 5173,
         origin: 'https://localhost:5173',
         cors: {
-            origin: 'https://localhost',
+            origin: ['https://localhost', 'https://php-fpm'],
             credentials: true,
         },
     },

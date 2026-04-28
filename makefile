@@ -55,3 +55,8 @@ test: ## Run Pest PHP tests
 
 phpstan: ## Run PHPStan static analysis
 	@$(PHP_CONT) composer phpstan
+
+e2e: ## Run Playwright E2E tests
+	@$(DOCKER_COMP) up --detach
+	@$(PHP_CONT) php artisan migrate --seed
+	@$(NODE_CONT) npm run test:e2e

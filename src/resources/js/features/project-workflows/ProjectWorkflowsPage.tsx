@@ -40,6 +40,7 @@ export default function ProjectWorkflowsPage(props: ProjectWorkflowsProps) {
                                 type="button"
                                 onClick={() => page.setWorkflowModalOpen(true)}
                                 className="btn-primary px-4 py-2.5 text-sm"
+                                data-testid="create-workflow-open"
                             >
                                 New Workflow
                             </button>
@@ -188,6 +189,7 @@ export default function ProjectWorkflowsPage(props: ProjectWorkflowsProps) {
                                                                 workflow: workflow.id,
                                                             })}
                                                             className="btn-secondary px-3 py-1.5 text-xs"
+                                                            data-testid="open-workflow-editor"
                                                         >
                                                             Open Editor
                                                         </Link>
@@ -256,6 +258,7 @@ export default function ProjectWorkflowsPage(props: ProjectWorkflowsProps) {
                             required
                             disabled={page.pendingWorkflow}
                             className="input-shell mt-2"
+                            data-testid="workflow-name-input"
                         />
                     </label>
 
@@ -277,6 +280,7 @@ export default function ProjectWorkflowsPage(props: ProjectWorkflowsProps) {
                             type="submit"
                             disabled={page.pendingWorkflow}
                             className="btn-primary px-4 py-3 text-sm"
+                            data-testid="create-workflow-submit"
                         >
                             Create
                         </button>

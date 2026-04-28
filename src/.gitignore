@@ -15,9 +15,11 @@
 /auth.json
 /bootstrap/ssr
 /node_modules
+/playwright-report
 /public/build
 /public/hot
 /public/storage
+/test-results
 /storage/*.key
 /storage/pail
 /vendor

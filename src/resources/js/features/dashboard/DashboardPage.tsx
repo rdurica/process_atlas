@@ -26,6 +26,7 @@ export default function DashboardPage(props: DashboardProps) {
                                 type="button"
                                 onClick={() => dashboard.setProjectModalOpen(true)}
                                 className="btn-secondary px-4 py-2.5 text-sm"
+                                data-testid="create-project-open"
                             >
                                 New Project
                             </button>
@@ -207,6 +208,7 @@ export default function DashboardPage(props: DashboardProps) {
                             required
                             disabled={!dashboard.canCreateProjects || dashboard.pendingProject}
                             className="input-shell mt-2"
+                            data-testid="project-name-input"
                         />
                     </label>
 
@@ -217,6 +219,7 @@ export default function DashboardPage(props: DashboardProps) {
                             onChange={event => dashboard.setProjectDescription(event.target.value)}
                             disabled={!dashboard.canCreateProjects || dashboard.pendingProject}
                             className="textarea-shell mt-2"
+                            data-testid="project-description-input"
                         />
                     </label>
 
@@ -238,6 +241,7 @@ export default function DashboardPage(props: DashboardProps) {
                             type="submit"
                             disabled={!dashboard.canCreateProjects || dashboard.pendingProject}
                             className="btn-primary px-4 py-3 text-sm"
+                            data-testid="create-project-submit"
                         >
                             Create Project
                         </button>

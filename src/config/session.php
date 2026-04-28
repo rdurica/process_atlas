@@ -2,6 +2,13 @@
 
 use Illuminate\Support\Str;
 
+$sessionDomain = env('SESSION_DOMAIN');
+
+if ($sessionDomain === 'localhost')
+{
+    $sessionDomain = null;
+}
+
 return [
 
     /*
@@ -156,7 +163,7 @@ return [
     |
     */
 
-    'domain' => env('SESSION_DOMAIN'),
+    'domain' => $sessionDomain,
 
     /*
     |--------------------------------------------------------------------------

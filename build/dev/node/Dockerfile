@@ -6,7 +6,8 @@ WORKDIR /app/src
 COPY ./src/package*.json ./
 
 RUN if [ -f package.json ]; then \
-      npm install; \
+      npm install && \
+      npx playwright install --with-deps chromium; \
     else \
       echo "No package.json found, skipping npm install"; \
     fi

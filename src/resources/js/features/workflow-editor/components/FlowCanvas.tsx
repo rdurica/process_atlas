@@ -45,35 +45,37 @@ export default function FlowCanvas({
     );
 
     return (
-        <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            nodeTypes={nodeTypes}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={editable ? onConnect : undefined}
-            onNodeClick={onNodeClick}
-            onNodeDoubleClick={editable ? onNodeDoubleClick : undefined}
-            onEdgeClick={onEdgeClick}
-            onEdgeDoubleClick={editable ? onEdgeDoubleClick : undefined}
-            onPaneClick={onPaneClick}
-            onPaneContextMenu={editable ? handlePaneContextMenu : undefined}
-            onDragOver={editable ? handleDragOver : undefined}
-            onDrop={editable ? handleDrop : undefined}
-            nodesDraggable={editable}
-            nodesConnectable={editable}
-            elementsSelectable={editable}
-            fitView
-        >
-            <Background gap={28} size={1} color="#7aa7f7" />
-            <MiniMap
-                pannable
-                zoomable
-                position="bottom-left"
-                nodeStrokeColor="#0f5ef7"
-                nodeColor="#d6e7ff"
-            />
-            <Controls position="bottom-left" style={{ left: 180 }} />
-        </ReactFlow>
+        <div className="h-full w-full" data-testid="workflow-canvas">
+            <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                nodeTypes={nodeTypes}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onConnect={editable ? onConnect : undefined}
+                onNodeClick={onNodeClick}
+                onNodeDoubleClick={editable ? onNodeDoubleClick : undefined}
+                onEdgeClick={onEdgeClick}
+                onEdgeDoubleClick={editable ? onEdgeDoubleClick : undefined}
+                onPaneClick={onPaneClick}
+                onPaneContextMenu={editable ? handlePaneContextMenu : undefined}
+                onDragOver={editable ? handleDragOver : undefined}
+                onDrop={editable ? handleDrop : undefined}
+                nodesDraggable={editable}
+                nodesConnectable={editable}
+                elementsSelectable={editable}
+                fitView
+            >
+                <Background gap={28} size={1} color="#7aa7f7" />
+                <MiniMap
+                    pannable
+                    zoomable
+                    position="bottom-left"
+                    nodeStrokeColor="#0f5ef7"
+                    nodeColor="#d6e7ff"
+                />
+                <Controls position="bottom-left" style={{ left: 180 }} />
+            </ReactFlow>
+        </div>
     );
 }

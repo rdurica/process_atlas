@@ -47,7 +47,9 @@ export default function WorkflowTopBar({
                 </h1>
                 <StatusBadge tone={workflowTone(workflow.status)}>{workflow.status}</StatusBadge>
                 {isArchived && <StatusBadge tone="neutral">Archived</StatusBadge>}
-                <StatusBadge tone={graphTone(graphState)}>{graphLabel(graphState)}</StatusBadge>
+                <span data-testid="graph-save-status">
+                    <StatusBadge tone={graphTone(graphState)}>{graphLabel(graphState)}</StatusBadge>
+                </span>
             </div>
 
             <div className="workflow-actions">
@@ -75,6 +77,7 @@ export default function WorkflowTopBar({
                     disabled={!canEditWorkflows || graphState === 'saving'}
                     className="btn-primary workflow-action-button"
                     title="Save (Ctrl/Cmd+S)"
+                    data-testid="save-workflow-graph"
                 >
                     Save
                 </button>
