@@ -4,7 +4,7 @@ import type { WorkflowNodeKind, InspectorTab } from '../types';
 function isWorkflowNodeKind(value: string | undefined): value is WorkflowNodeKind {
     return (
         value === 'screen' ||
-        value === 'flash' ||
+        value === 'notification' ||
         value === 'condition' ||
         value === 'if' ||
         value === 'action' ||

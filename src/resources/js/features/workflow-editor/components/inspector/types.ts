@@ -2,7 +2,7 @@ import type { Edge, Node } from '@xyflow/react';
 import type { Screen, ScreenCustomField } from '@/types/processAtlas';
 import type {
     FieldEditorMode,
-    FlashType,
+    NotificationSeverity,
     InspectorTab,
     WorkflowNodeData,
     WorkflowNodeKind,
@@ -73,4 +73,4 @@ export interface ScreenInspectorProps {
     setActionNotice: (notice: string | null) => void;
 }
 
-export type { FlashType, ScreenCustomField };
+export type { NotificationSeverity, ScreenCustomField };

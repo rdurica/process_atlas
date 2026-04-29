@@ -135,10 +135,10 @@ export function useWorkflowGraph({
                 ).length + 1;
 
             const data =
-                nodeKind === 'flash'
+                nodeKind === 'notification'
                     ? {
-                          type: 'info' as const,
-                          text: `Flash ${labelIndex}`,
+                          severity: 'info' as const,
+                          text: `Notification ${labelIndex}`,
                           description: '',
                       }
                     : nodeKind === 'condition'

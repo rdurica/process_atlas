@@ -9,7 +9,7 @@ interface ContextMenuProps {
 
 const addElementKinds: [WorkflowNodeKind, string][] = [
     ['screen', 'Screen'],
-    ['flash', 'Flash'],
+    ['notification', 'Notification'],
     ['condition', 'Condition'],
     ['action', 'Action'],
     ['end', 'End'],

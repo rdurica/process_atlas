@@ -1,10 +1,17 @@
-export type WorkflowNodeKind = 'screen' | 'flash' | 'condition' | 'if' | 'action' | 'start' | 'end';
+export type WorkflowNodeKind =
+    | 'screen'
+    | 'notification'
+    | 'condition'
+    | 'if'
+    | 'action'
+    | 'start'
+    | 'end';
 
 export type InspectorTab = 'screen' | 'fields' | 'general' | 'security';
 
 export type GraphState = 'saved' | 'dirty' | 'saving' | 'conflict' | 'error';
 
-export type FlashType = 'error' | 'warning' | 'info' | 'success';
+export type NotificationSeverity = 'error' | 'warning' | 'info' | 'success';
 
 export type FieldEditorMode = 'hidden' | 'create' | 'edit';
 
@@ -15,8 +22,8 @@ export type ScreenNodeData = Record<string, unknown> & {
     security_rule?: string | null;
 };
 
-export type FlashNodeData = Record<string, unknown> & {
-    type?: FlashType;
+export type NotificationNodeData = Record<string, unknown> & {
+    severity?: NotificationSeverity;
     text?: string;
     description?: string;
 };
@@ -44,7 +51,7 @@ export type EndNodeData = Record<string, unknown> & {
 
 export type WorkflowNodeData =
     | ScreenNodeData
-    | FlashNodeData
+    | NotificationNodeData
     | ConditionNodeData
     | ActionNodeData
     | StartNodeData

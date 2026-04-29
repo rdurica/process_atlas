@@ -1,5 +1,5 @@
 import { isConditionNodeKind } from '../../lib/utils';
-import type { FlashType, NodeInspectorProps } from './types';
+import type { NotificationSeverity, NodeInspectorProps } from './types';
 
 export default function NodeInspector({
     selectedNode,
@@ -13,27 +13,34 @@ export default function NodeInspector({
 }: NodeInspectorProps) {
     return (
         <div className="workflow-inline-form mt-5">
-            {selectedNodeKind === 'flash' && (
+            {selectedNodeKind === 'notification' && (
                 <>
                     <div
-                        className={`workflow-text-row workflow-flash-row-${
-                            (selectedNode.data.type as FlashType | undefined) ?? 'info'
+                        className={`workflow-text-row workflow-notification-row-${
+                            (selectedNode.data.severity as NotificationSeverity | undefined) ??
+                            'info'
                         }`}
                     >
                         <p className="workflow-text-row-title">
-                            {(selectedNode.data.text as string | undefined) ?? 'Flash'}
+                            {(selectedNode.data.text as string | undefined) ?? 'Notification'}
                         </p>
                         <p className="workflow-text-row-meta">
-                            {(selectedNode.data.type as FlashType | undefined) ?? 'info'}
+                            {(selectedNode.data.severity as NotificationSeverity | undefined) ??
+                                'info'}
                         </p>
                     </div>
 
                     <label className="block text-sm font-medium text-slate-700">
                         Severity
                         <select
-                            value={(selectedNode.data.type as FlashType | undefined) ?? 'info'}
+                            value={
+                                (selectedNode.data.severity as NotificationSeverity | undefined) ??
+                                'info'
+                            }
                             onChange={event =>
-                                updateNodeData({ type: event.target.value as FlashType })
+                                updateNodeData({
+                                    severity: event.target.value as NotificationSeverity,
+                                })
                             }
                             disabled={!canEditWorkflows}
                             className="select-shell mt-2"

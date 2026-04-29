@@ -6,7 +6,7 @@ export const conditionOutputHandles = ['out-1', 'out-2', 'out-3', 'out-4', 'out-
 
 const NODE_KIND_PREFIX: Record<WorkflowNodeKind, string> = {
     screen: 'SCR',
-    flash: 'FLA',
+    notification: 'NOT',
     condition: 'CON',
     if: 'CON',
     action: 'ACT',
@@ -24,8 +24,8 @@ export function nodeDisplayLabel(node: Node): string {
     switch (node.type) {
         case 'screen':
             return (data.label as string) || 'Untitled Screen';
-        case 'flash':
-            return (data.text as string) || 'Flash';
+        case 'notification':
+            return (data.text as string) || 'Notification';
         case 'condition':
         case 'if': {
             const condition = (data.condition as string) || '';
@@ -115,7 +115,7 @@ export function workflowTone(status: 'draft' | 'published') {
 export function isWorkflowNodeKind(value: string | undefined): value is WorkflowNodeKind {
     return (
         value === 'screen' ||
-        value === 'flash' ||
+        value === 'notification' ||
         value === 'condition' ||
         value === 'if' ||
         value === 'action' ||
