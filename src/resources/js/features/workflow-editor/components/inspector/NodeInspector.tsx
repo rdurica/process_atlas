@@ -1,3 +1,4 @@
+import { Link } from '@inertiajs/react';
 import { isConditionNodeKind } from '../../lib/utils';
 import type { NotificationSeverity, NodeInspectorProps } from './types';
 
@@ -209,6 +210,17 @@ export default function NodeInspector({
                                 ))}
                         </select>
                     </label>
+
+                    {(selectedNode.data.linked_workflow_id as number | null | undefined) && (
+                        <Link
+                            href={route('workflows.editor', {
+                                workflow: selectedNode.data.linked_workflow_id as number,
+                            })}
+                            className="mt-1 inline-flex items-center text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                        >
+                            Open workflow →
+                        </Link>
+                    )}
                 </>
             )}
 
@@ -262,6 +274,17 @@ export default function NodeInspector({
                                 ))}
                         </select>
                     </label>
+
+                    {(selectedNode.data.linked_workflow_id as number | null | undefined) && (
+                        <Link
+                            href={route('workflows.editor', {
+                                workflow: selectedNode.data.linked_workflow_id as number,
+                            })}
+                            className="mt-1 inline-flex items-center text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                        >
+                            Open sub-process →
+                        </Link>
+                    )}
                 </>
             )}
 
