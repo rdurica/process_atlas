@@ -247,6 +247,17 @@ export function useWorkflowEditor({
     }, [latestRevision?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
+        if (!previewRevision) return;
+        initializeGraph({
+            nodes: previewRevision.graph_json?.nodes,
+            edges: previewRevision.graph_json?.edges,
+            screens: previewRevision.screens ?? [],
+            lockVersion: previewRevision.lock_version ?? 0,
+        });
+        setScreens(previewRevision.screens ?? []);
+    }, [previewRevision?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    useEffect(() => {
         setEdgeDraftLabel(String(selectedEdge?.label ?? ''));
     }, [selectedEdge]);
 
