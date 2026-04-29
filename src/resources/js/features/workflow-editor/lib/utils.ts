@@ -4,6 +4,44 @@ import type { GraphState, InspectorTab, WorkflowNodeKind } from '../types';
 
 export const conditionOutputHandles = ['out-1', 'out-2', 'out-3', 'out-4', 'out-5'];
 
+const NODE_KIND_PREFIX: Record<WorkflowNodeKind, string> = {
+    screen: 'SCR',
+    flash: 'FLA',
+    condition: 'CON',
+    if: 'CON',
+    action: 'ACT',
+    start: 'STR',
+    end: 'END',
+};
+
+export function generateNodeId(kind: WorkflowNodeKind): string {
+    return `${NODE_KIND_PREFIX[kind]}-${crypto.randomUUID()}`;
+}
+
+export function nodeDisplayLabel(node: Node): string {
+    const data = node.data as Record<string, unknown>;
+
+    switch (node.type) {
+        case 'screen':
+            return (data.label as string) || 'Untitled Screen';
+        case 'flash':
+            return (data.text as string) || 'Flash';
+        case 'condition':
+        case 'if': {
+            const condition = (data.condition as string) || '';
+            return condition.length > 30 ? condition.slice(0, 30) + '…' : condition || 'Condition';
+        }
+        case 'action':
+            return (data.title as string) || 'Untitled Action';
+        case 'start':
+            return (data.label as string) || 'Start';
+        case 'end':
+            return (data.label as string) || 'End';
+        default:
+            return node.id;
+    }
+}
+
 export function buildInitialNodes(nodes: Node[] | undefined, screens: Screen[] = []): Node[] {
     const screenByNodeId = new Map(screens.map(screen => [screen.node_id, screen]));
 

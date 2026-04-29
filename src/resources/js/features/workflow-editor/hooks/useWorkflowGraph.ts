@@ -12,7 +12,12 @@ import {
     useNodesState,
 } from '@xyflow/react';
 import type { WorkflowNodeData, WorkflowNodeKind, GraphState } from '../types';
-import { buildInitialNodes, conditionOutputLabel, isConditionNodeKind } from '../lib/utils';
+import {
+    buildInitialNodes,
+    conditionOutputLabel,
+    generateNodeId,
+    isConditionNodeKind,
+} from '../lib/utils';
 import { processAtlasApi } from '@/shared/api/processAtlasApi';
 
 interface UseWorkflowGraphOptions {
@@ -122,7 +127,7 @@ export function useWorkflowGraph({
             nodeKind: Exclude<WorkflowNodeKind, 'screen' | 'if'>,
             position?: { x: number; y: number }
         ) => {
-            const nextId = `${nodeKind}-${Date.now()}`;
+            const nextId = generateNodeId(nodeKind);
             const labelIndex =
                 nodes.filter(
                     node =>
@@ -170,7 +175,7 @@ export function useWorkflowGraph({
 
     const addScreenNode = useCallback(
         (position?: { x: number; y: number }) => {
-            const nextId = `screen-${Date.now()}`;
+            const nextId = generateNodeId('screen');
             setNodes(currentNodes => [
                 ...currentNodes,
                 {

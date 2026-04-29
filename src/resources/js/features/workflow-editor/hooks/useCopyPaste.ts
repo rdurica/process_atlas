@@ -1,5 +1,7 @@
 import { useCallback, useState } from 'react';
 import type { Node } from '@xyflow/react';
+import { generateNodeId } from '../lib/utils';
+import type { WorkflowNodeKind } from '../types';
 
 const PASTE_OFFSET = 20;
 
@@ -29,8 +31,8 @@ export function useCopyPaste({ setNodes }: UseCopyPasteOptions) {
         const nodesToPaste = copiedNodes.filter(node => node.type !== 'start');
         if (nodesToPaste.length === 0) return [];
 
-        const newNodes: Node[] = nodesToPaste.map((node, index) => {
-            const newId = `${node.type}-${Date.now()}-${index}`;
+        const newNodes: Node[] = nodesToPaste.map((node, _index) => {
+            const newId = generateNodeId((node.type ?? 'action') as WorkflowNodeKind);
             return {
                 ...node,
                 id: newId,
