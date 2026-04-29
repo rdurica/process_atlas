@@ -1,5 +1,5 @@
 import StatusBadge from '@/Components/StatusBadge';
-import { nodeDisplayLabel, workflowNodeKindLabel } from '../lib/utils';
+import { workflowNodeKindLabel } from '../lib/utils';
 import type { InspectorTab, WorkflowNodeData, WorkflowNodeKind } from '../types';
 import type { Edge, Node } from '@xyflow/react';
 import EdgeInspector from './inspector/EdgeInspector';
@@ -70,7 +70,7 @@ export default function InspectorPanel({
                             {selectedEdge
                                 ? 'Connection'
                                 : selectedNode
-                                  ? nodeDisplayLabel(selectedNode)
+                                  ? workflowNodeKindLabel(selectedNodeKind)
                                   : null}
                         </h2>
                     </div>

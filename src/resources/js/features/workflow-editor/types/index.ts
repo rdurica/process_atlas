@@ -4,6 +4,9 @@ export type WorkflowNodeKind =
     | 'condition'
     | 'if'
     | 'action'
+    | 'timer'
+    | 'subprocess'
+    | 'note'
     | 'start'
     | 'end';
 
@@ -38,6 +41,19 @@ export type ActionNodeData = Record<string, unknown> & {
     security_rule?: string | null;
 };
 
+export type TimerNodeData = Record<string, unknown> & {
+    text?: string;
+};
+
+export type SubprocessNodeData = Record<string, unknown> & {
+    linked_workflow_id?: number | null;
+    linked_workflow_name?: string | null;
+};
+
+export type NoteNodeData = Record<string, unknown> & {
+    text?: string;
+};
+
 export type StartNodeData = Record<string, unknown> & {
     label?: string;
     security_rule?: string | null;
@@ -54,6 +70,9 @@ export type WorkflowNodeData =
     | NotificationNodeData
     | ConditionNodeData
     | ActionNodeData
+    | TimerNodeData
+    | SubprocessNodeData
+    | NoteNodeData
     | StartNodeData
     | EndNodeData;
 

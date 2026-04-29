@@ -158,7 +158,7 @@ export function useScreenEditor({
         });
 
         updateNodeData(updatedScreen.node_id, {
-            label: updatedScreen.title || updatedScreen.node_id,
+            label: updatedScreen.title,
             subtitle: updatedScreen.subtitle ?? '',
             image_url: updatedScreen.image_url ?? null,
         });

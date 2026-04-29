@@ -8,6 +8,9 @@ function isWorkflowNodeKind(value: string | undefined): value is WorkflowNodeKin
         value === 'condition' ||
         value === 'if' ||
         value === 'action' ||
+        value === 'timer' ||
+        value === 'subprocess' ||
+        value === 'note' ||
         value === 'start' ||
         value === 'end'
     );
@@ -39,8 +42,9 @@ function inspectorTabsForNodeKind(nodeKind: WorkflowNodeKind): [InspectorTab, st
 }
 
 function workflowNodeKindLabel(value: WorkflowNodeKind): string {
-    if (value === 'if') return 'condition';
-    return value;
+    if (value === 'if') return 'Condition';
+    if (value === 'subprocess') return 'Sub-process';
+    return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 interface UseNodeSelectionOptions {

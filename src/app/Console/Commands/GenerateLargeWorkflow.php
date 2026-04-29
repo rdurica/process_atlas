@@ -71,7 +71,7 @@ class GenerateLargeWorkflow extends Command
         $nodeCount = 1;
         $yBase = 300;
 
-        $nodeTypes = ['screen', 'action', 'notification', 'condition'];
+        $nodeTypes = ['screen', 'action', 'notification', 'condition', 'timer', 'subprocess', 'note'];
         $screenTitles = [
             'Login', 'Dashboard', 'Profile', 'Settings', 'Checkout', 'Payment',
             'Confirmation', 'Review', 'Cart', 'Shipping', 'Billing', 'Summary',
@@ -155,6 +155,43 @@ class GenerateLargeWorkflow extends Command
                             'severity'    => ['info', 'warning', 'success', 'error'][array_rand(['info', 'warning', 'success', 'error'])],
                             'text'        => $notificationTexts[array_rand($notificationTexts)],
                             'description' => 'Notification',
+                        ],
+                        'position' => ['x' => $x, 'y' => $y],
+                    ];
+                    break;
+
+                case 'timer':
+                    $id = $this->nodeId('timer');
+                    $nodes[] = [
+                        'id'   => $id,
+                        'type' => 'timer',
+                        'data' => [
+                            'text' => 'Wait ' . rand(1, 24) . ' hours',
+                        ],
+                        'position' => ['x' => $x, 'y' => $y],
+                    ];
+                    break;
+
+                case 'subprocess':
+                    $id = $this->nodeId('subprocess');
+                    $nodes[] = [
+                        'id'   => $id,
+                        'type' => 'subprocess',
+                        'data' => [
+                            'linked_workflow_id'   => null,
+                            'linked_workflow_name' => null,
+                        ],
+                        'position' => ['x' => $x, 'y' => $y],
+                    ];
+                    break;
+
+                case 'note':
+                    $id = $this->nodeId('note');
+                    $nodes[] = [
+                        'id'   => $id,
+                        'type' => 'note',
+                        'data' => [
+                            'text' => 'Annotation ' . $nodeCount,
                         ],
                         'position' => ['x' => $x, 'y' => $y],
                     ];
@@ -270,6 +307,9 @@ class GenerateLargeWorkflow extends Command
             'condition'    => 'CON',
             'if'           => 'CON',
             'action'       => 'ACT',
+            'timer'        => 'TMR',
+            'subprocess'   => 'SUB',
+            'note'         => 'NTE',
             'start'        => 'STR',
             'end'          => 'END',
             default        => 'NOD',

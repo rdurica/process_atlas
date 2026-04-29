@@ -12,6 +12,9 @@ const addElementKinds: [WorkflowNodeKind, string][] = [
     ['notification', 'Notification'],
     ['condition', 'Condition'],
     ['action', 'Action'],
+    ['timer', 'Timer'],
+    ['subprocess', 'Sub-process'],
+    ['note', 'Note'],
     ['end', 'End'],
 ];
 

@@ -10,6 +10,9 @@ const NODE_KIND_PREFIX: Record<WorkflowNodeKind, string> = {
     condition: 'CON',
     if: 'CON',
     action: 'ACT',
+    timer: 'TMR',
+    subprocess: 'SUB',
+    note: 'NTE',
     start: 'STR',
     end: 'END',
 };
@@ -33,6 +36,12 @@ export function nodeDisplayLabel(node: Node): string {
         }
         case 'action':
             return (data.title as string) || 'Untitled Action';
+        case 'timer':
+            return (data.text as string) || 'Timer';
+        case 'subprocess':
+            return (data.linked_workflow_name as string) || 'Sub-process';
+        case 'note':
+            return (data.text as string) || 'Note';
         case 'start':
             return (data.label as string) || 'Start';
         case 'end':
@@ -67,7 +76,7 @@ export function buildInitialNodes(nodes: Node[] | undefined, screens: Screen[] =
                 ...node.data,
                 ...(nodeType === 'screen'
                     ? {
-                          label: screen?.title || node.data?.label || node.id,
+                          label: screen?.title ?? node.data?.label,
                           subtitle: screen?.subtitle ?? node.data?.subtitle ?? '',
                           image_url: screen?.image_url ?? null,
                       }
@@ -119,6 +128,9 @@ export function isWorkflowNodeKind(value: string | undefined): value is Workflow
         value === 'condition' ||
         value === 'if' ||
         value === 'action' ||
+        value === 'timer' ||
+        value === 'subprocess' ||
+        value === 'note' ||
         value === 'start' ||
         value === 'end'
     );
@@ -129,8 +141,9 @@ export function isConditionNodeKind(value: string | undefined): boolean {
 }
 
 export function workflowNodeKindLabel(value: WorkflowNodeKind): string {
-    if (value === 'if') return 'condition';
-    return value;
+    if (value === 'if') return 'Condition';
+    if (value === 'subprocess') return 'Sub-process';
+    return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 export function conditionOutputLabel(sourceHandle?: string | null): string {

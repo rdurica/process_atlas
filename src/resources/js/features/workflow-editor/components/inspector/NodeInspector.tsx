@@ -212,6 +212,71 @@ export default function NodeInspector({
                 </>
             )}
 
+            {selectedNodeKind === 'timer' && (
+                <>
+                    <label className="block text-sm font-medium text-slate-700">
+                        Timer expression
+                        <textarea
+                            value={(selectedNode.data.text as string | undefined) ?? ''}
+                            onChange={event => updateNodeData({ text: event.target.value })}
+                            disabled={!canEditWorkflows}
+                            className="textarea-shell mt-2"
+                            placeholder="e.g. wait 2 hours, until next Monday 9:00"
+                        />
+                    </label>
+                </>
+            )}
+
+            {selectedNodeKind === 'subprocess' && (
+                <>
+                    <label className="block text-sm font-medium text-slate-700">
+                        Sub-process workflow
+                        <select
+                            value={String(
+                                (selectedNode.data.linked_workflow_id as
+                                    | number
+                                    | null
+                                    | undefined) ?? ''
+                            )}
+                            onChange={event => {
+                                const id = event.target.value ? Number(event.target.value) : null;
+                                const name =
+                                    projectWorkflows.find(workflow => workflow.id === id)?.name ??
+                                    null;
+                                updateNodeData({
+                                    linked_workflow_id: id,
+                                    linked_workflow_name: name,
+                                });
+                            }}
+                            disabled={!canEditWorkflows}
+                            className="select-shell mt-2"
+                        >
+                            <option value="">— None —</option>
+                            {projectWorkflows
+                                .filter(workflow => workflow.id !== workflowId)
+                                .map(workflow => (
+                                    <option key={workflow.id} value={workflow.id}>
+                                        {workflow.name}
+                                        {workflow.status === 'published' ? ' ✓' : ''}
+                                    </option>
+                                ))}
+                        </select>
+                    </label>
+                </>
+            )}
+
+            {selectedNodeKind === 'note' && (
+                <label className="block text-sm font-medium text-slate-700">
+                    Note
+                    <textarea
+                        value={(selectedNode.data.text as string | undefined) ?? ''}
+                        onChange={event => updateNodeData({ text: event.target.value })}
+                        disabled={!canEditWorkflows}
+                        className="textarea-shell mt-2"
+                    />
+                </label>
+            )}
+
             {selectedNode.type !== 'start' && (
                 <div className="workflow-inline-actions">
                     <button

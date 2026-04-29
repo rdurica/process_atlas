@@ -145,15 +145,25 @@ export function useWorkflowGraph({
                       ? {
                             condition: `Condition ${labelIndex}`,
                         }
-                      : nodeKind === 'start'
-                        ? { label: 'Start', security_rule: null }
-                        : nodeKind === 'end'
-                          ? { label: 'End', linked_workflow_id: null, linked_workflow_name: null }
-                          : {
-                                title: `Action ${labelIndex}`,
-                                description: '',
-                                security_rule: null,
-                            };
+                      : nodeKind === 'timer'
+                        ? { text: `Timer ${labelIndex}` }
+                        : nodeKind === 'subprocess'
+                          ? { linked_workflow_id: null, linked_workflow_name: null }
+                          : nodeKind === 'note'
+                            ? { text: `Note ${labelIndex}` }
+                            : nodeKind === 'start'
+                              ? { label: 'Start', security_rule: null }
+                              : nodeKind === 'end'
+                                ? {
+                                      label: 'End',
+                                      linked_workflow_id: null,
+                                      linked_workflow_name: null,
+                                  }
+                                : {
+                                      title: `Action ${labelIndex}`,
+                                      description: '',
+                                      security_rule: null,
+                                  };
 
             setNodes(currentNodes => [
                 ...currentNodes,
