@@ -1124,7 +1124,7 @@ select {
     .context-menu {
         position: fixed;
         z-index: 1000;
-        min-width: 180px;
+        min-width: 200px;
         border-radius: 8px;
         border: 1px solid rgba(226, 232, 240, 0.92);
         background: rgba(255, 255, 255, 0.96);
@@ -1138,28 +1138,45 @@ select {
     }
 
     .context-menu-header {
-        padding: 6px 16px 8px;
-        font-size: 0.7rem;
+        padding: 6px 14px 6px;
+        font-size: 0.68rem;
         font-weight: 700;
         color: #64748b;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
 
+    .context-menu-divider {
+        height: 1px;
+        background: rgba(226, 232, 240, 0.7);
+        margin: 2px 10px;
+    }
+
     .context-menu-item {
-        padding: 9px 16px;
-        font-size: 0.82rem;
+        padding: 7px 14px;
+        font-size: 0.8rem;
         font-weight: 500;
         color: #0f172a;
         cursor: pointer;
         display: flex;
-        justify-content: space-between;
         align-items: center;
+        gap: 0.55rem;
         transition: background-color 100ms ease;
     }
 
     .context-menu-item:hover {
         background: #f1f5f9;
+    }
+
+    .context-menu-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .context-menu-label {
+        flex-grow: 1;
     }
 
     .workflow-action-button,
