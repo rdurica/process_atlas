@@ -12,7 +12,7 @@ export default function ScreenInspector({
     setActionNotice,
 }: ScreenInspectorProps) {
     return (
-        <div className="mt-5 space-y-5">
+        <div className="mt-5 flex flex-1 flex-col space-y-5">
             {inspectorTab === 'screen' && (
                 <form onSubmit={screenEditor.upsertScreen} className="space-y-4">
                     <ScreenPreview
@@ -126,7 +126,7 @@ export default function ScreenInspector({
             )}
 
             {selectedNode.type !== 'start' && (
-                <div className="workflow-inline-actions">
+                <div className="workflow-inline-actions mt-auto">
                     <button
                         type="button"
                         onClick={() => removeWorkflowNode(selectedNode.id)}

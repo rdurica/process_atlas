@@ -11,7 +11,10 @@ export default function EdgeInspector({
     removeSelectedEdge,
 }: EdgeInspectorProps) {
     return (
-        <form onSubmit={saveSelectedEdgeLabel} className="workflow-inline-form mt-5">
+        <form
+            onSubmit={saveSelectedEdgeLabel}
+            className="workflow-inline-form mt-5 flex flex-1 flex-col"
+        >
             <div className="workflow-text-row workflow-field-row">
                 <p className="workflow-text-row-title">
                     {selectedEdge.source} to {selectedEdge.target}
@@ -33,7 +36,7 @@ export default function EdgeInspector({
                 />
             </label>
 
-            <div className="workflow-inline-actions">
+            <div className="workflow-inline-actions mt-auto">
                 <button
                     type="button"
                     onClick={removeSelectedEdge}

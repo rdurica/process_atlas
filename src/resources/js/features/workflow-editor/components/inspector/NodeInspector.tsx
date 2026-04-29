@@ -13,7 +13,7 @@ export default function NodeInspector({
     removeWorkflowNode,
 }: NodeInspectorProps) {
     return (
-        <div className="workflow-inline-form mt-5">
+        <div className="workflow-inline-form mt-5 flex flex-1 flex-col">
             {selectedNodeKind === 'notification' && (
                 <>
                     <div
@@ -301,7 +301,7 @@ export default function NodeInspector({
             )}
 
             {selectedNode.type !== 'start' && (
-                <div className="workflow-inline-actions">
+                <div className="workflow-inline-actions mt-auto">
                     <button
                         type="button"
                         onClick={() => removeWorkflowNode(selectedNode.id)}

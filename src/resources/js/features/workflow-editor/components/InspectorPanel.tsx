@@ -62,7 +62,7 @@ export default function InspectorPanel({
 
     return (
         <aside className="workflow-inspector-panel">
-            <section>
+            <section className="flex min-h-full flex-col">
                 <div className="flex items-start justify-between gap-3">
                     <div>
                         <p className="eyebrow">Inspector</p>

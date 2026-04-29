@@ -20,6 +20,7 @@ export default function AuthenticatedLayout({
     const user = usePage().props.auth.user;
     const projects = usePage().props.projects as ProjectNavItem[] | undefined;
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
+    const [projectSearch, setProjectSearch] = useState('');
 
     const contentClassName = useMemo(() => {
         if (contentWidth === 'full') {
@@ -37,9 +38,34 @@ export default function AuthenticatedLayout({
         return route().current('projects.show', { project: projectId });
     };
 
+    const filteredProjects = useMemo(() => {
+        if (!projects) return [];
+
+        const query = projectSearch.trim().toLowerCase();
+        if (!query) return projects;
+
+        return projects.filter(p => p.name.toLowerCase().includes(query));
+    }, [projects, projectSearch]);
+
+    const renderProjectLink = (project: ProjectNavItem) => {
+        const isActive = isProjectActive(project.id);
+
+        return (
+            <Link
+                key={project.id}
+                href={route('projects.show', { project: project.id })}
+                className={`sidebar-link ${isActive ? 'sidebar-link-active' : ''}`.trim()}
+                onClick={() => setMobileNavOpen(false)}
+            >
+                <span className="sidebar-glyph">{project.name.charAt(0).toUpperCase()}</span>
+                <span className="truncate">{project.name}</span>
+            </Link>
+        );
+    };
+
     const navContent = (
         <div className="flex h-full flex-col">
-            <div className="border-b border-white/60 px-5 py-5">
+            <div className="shrink-0 border-b border-white/60 px-5 py-5">
                 <Link href={route('dashboard')} className="flex items-center gap-3">
                     <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#0f5ef7,#24b3ff)] text-xs font-bold tracking-[0.18em] text-white shadow-[0_12px_30px_rgba(15,94,247,0.35)]">
                         PA
@@ -53,60 +79,77 @@ export default function AuthenticatedLayout({
                 </Link>
             </div>
 
-            <div className="px-3 py-4">
-                <p className="px-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                    Navigation
-                </p>
-                <nav className="mt-3 space-y-1.5">
-                    <Link
-                        href={route('dashboard')}
-                        className={`sidebar-link ${route().current('dashboard') ? 'sidebar-link-active' : ''}`.trim()}
-                        onClick={() => setMobileNavOpen(false)}
-                    >
-                        <span className="sidebar-glyph">OV</span>
-                        <span>Dashboard</span>
-                    </Link>
-                    {(user as { is_admin?: boolean } | null)?.is_admin && (
-                        <Link
-                            href={route('admin.users')}
-                            className={`sidebar-link ${route().current('admin.users') ? 'sidebar-link-active' : ''}`.trim()}
-                            onClick={() => setMobileNavOpen(false)}
-                        >
-                            <span className="sidebar-glyph">AD</span>
-                            <span>Administration</span>
-                        </Link>
-                    )}
-                </nav>
-            </div>
-
-            {projects && projects.length > 0 && (
+            <div className="sidebar-scroll min-h-0 flex-1 overflow-y-auto">
                 <div className="px-3 py-4">
                     <p className="px-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                        Projects
+                        Navigation
                     </p>
                     <nav className="mt-3 space-y-1.5">
-                        {projects.map(project => {
-                            const isActive = isProjectActive(project.id);
-
-                            return (
-                                <Link
-                                    key={project.id}
-                                    href={route('projects.show', { project: project.id })}
-                                    className={`sidebar-link ${isActive ? 'sidebar-link-active' : ''}`.trim()}
-                                    onClick={() => setMobileNavOpen(false)}
-                                >
-                                    <span className="sidebar-glyph">
-                                        {project.name.charAt(0).toUpperCase()}
-                                    </span>
-                                    <span className="truncate">{project.name}</span>
-                                </Link>
-                            );
-                        })}
+                        <Link
+                            href={route('dashboard')}
+                            className={`sidebar-link ${route().current('dashboard') ? 'sidebar-link-active' : ''}`.trim()}
+                            onClick={() => setMobileNavOpen(false)}
+                        >
+                            <span className="sidebar-glyph">OV</span>
+                            <span>Dashboard</span>
+                        </Link>
+                        {(user as { is_admin?: boolean } | null)?.is_admin && (
+                            <Link
+                                href={route('admin.users')}
+                                className={`sidebar-link ${route().current('admin.users') ? 'sidebar-link-active' : ''}`.trim()}
+                                onClick={() => setMobileNavOpen(false)}
+                            >
+                                <span className="sidebar-glyph">AD</span>
+                                <span>Administration</span>
+                            </Link>
+                        )}
                     </nav>
                 </div>
-            )}
 
-            <div className="mt-auto px-5 pb-5 pt-3">
+                {projects && projects.length > 0 && (
+                    <div className="px-3 py-4">
+                        <p className="px-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                            Projects
+                        </p>
+
+                        <div className="relative mb-3 mt-3">
+                            <svg
+                                className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth={2}
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+                                />
+                            </svg>
+                            <input
+                                type="text"
+                                value={projectSearch}
+                                onChange={e => setProjectSearch(e.target.value)}
+                                placeholder="Search projects..."
+                                className="w-full rounded-2xl border border-slate-200/60 bg-white/70 py-2 pl-9 pr-3 text-sm text-slate-700 shadow-sm transition-all placeholder:text-slate-400 focus:border-blue-300 focus:bg-white/90 focus:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-100/50"
+                            />
+                        </div>
+
+                        <nav className="space-y-1.5">
+                            {filteredProjects.map(renderProjectLink)}
+
+                            {filteredProjects.length === 0 && projectSearch.trim() && (
+                                <p className="px-3 py-2 text-sm text-slate-400">
+                                    No projects found
+                                </p>
+                            )}
+                        </nav>
+                    </div>
+                )}
+            </div>
+
+            <div className="mt-auto shrink-0 border-t border-white/60 px-5 pb-5 pt-3">
                 <p className="eyebrow text-slate-400">Signed In</p>
                 <p className="mt-2 text-sm font-semibold text-slate-950">{user?.name}</p>
                 <p className="mt-1 truncate text-sm text-slate-500">{user?.email}</p>
@@ -118,7 +161,7 @@ export default function AuthenticatedLayout({
                         href={route('logout')}
                         method="post"
                         as="button"
-                        className="btn-ghost px-3 py-2 text-xs"
+                        className="btn-danger px-3 py-2 text-xs"
                     >
                         Log Out
                     </Link>
