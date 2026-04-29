@@ -37,18 +37,11 @@ jobs:
         working-directory: src
 
       - name: Run Unit tests
-        if: false # Set true to run tests
         run: php artisan test --testsuite=Unit
         working-directory: src
 
       - name: Run Feature tests
-        if: false # Set true to run tests
         run: php artisan test --testsuite=Feature
-        working-directory: src
-
-      - name: Run PHPStan
-        if: false # Set true to run tests
-        run: composer phpstan
         working-directory: src
 
   lint:

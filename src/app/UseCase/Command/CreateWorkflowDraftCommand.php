@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\UseCase\Command;
 
 use App\DTO\Response\WorkflowRevisionResponse;
+use App\Infrastructure\Transaction\TransactionManager;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Services\Audit\AuditLogger;
@@ -14,16 +15,20 @@ final class CreateWorkflowDraftCommand
 {
     public function __construct(
         private readonly WorkflowRevisionService $revisionService,
+        private readonly TransactionManager $transactionManager,
     ) {}
 
     public function execute(User $actor, Workflow $workflow, ?string $draftName = null, ?int $sourceRevisionId = null): WorkflowRevisionResponse
     {
-        $revision = $this->revisionService->createDraftFromSource($workflow, $actor, $draftName, $sourceRevisionId);
+        return $this->transactionManager->transactional(function () use ($actor, $workflow, $draftName, $sourceRevisionId): WorkflowRevisionResponse
+        {
+            $revision = $this->revisionService->createDraftFromSource($workflow, $actor, $draftName, $sourceRevisionId);
 
-        AuditLogger::log($actor, $revision, 'created', 'Draft workflow revision created', [
-            'workflow_id' => $workflow->id,
-        ]);
+            AuditLogger::log($actor, $revision, 'created', 'Draft workflow revision created', [
+                'workflow_id' => $workflow->id,
+            ]);
 
-        return WorkflowRevisionResponse::fromModel($revision);
+            return WorkflowRevisionResponse::fromModel($revision);
+        });
     }
 }

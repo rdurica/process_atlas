@@ -6,6 +6,7 @@ namespace App\UseCase\Command;
 
 use App\DTO\Response\WorkflowRevisionResponse;
 use App\Exceptions\WorkflowRevisionNotFoundException;
+use App\Infrastructure\Transaction\TransactionManager;
 use App\Models\User;
 use App\Models\WorkflowRevision;
 use App\Services\Audit\AuditLogger;
@@ -17,24 +18,34 @@ final class PublishWorkflowRevisionCommand
     public function __construct(
         private readonly WorkflowRevisionService $revisionService,
         private readonly PublishedWorkflowCacheService $cache,
+        private readonly TransactionManager $transactionManager,
     ) {}
 
     public function execute(User $actor, WorkflowRevision $workflowRevision, bool $force = false): WorkflowRevisionResponse
     {
-        $workflow = $this->revisionService->publishRevision($workflowRevision, $force);
-
-        $this->cache->forget($workflow->id);
-
-        AuditLogger::log($actor, $workflowRevision, 'published', 'Workflow revision published', [
-            'workflow_id' => $workflowRevision->workflow_id,
-        ]);
-
-        $freshRevision = $workflowRevision->fresh();
-        if (! $freshRevision instanceof WorkflowRevision)
+        /** @var array{workflow_id: int, response: WorkflowRevisionResponse} $result */
+        $result = $this->transactionManager->transactional(function () use ($actor, $workflowRevision, $force): array
         {
-            throw new WorkflowRevisionNotFoundException('Workflow revision not found after publish.');
-        }
+            $workflow = $this->revisionService->publishRevision($workflowRevision, $force);
 
-        return WorkflowRevisionResponse::fromModel($freshRevision);
+            AuditLogger::log($actor, $workflowRevision, 'published', 'Workflow revision published', [
+                'workflow_id' => $workflowRevision->workflow_id,
+            ]);
+
+            $freshRevision = $workflowRevision->fresh();
+            if (! $freshRevision instanceof WorkflowRevision)
+            {
+                throw new WorkflowRevisionNotFoundException('Workflow revision not found after publish.');
+            }
+
+            return [
+                'workflow_id' => $workflow->id,
+                'response'    => WorkflowRevisionResponse::fromModel($freshRevision),
+            ];
+        });
+
+        $this->cache->forget($result['workflow_id']);
+
+        return $result['response'];
     }
 }
