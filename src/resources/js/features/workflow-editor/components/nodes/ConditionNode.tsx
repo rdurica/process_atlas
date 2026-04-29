@@ -1,13 +1,18 @@
 import { Handle, Node, NodeProps, Position } from '@xyflow/react';
 import type { ConditionNodeData } from '../../types';
 import { conditionOutputHandles } from '../../lib/utils';
+import { ConditionIcon } from './icons';
 
 export default function ConditionNode({ data }: NodeProps<Node<ConditionNodeData>>) {
     return (
         <div className="rf-flow-node rf-condition-node">
             <Handle type="target" position={Position.Left} />
-            <p className="rf-node-kicker">condition</p>
-            <p className="rf-node-title">{data.condition ?? 'Condition'}</p>
+            <div className="rf-node-main">
+                <span className="rf-node-main-icon" style={{ color: '#7c3aed' }}>
+                    <ConditionIcon />
+                </span>
+                <p className="rf-node-title">{data.condition ?? 'Condition'}</p>
+            </div>
             {conditionOutputHandles.map((handleId, index) => (
                 <Handle
                     key={handleId}

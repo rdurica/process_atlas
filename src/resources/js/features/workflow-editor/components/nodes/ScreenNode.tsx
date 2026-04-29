@@ -1,5 +1,6 @@
 import { Handle, Node, NodeProps, Position } from '@xyflow/react';
 import type { ScreenNodeData } from '../../types';
+import { ScreenIcon } from './icons';
 
 export default function ScreenNode({ data }: NodeProps<Node<ScreenNodeData>>) {
     if (data.image_url) {
@@ -27,7 +28,12 @@ export default function ScreenNode({ data }: NodeProps<Node<ScreenNodeData>>) {
     return (
         <div className="rf-screen-node">
             <Handle type="target" position={Position.Left} />
-            <div className="rf-node-box">{data.label ?? 'Screen'}</div>
+            <div className="rf-node-box">
+                <span className="rf-node-box-icon" style={{ color: '#0f5ef7' }}>
+                    <ScreenIcon />
+                </span>
+                {data.label ?? 'Screen'}
+            </div>
             {data.subtitle && <div className="rf-node-subtitle">{data.subtitle}</div>}
             <Handle type="source" position={Position.Right} />
         </div>
