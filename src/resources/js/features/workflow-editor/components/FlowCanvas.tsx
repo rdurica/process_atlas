@@ -1,6 +1,7 @@
 import type { DragEvent, MouseEvent as ReactMouseEvent, ReactElement } from 'react';
 import { useCallback } from 'react';
 import { Background, Controls, MiniMap, ReactFlow, useReactFlow } from '@xyflow/react';
+import { useTheme } from '@/Components/ThemeProvider';
 import type { FlowCanvasProps, WorkflowNodeKind } from '../types';
 
 export default function FlowCanvas({
@@ -20,6 +21,7 @@ export default function FlowCanvas({
     editable,
 }: FlowCanvasProps): ReactElement {
     const { screenToFlowPosition } = useReactFlow();
+    const { resolvedTheme } = useTheme();
 
     const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
         e.preventDefault();
@@ -64,6 +66,7 @@ export default function FlowCanvas({
                 nodesDraggable={editable}
                 nodesConnectable={editable}
                 elementsSelectable={editable}
+                colorMode={resolvedTheme}
                 fitView
             >
                 <Background gap={28} size={1.5} color="hsl(var(--muted-foreground) / 0.35)" />

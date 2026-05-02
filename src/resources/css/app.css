@@ -1546,14 +1546,6 @@
         border-radius: calc(var(--radius) - 4px);
     }
 
-    /* MiniMap dark mode support */
-    .react-flow__minimap {
-        background-color: hsl(var(--card)) !important;
-    }
-    .react-flow__minimap-mask {
-        fill: hsl(var(--foreground) / 0.15) !important;
-    }
-
     /* ── Screen Phone Mockup ───────────────────── */
     .screen-phone-mockup {
         display: flex;
