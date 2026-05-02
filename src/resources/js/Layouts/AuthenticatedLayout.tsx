@@ -170,7 +170,7 @@ export default function AuthenticatedLayout({
     );
 
     return (
-        <TooltipProvider delayDuration={300}>
+        <TooltipProvider delayDuration={300} skipDelayDuration={0} disableHoverableContent>
             <div className="shell-app min-h-screen bg-background text-foreground">
                 {/* Desktop sidebar */}
                 <aside className="shell-sidebar hidden overflow-x-hidden xl:flex">
