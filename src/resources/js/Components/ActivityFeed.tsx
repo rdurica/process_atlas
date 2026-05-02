@@ -1,5 +1,7 @@
 import { ActivityItem } from '@/types/processAtlas';
 import { formatDateTime } from '@/shared/lib/dates';
+import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
+import { Badge } from '@/Components/ui/badge';
 
 export default function ActivityFeed({
     title = 'Recent Activity',
@@ -13,39 +15,46 @@ export default function ActivityFeed({
     className?: string;
 }) {
     return (
-        <section className={`surface-card p-5 ${className}`.trim()}>
-            <div className="flex items-center justify-between gap-3">
-                <div>
-                    <p className="eyebrow">Operations</p>
-                    <h2 className="panel-title mt-2">{title}</h2>
+        <Card className={className}>
+            <CardHeader className="pb-3">
+                <div className="flex items-center justify-between gap-3">
+                    <div>
+                        <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                            Operations
+                        </p>
+                        <CardTitle className="mt-1.5 text-base">{title}</CardTitle>
+                    </div>
+                    <Badge variant="secondary">{items.length}</Badge>
                 </div>
-                <span className="badge badge-neutral">{items.length}</span>
-            </div>
-
-            {items.length === 0 ? (
-                <div className="empty-state mt-4">{emptyMessage}</div>
-            ) : (
-                <div className="mt-4 space-y-3">
-                    {items.map(item => (
-                        <article key={item.id} className="activity-item">
-                            <div className="flex items-start justify-between gap-3">
-                                <div>
-                                    <p className="text-sm font-semibold text-slate-950">
-                                        {item.description}
-                                    </p>
-                                    <p className="mt-1 text-sm text-slate-600">
-                                        {item.subject_label} · {item.causer_name}
-                                    </p>
+            </CardHeader>
+            <CardContent className="pt-0">
+                {items.length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-border bg-muted px-4 py-8 text-center text-sm text-muted-foreground">
+                        {emptyMessage}
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {items.map(item => (
+                            <article key={item.id} className="rounded-lg border bg-card p-4">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p className="text-sm font-semibold text-foreground">
+                                            {item.description}
+                                        </p>
+                                        <p className="mt-1 text-sm text-muted-foreground">
+                                            {item.subject_label} · {item.causer_name}
+                                        </p>
+                                    </div>
+                                    <Badge variant="secondary">{item.event}</Badge>
                                 </div>
-                                <span className="badge badge-neutral">{item.event}</span>
-                            </div>
-                            <p className="mt-2 text-xs uppercase tracking-[0.16em] text-slate-400">
-                                {formatDateTime(item.created_at)}
-                            </p>
-                        </article>
-                    ))}
-                </div>
-            )}
-        </section>
+                                <p className="mt-2 text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                                    {formatDateTime(item.created_at)}
+                                </p>
+                            </article>
+                        ))}
+                    </div>
+                )}
+            </CardContent>
+        </Card>
     );
 }

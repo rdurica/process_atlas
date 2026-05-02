@@ -1,8 +1,8 @@
-import DangerButton from '@/Components/DangerButton';
-import PrimaryButton from '@/Components/PrimaryButton';
-import SecondaryButton from '@/Components/SecondaryButton';
+import { Button } from '@/Components/ui/button';
+import { Input } from '@/Components/ui/input';
 import { useForm } from '@inertiajs/react';
 import { FormEventHandler, useState } from 'react';
+import { Copy, Check } from 'lucide-react';
 
 export default function McpTokenManager({
     hasToken,
@@ -40,53 +40,57 @@ export default function McpTokenManager({
     return (
         <section className={`space-y-6 ${className}`}>
             <header>
-                <h2 className="text-lg font-medium text-gray-900">MCP Token</h2>
+                <h2 className="text-lg font-medium text-foreground">MCP Token</h2>
 
-                <p className="mt-1 text-sm text-gray-600">
+                <p className="mt-1 text-sm text-muted-foreground">
                     Generate a personal access token for the MCP server. You can only have one
                     active token at a time.
                 </p>
             </header>
 
             {token && (
-                <div className="rounded-lg bg-green-50 p-4 ring-1 ring-green-600/20">
-                    <p className="text-sm font-medium text-green-800">
+                <div className="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-900 dark:bg-green-950/30">
+                    <p className="text-sm font-medium text-green-800 dark:text-green-400">
                         Your new token has been generated. Copy it now — you will not see it again.
                     </p>
 
                     <div className="mt-3 flex items-center gap-2">
-                        <input
-                            type="text"
-                            readOnly
-                            value={token}
-                            className="block w-full rounded-md border-gray-300 bg-white text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                        />
-                        <SecondaryButton
+                        <Input type="text" readOnly value={token} className="font-mono text-sm" />
+                        <Button
                             type="button"
+                            variant="outline"
+                            size="sm"
                             onClick={() => copyToClipboard(token)}
                             disabled={copied}
                         >
+                            {copied ? (
+                                <Check className="mr-1 h-4 w-4" />
+                            ) : (
+                                <Copy className="mr-1 h-4 w-4" />
+                            )}
                             {copied ? 'Copied' : 'Copy'}
-                        </SecondaryButton>
+                        </Button>
                     </div>
                 </div>
             )}
 
             {!token && hasToken && (
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-sm text-gray-600">You currently have an active MCP token.</p>
+                    <p className="text-sm text-muted-foreground">
+                        You currently have an active MCP token.
+                    </p>
 
                     <div className="flex gap-3">
                         <form onSubmit={generateToken}>
-                            <PrimaryButton type="submit" disabled={processing}>
+                            <Button type="submit" disabled={processing}>
                                 Regenerate
-                            </PrimaryButton>
+                            </Button>
                         </form>
 
                         <form onSubmit={deleteToken}>
-                            <DangerButton type="submit" disabled={processing}>
+                            <Button type="submit" variant="destructive" disabled={processing}>
                                 Delete
-                            </DangerButton>
+                            </Button>
                         </form>
                     </div>
                 </div>
@@ -94,9 +98,9 @@ export default function McpTokenManager({
 
             {!token && !hasToken && (
                 <form onSubmit={generateToken}>
-                    <PrimaryButton type="submit" disabled={processing}>
+                    <Button type="submit" disabled={processing}>
                         Generate Token
-                    </PrimaryButton>
+                    </Button>
                 </form>
             )}
         </section>

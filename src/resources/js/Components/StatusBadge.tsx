@@ -1,18 +1,21 @@
-import { PropsWithChildren } from 'react';
+import { Badge } from '@/Components/ui/badge';
+import type { VariantProps } from 'class-variance-authority';
+import { badgeVariants } from '@/Components/ui/badge';
+import type { PropsWithChildren } from 'react';
 
 type Tone = 'neutral' | 'brand' | 'success' | 'warning' | 'danger';
 
-const toneClasses: Record<Tone, string> = {
-    neutral: 'badge-neutral',
-    brand: 'badge-brand',
-    success: 'badge-success',
-    warning: 'badge-warning',
-    danger: 'badge-danger',
+const toneToVariant: Record<Tone, VariantProps<typeof badgeVariants>['variant']> = {
+    neutral: 'secondary',
+    brand: 'subtle',
+    success: 'success',
+    warning: 'warning',
+    danger: 'destructive',
 };
 
 export default function StatusBadge({
     tone = 'neutral',
     children,
 }: PropsWithChildren<{ tone?: Tone }>) {
-    return <span className={`badge ${toneClasses[tone]}`}>{children}</span>;
+    return <Badge variant={toneToVariant[tone]}>{children}</Badge>;
 }

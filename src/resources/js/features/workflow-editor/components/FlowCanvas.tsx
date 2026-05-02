@@ -66,13 +66,13 @@ export default function FlowCanvas({
                 elementsSelectable={editable}
                 fitView
             >
-                <Background gap={28} size={1} color="#7aa7f7" />
+                <Background gap={28} size={1.5} color="hsl(var(--muted-foreground) / 0.35)" />
                 <MiniMap
                     pannable
                     zoomable
                     position="bottom-left"
-                    nodeStrokeColor="#0f5ef7"
-                    nodeColor="#d6e7ff"
+                    nodeStrokeColor="hsl(var(--primary))"
+                    nodeColor="hsl(var(--muted))"
                 />
                 <Controls position="bottom-left" style={{ left: 180 }} />
             </ReactFlow>

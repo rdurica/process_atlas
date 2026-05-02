@@ -1,8 +1,9 @@
-import Checkbox from '@/Components/Checkbox';
 import InputError from '@/Components/InputError';
-import TextInput from '@/Components/TextInput';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
+import { Input } from '@/Components/ui/input';
+import { Button } from '@/Components/ui/button';
+import { Label } from '@/Components/ui/label';
 
 export default function Login({
     status,
@@ -19,7 +20,6 @@ export default function Login({
 
     const submit: FormEventHandler = e => {
         e.preventDefault();
-
         post(route('login'), {
             onFinish: () => reset('password'),
         });
@@ -35,11 +35,13 @@ export default function Login({
                 </Link>
 
                 <div>
-                    <p className="eyebrow text-slate-500">Process Atlas</p>
+                    <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                        Process Atlas
+                    </p>
                     <h1 className="login-title">
                         Sign in and continue mapping workflow decisions.
                     </h1>
-                    <p className="mt-5 max-w-xl text-base leading-7 text-slate-600">
+                    <p className="mt-4 max-w-xl text-base leading-7 text-muted-foreground">
                         Review process models, update screen metadata, and publish workflow
                         revisions from one focused workspace.
                     </p>
@@ -57,77 +59,79 @@ export default function Login({
             <section className="login-form-panel">
                 <div className="w-full max-w-md">
                     <div className="mb-8">
-                        <p className="eyebrow text-slate-500">Secure Workspace</p>
-                        <h2 className="mt-3 text-3xl font-bold text-slate-950">Log in</h2>
+                        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                            Secure Workspace
+                        </p>
+                        <h2 className="mt-2 text-2xl font-bold text-foreground">Log in</h2>
                     </div>
 
                     {status && (
-                        <div className="mb-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+                        <div className="mb-5 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700 dark:border-green-900 dark:bg-green-950/30 dark:text-green-400">
                             {status}
                         </div>
                     )}
 
                     <form onSubmit={submit} className="space-y-5">
-                        <label className="block text-sm font-semibold text-slate-700">
-                            Email
-                            <TextInput
+                        <div className="space-y-1.5">
+                            <Label htmlFor="email">Email</Label>
+                            <Input
                                 id="email"
                                 type="email"
                                 name="email"
                                 value={data.email}
-                                className="login-input mt-2 block w-full"
                                 autoComplete="username"
-                                isFocused={true}
+                                autoFocus
                                 onChange={e => setData('email', e.target.value)}
                             />
-                            <InputError message={errors.email} className="mt-2" />
-                        </label>
+                            <InputError message={errors.email} />
+                        </div>
 
-                        <label className="block text-sm font-semibold text-slate-700">
-                            Password
-                            <TextInput
+                        <div className="space-y-1.5">
+                            <Label htmlFor="password">Password</Label>
+                            <Input
                                 id="password"
                                 type="password"
                                 name="password"
                                 value={data.password}
-                                className="login-input mt-2 block w-full"
                                 autoComplete="current-password"
                                 onChange={e => setData('password', e.target.value)}
                             />
-                            <InputError message={errors.password} className="mt-2" />
-                        </label>
+                            <InputError message={errors.password} />
+                        </div>
 
                         <div className="flex flex-wrap items-center justify-between gap-3">
-                            <label className="flex items-center">
-                                <Checkbox
+                            <label className="flex cursor-pointer items-center gap-2">
+                                <input
+                                    type="checkbox"
                                     name="remember"
                                     checked={data.remember}
                                     onChange={e =>
                                         setData('remember', (e.target.checked || false) as false)
                                     }
+                                    className="h-4 w-4 rounded border-border bg-background text-primary shadow-sm ring-offset-background transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                                 />
-                                <span className="ms-2 text-sm text-slate-600">Remember me</span>
+                                <span className="text-sm text-muted-foreground">Remember me</span>
                             </label>
 
                             {canResetPassword && (
                                 <Link
                                     href={route('password.request')}
-                                    className="rounded-lg text-sm font-semibold text-blue-700 underline-offset-4 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                    className="rounded-md text-sm font-medium text-primary underline-offset-4 hover:underline focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                                 >
                                     Forgot your password?
                                 </Link>
                             )}
                         </div>
 
-                        <button type="submit" className="login-submit" disabled={processing}>
+                        <Button type="submit" className="w-full" disabled={processing}>
                             Log in
-                        </button>
+                        </Button>
 
-                        <p className="text-center text-sm text-slate-600">
+                        <p className="text-center text-sm text-muted-foreground">
                             Don&apos;t have an account?{' '}
                             <Link
                                 href={route('register')}
-                                className="font-semibold text-blue-700 underline-offset-4 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                className="font-medium text-primary underline-offset-4 hover:underline focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                             >
                                 Register
                             </Link>

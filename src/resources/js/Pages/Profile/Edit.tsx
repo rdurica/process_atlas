@@ -5,6 +5,7 @@ import DeleteUserForm from './Partials/DeleteUserForm';
 import McpTokenManager from './Partials/McpTokenManager';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm';
+import { Card, CardContent } from '@/Components/ui/card';
 
 export default function Edit({
     mustVerifyEmail,
@@ -20,38 +21,53 @@ export default function Edit({
     const user = usePage().props.auth.user;
     return (
         <AuthenticatedLayout
-            header={<h2 className="text-xl font-semibold leading-tight text-gray-800">Profile</h2>}
+            header={
+                <div>
+                    <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                        Account
+                    </p>
+                    <h1 className="mt-1 text-2xl font-bold tracking-tight text-foreground">
+                        Profile
+                    </h1>
+                </div>
+            }
         >
             <Head title="Profile" />
 
-            <div className="py-12">
-                <div className="mx-auto max-w-7xl space-y-6 sm:px-6 lg:px-8">
-                    <div className="bg-white p-4 shadow sm:rounded-lg sm:p-8">
+            <div className="space-y-6">
+                <Card>
+                    <CardContent className="p-6">
                         <UpdateProfileInformationForm
                             mustVerifyEmail={mustVerifyEmail}
                             status={status}
                             className="max-w-xl"
                         />
-                    </div>
+                    </CardContent>
+                </Card>
 
-                    {user?.permissions.includes('mcp.use') && (
-                        <div className="bg-white p-4 shadow sm:rounded-lg sm:p-8">
+                {user?.permissions.includes('mcp.use') && (
+                    <Card>
+                        <CardContent className="p-6">
                             <McpTokenManager
                                 hasToken={!!hasMcpToken}
                                 token={mcpToken}
                                 className="max-w-xl"
                             />
-                        </div>
-                    )}
+                        </CardContent>
+                    </Card>
+                )}
 
-                    <div className="bg-white p-4 shadow sm:rounded-lg sm:p-8">
+                <Card>
+                    <CardContent className="p-6">
                         <UpdatePasswordForm className="max-w-xl" />
-                    </div>
+                    </CardContent>
+                </Card>
 
-                    <div className="bg-white p-4 shadow sm:rounded-lg sm:p-8">
+                <Card>
+                    <CardContent className="p-6">
                         <DeleteUserForm className="max-w-xl" />
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
             </div>
         </AuthenticatedLayout>
     );

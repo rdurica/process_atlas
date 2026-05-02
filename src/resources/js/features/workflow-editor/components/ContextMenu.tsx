@@ -10,6 +10,7 @@ import {
     NoteIcon,
     EndIcon,
 } from './nodes/icons';
+import { cn } from '@/lib/utils';
 
 interface ContextMenuProps {
     position: { x: number; y: number };
@@ -82,33 +83,40 @@ export default function ContextMenu({
 
     return (
         <div
-            className="context-menu"
+            className={cn(
+                'fixed z-[1000] min-w-[14rem] overflow-hidden rounded-lg border border-border bg-popover p-1.5 text-popover-foreground shadow-elevated-lg'
+            )}
             style={{ left: position.x, top: position.y }}
             onClick={e => e.stopPropagation()}
             data-testid="workflow-context-menu"
         >
             {menuGroups.map((group, groupIndex) => (
                 <div key={group.label}>
-                    {groupIndex > 0 && <div className="context-menu-divider" />}
-                    <div className="context-menu-section">
-                        <div className="context-menu-header">{group.label}</div>
-                        {group.items.map(item => (
-                            <div
-                                key={item.kind}
-                                className="context-menu-item"
-                                onClick={() => handleAddElement(item.kind)}
-                                data-testid={`add-${item.kind}-node`}
-                            >
-                                <span
-                                    className="context-menu-icon"
-                                    style={{ color: item.indicatorColor }}
-                                >
-                                    {item.icon}
-                                </span>
-                                <span className="context-menu-label">{item.label}</span>
-                            </div>
-                        ))}
+                    {groupIndex > 0 && <div className="my-1 h-px bg-border" />}
+                    <div className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        {group.label}
                     </div>
+                    {group.items.map(item => (
+                        <button
+                            key={item.kind}
+                            type="button"
+                            onClick={() => handleAddElement(item.kind)}
+                            data-testid={`add-${item.kind}-node`}
+                            className={cn(
+                                'flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-sm font-medium text-popover-foreground',
+                                'transition-colors hover:bg-accent hover:text-accent-foreground',
+                                'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
+                            )}
+                        >
+                            <span
+                                style={{ color: item.indicatorColor }}
+                                className="flex shrink-0 items-center"
+                            >
+                                {item.icon}
+                            </span>
+                            {item.label}
+                        </button>
+                    ))}
                 </div>
             ))}
         </div>

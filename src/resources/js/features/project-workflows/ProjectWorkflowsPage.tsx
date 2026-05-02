@@ -9,6 +9,35 @@ import {
     workflowTone,
 } from '@/features/project-workflows/useProjectWorkflows';
 import type { ProjectWorkflowsProps, WorkflowStatusFilter } from './types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
+import { Badge } from '@/Components/ui/badge';
+import { Button } from '@/Components/ui/button';
+import { Input } from '@/Components/ui/input';
+import { Switch } from '@/Components/ui/switch';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/Components/ui/table';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/Components/ui/select';
+import {
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbList,
+    BreadcrumbSeparator,
+} from '@/Components/ui/breadcrumb';
+import { cn } from '@/lib/utils';
+import { Search, Plus, ArrowRight, GitBranch, Archive, RotateCcw } from 'lucide-react';
 
 export default function ProjectWorkflowsPage(props: ProjectWorkflowsProps) {
     const { project, workflows } = props;
@@ -20,30 +49,37 @@ export default function ProjectWorkflowsPage(props: ProjectWorkflowsProps) {
             header={
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <p className="eyebrow">
-                            <Link href={route('dashboard')} className="hover:text-slate-900">
-                                Projects
-                            </Link>
-                            {' / '}
-                            {project.name}
-                        </p>
-                        <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
+                        <Breadcrumb>
+                            <BreadcrumbList>
+                                <BreadcrumbItem>
+                                    <BreadcrumbLink asChild>
+                                        <Link href={route('dashboard')}>Projects</Link>
+                                    </BreadcrumbLink>
+                                </BreadcrumbItem>
+                                <BreadcrumbSeparator />
+                                <BreadcrumbItem>
+                                    <span className="text-foreground">{project.name}</span>
+                                </BreadcrumbItem>
+                            </BreadcrumbList>
+                        </Breadcrumb>
+                        <h1 className="mt-1 text-2xl font-bold tracking-tight text-foreground">
                             {project.name}
                         </h1>
                         {project.description && (
-                            <p className="mt-1 text-sm text-slate-600">{project.description}</p>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                                {project.description}
+                            </p>
                         )}
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
                         {canEditInProject(project.current_user_role) && (
-                            <button
-                                type="button"
+                            <Button
                                 onClick={() => page.setWorkflowModalOpen(true)}
-                                className="btn-primary px-4 py-2.5 text-sm"
                                 data-testid="create-workflow-open"
                             >
+                                <Plus className="mr-1.5 h-4 w-4" />
                                 New Workflow
-                            </button>
+                            </Button>
                         )}
                     </div>
                 </div>
@@ -51,119 +87,117 @@ export default function ProjectWorkflowsPage(props: ProjectWorkflowsProps) {
         >
             <Head title={project.name} />
 
-            <div className="space-y-6">
-                <section className="surface-card table-shell">
-                    <div className="command-bar border-b border-slate-200/70">
-                        <div>
-                            <p className="eyebrow">Workflows</p>
-                            <h2 className="panel-title mt-2">{project.name}</h2>
-                        </div>
-
-                        <div className="flex w-full flex-col gap-3 lg:w-auto lg:flex-row lg:items-center">
-                            <div className="min-w-[260px] lg:w-[320px]">
-                                <input
-                                    value={page.query}
-                                    onChange={event => page.setQuery(event.target.value)}
-                                    placeholder="Search workflows"
-                                    className="input-shell"
-                                />
+            <div className="space-y-8">
+                <Card>
+                    <CardHeader>
+                        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                            <div>
+                                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                                    Workflows
+                                </p>
+                                <CardTitle className="mt-1 text-base">{project.name}</CardTitle>
                             </div>
-                            <div className="min-w-[180px]">
-                                <select
+
+                            <div className="flex w-full flex-col gap-3 lg:w-auto lg:flex-row lg:items-center">
+                                <div className="relative min-w-[260px] lg:w-[320px]">
+                                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                    <Input
+                                        value={page.query}
+                                        onChange={event => page.setQuery(event.target.value)}
+                                        placeholder="Search workflows"
+                                        className="pl-9"
+                                    />
+                                </div>
+                                <Select
                                     value={page.statusFilter}
-                                    onChange={event =>
-                                        page.setStatusFilter(
-                                            event.target.value as WorkflowStatusFilter
-                                        )
+                                    onValueChange={value =>
+                                        page.setStatusFilter(value as WorkflowStatusFilter)
                                     }
-                                    className="select-shell"
                                 >
-                                    <option value="all">All statuses</option>
-                                    <option value="published">Published</option>
-                                    <option value="draft">Draft</option>
-                                </select>
+                                    <SelectTrigger className="min-w-[180px]">
+                                        <SelectValue placeholder="All statuses" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All statuses</SelectItem>
+                                        <SelectItem value="published">Published</SelectItem>
+                                        <SelectItem value="draft">Draft</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <div className="flex items-center gap-2">
+                                    <Switch
+                                        id="show-archived"
+                                        checked={page.showArchived}
+                                        onCheckedChange={checked => page.setShowArchived(checked)}
+                                    />
+                                    <label
+                                        htmlFor="show-archived"
+                                        className="cursor-pointer text-sm text-muted-foreground"
+                                    >
+                                        Show archived
+                                    </label>
+                                </div>
                             </div>
-                            <label className="inline-flex items-center gap-2 text-sm text-slate-700">
-                                <input
-                                    type="checkbox"
-                                    checked={page.showArchived}
-                                    onChange={event => page.setShowArchived(event.target.checked)}
-                                    className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                                />
-                                Show archived
-                            </label>
                         </div>
-                    </div>
-
-                    <div className="overflow-x-auto px-6 pb-6">
+                    </CardHeader>
+                    <CardContent>
                         {page.displayedWorkflows.length === 0 ? (
-                            <div className="empty-state py-12">
-                                {workflows.length === 0 && !page.showArchived
-                                    ? 'This project does not have any workflows yet.'
-                                    : 'No workflows match the current filters.'}
+                            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12 text-center">
+                                <GitBranch className="h-8 w-8 text-muted-foreground/50" />
+                                <p className="mt-2 text-sm text-muted-foreground">
+                                    {workflows.length === 0 && !page.showArchived
+                                        ? 'This project does not have any workflows yet.'
+                                        : 'No workflows match the current filters.'}
+                                </p>
                             </div>
                         ) : (
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="border-b border-slate-200/70">
-                                        <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
-                                            Name
-                                        </th>
-                                        <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
-                                            Revision
-                                        </th>
-                                        <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
-                                            Status
-                                        </th>
-                                        <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
-                                            Last Updated
-                                        </th>
-                                        <th className="px-4 py-4 text-right text-xs font-bold uppercase tracking-wider text-slate-500">
-                                            Actions
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Name</TableHead>
+                                        <TableHead>Revision</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead>Last Updated</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
                                     {page.displayedWorkflows.map(workflow => {
                                         const isArchived = !!workflow.archived_at;
 
                                         return (
-                                            <tr
+                                            <TableRow
                                                 key={workflow.id}
-                                                className={`group transition-colors hover:bg-slate-50/80 ${
-                                                    isArchived ? 'bg-slate-50/40' : ''
-                                                }`}
+                                                className={isArchived ? 'bg-muted/30' : ''}
                                             >
-                                                <td className="px-4 py-4">
+                                                <TableCell>
                                                     <div className="flex items-center gap-2">
-                                                        <p
-                                                            className={`font-semibold ${
+                                                        <span
+                                                            className={cn(
+                                                                'font-semibold',
                                                                 isArchived
-                                                                    ? 'text-slate-500'
-                                                                    : 'text-slate-950'
-                                                            }`}
+                                                                    ? 'text-muted-foreground'
+                                                                    : 'text-foreground'
+                                                            )}
                                                         >
                                                             {workflow.name}
-                                                        </p>
+                                                        </span>
                                                         {isArchived && (
-                                                            <StatusBadge tone="neutral">
+                                                            <Badge variant="secondary">
                                                                 Archived
-                                                            </StatusBadge>
+                                                            </Badge>
                                                         )}
                                                     </div>
-                                                </td>
-                                                <td className="px-4 py-4">
-                                                    <div className="flex flex-wrap items-center gap-1.5">
-                                                        <StatusBadge
-                                                            tone={isArchived ? 'neutral' : 'brand'}
-                                                        >
-                                                            {workflow.published_revision
-                                                                ? `rev. ${workflow.published_revision.revision_number}`
-                                                                : 'No revision'}
-                                                        </StatusBadge>
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-4">
+                                                </TableCell>
+                                                <TableCell>
+                                                    <StatusBadge
+                                                        tone={isArchived ? 'neutral' : 'brand'}
+                                                    >
+                                                        {workflow.published_revision
+                                                            ? `rev. ${workflow.published_revision.revision_number}`
+                                                            : 'No revision'}
+                                                    </StatusBadge>
+                                                </TableCell>
+                                                <TableCell>
                                                     <StatusBadge
                                                         tone={
                                                             isArchived
@@ -173,117 +207,119 @@ export default function ProjectWorkflowsPage(props: ProjectWorkflowsProps) {
                                                     >
                                                         {workflow.status}
                                                     </StatusBadge>
-                                                </td>
-                                                <td className="px-4 py-4">
-                                                    <p className="text-sm text-slate-500">
+                                                </TableCell>
+                                                <TableCell>
+                                                    <p className="text-sm text-muted-foreground">
                                                         {formatDateTime(
                                                             workflow.updated_at,
                                                             'No recent changes'
                                                         )}
                                                     </p>
-                                                </td>
-                                                <td className="px-4 py-4 text-right">
+                                                </TableCell>
+                                                <TableCell className="text-right">
                                                     <div className="flex items-center justify-end gap-2">
-                                                        <Link
-                                                            href={route('workflows.editor', {
-                                                                workflow: workflow.id,
-                                                            })}
-                                                            className="btn-secondary px-3 py-1.5 text-xs"
-                                                            data-testid="open-workflow-editor"
-                                                        >
-                                                            Open Editor
-                                                        </Link>
+                                                        <Button variant="outline" size="sm" asChild>
+                                                            <Link
+                                                                href={route('workflows.editor', {
+                                                                    workflow: workflow.id,
+                                                                })}
+                                                                data-testid="open-workflow-editor"
+                                                            >
+                                                                Open Editor
+                                                                <ArrowRight className="ml-1 h-3 w-3" />
+                                                            </Link>
+                                                        </Button>
                                                         {canArchiveInProject(
                                                             project.current_user_role
                                                         ) &&
                                                             (isArchived ? (
-                                                                <button
-                                                                    type="button"
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
                                                                     onClick={() =>
                                                                         page.unarchiveWorkflow(
                                                                             workflow.id
                                                                         )
                                                                     }
                                                                     disabled={page.pendingArchive}
-                                                                    className="btn-secondary px-3 py-1.5 text-xs"
                                                                 >
+                                                                    <RotateCcw className="mr-1 h-3 w-3" />
                                                                     Unarchive
-                                                                </button>
+                                                                </Button>
                                                             ) : (
-                                                                <button
-                                                                    type="button"
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    className="text-destructive hover:bg-destructive/10"
                                                                     onClick={() =>
                                                                         page.setConfirmArchiveId(
                                                                             workflow.id
                                                                         )
                                                                     }
-                                                                    className="btn-secondary px-3 py-1.5 text-xs text-rose-700 hover:border-rose-300 hover:bg-rose-50"
                                                                 >
+                                                                    <Archive className="mr-1 h-3 w-3" />
                                                                     Archive
-                                                                </button>
+                                                                </Button>
                                                             ))}
                                                     </div>
-                                                </td>
-                                            </tr>
+                                                </TableCell>
+                                            </TableRow>
                                         );
                                     })}
-                                </tbody>
-                            </table>
+                                </TableBody>
+                            </Table>
                         )}
                         {page.loadingArchived && (
-                            <p className="py-4 text-center text-sm text-slate-500">
+                            <p className="py-4 text-center text-sm text-muted-foreground">
                                 Loading archived workflows…
                             </p>
                         )}
-                    </div>
-                </section>
+                    </CardContent>
+                </Card>
             </div>
 
             <Modal show={page.workflowModalOpen} onClose={page.closeWorkflowModal} maxWidth="lg">
                 <form onSubmit={page.createWorkflow} className="space-y-5 p-6 sm:p-7">
                     <div>
-                        <p className="eyebrow">Create Workflow</p>
-                        <h2 className="panel-title mt-2">Open a new process model</h2>
-                        <p className="mt-3 text-sm text-slate-600">
+                        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                            Create Workflow
+                        </p>
+                        <h2 className="mt-1 text-base font-semibold">Open a new process model</h2>
+                        <p className="mt-2 text-sm text-muted-foreground">
                             New workflows start in draft mode with an initial revision ready for
                             editing.
                         </p>
                     </div>
 
-                    <label className="block text-sm font-medium text-slate-700">
+                    <label className="block text-sm font-medium text-foreground">
                         Workflow Name
-                        <input
+                        <Input
                             value={page.workflowName}
                             onChange={event => page.setWorkflowName(event.target.value)}
                             required
                             disabled={page.pendingWorkflow}
-                            className="input-shell mt-2"
+                            className="mt-1.5"
                             data-testid="workflow-name-input"
                         />
                     </label>
 
                     {page.workflowError && (
-                        <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                        <p className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                             {page.workflowError}
                         </p>
                     )}
 
                     <div className="flex justify-end gap-3">
-                        <button
-                            type="button"
-                            onClick={page.closeWorkflowModal}
-                            className="btn-ghost px-4 py-3 text-sm"
-                        >
+                        <Button type="button" variant="outline" onClick={page.closeWorkflowModal}>
                             Cancel
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             type="submit"
                             disabled={page.pendingWorkflow}
-                            className="btn-primary px-4 py-3 text-sm"
                             data-testid="create-workflow-submit"
                         >
                             Create
-                        </button>
+                        </Button>
                     </div>
                 </form>
             </Modal>
@@ -295,40 +331,42 @@ export default function ProjectWorkflowsPage(props: ProjectWorkflowsProps) {
             >
                 <div className="space-y-5 p-6 sm:p-7">
                     <div>
-                        <p className="eyebrow">Archive Workflow</p>
-                        <h2 className="panel-title mt-2">Are you sure?</h2>
-                        <p className="mt-3 text-sm text-slate-600">
+                        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                            Archive Workflow
+                        </p>
+                        <h2 className="mt-1 text-base font-semibold">Are you sure?</h2>
+                        <p className="mt-2 text-sm text-muted-foreground">
                             Archiving will hide this workflow from the default list. It will remain
                             accessible in read-only mode.
                         </p>
                     </div>
 
                     {page.archiveError && (
-                        <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                        <p className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                             {page.archiveError}
                         </p>
                     )}
 
                     <div className="flex justify-end gap-3">
-                        <button
+                        <Button
                             type="button"
+                            variant="outline"
                             onClick={() => page.setConfirmArchiveId(null)}
-                            className="btn-ghost px-4 py-3 text-sm"
                         >
                             Cancel
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             type="button"
+                            variant="destructive"
                             disabled={page.pendingArchive}
                             onClick={() => {
                                 if (page.confirmArchiveId) {
                                     page.archiveWorkflow(page.confirmArchiveId);
                                 }
                             }}
-                            className="btn-primary bg-rose-600 px-4 py-3 text-sm hover:bg-rose-700"
                         >
                             Archive
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </Modal>

@@ -102,8 +102,8 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
 
             <div className="workflow-canvas-layer">
                 {editor.previewRevision && editor.previewRevision.is_published && (
-                    <div className="pointer-events-auto absolute inset-x-0 top-0 z-10 flex items-center justify-between gap-4 border-b border-amber-200 bg-amber-50 px-5 py-2.5">
-                        <p className="text-sm font-medium text-amber-900">
+                    <div className="pointer-events-auto absolute inset-x-0 top-0 z-10 flex items-center justify-between gap-4 border-b border-amber-200 bg-amber-50 px-5 py-2.5 dark:border-amber-900 dark:bg-amber-950/30">
+                        <p className="text-sm font-medium text-amber-900 dark:text-amber-400">
                             Viewing rev. {editor.previewRevision.revision_number} (read-only)
                         </p>
                         {editor.latestRevision && (
@@ -112,7 +112,7 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                                 onClick={() =>
                                     editor.handleRevisionTimelineClick(editor.latestRevision!)
                                 }
-                                className="text-sm font-semibold text-amber-700 hover:text-amber-900"
+                                className="text-sm font-semibold text-amber-700 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-300"
                             >
                                 Return to current draft
                             </button>
@@ -121,8 +121,8 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                 )}
 
                 {editor.isArchived && (
-                    <div className="pointer-events-auto absolute inset-x-0 top-0 z-10 flex items-center justify-center gap-4 border-b border-slate-200 bg-slate-100 px-5 py-2.5">
-                        <p className="text-sm font-medium text-slate-700">
+                    <div className="pointer-events-auto absolute inset-x-0 top-0 z-10 flex items-center justify-center gap-4 border-b border-border bg-muted px-5 py-2.5">
+                        <p className="text-sm font-medium text-muted-foreground">
                             This workflow is archived and read-only.
                         </p>
                     </div>

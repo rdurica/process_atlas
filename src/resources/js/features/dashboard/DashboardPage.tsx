@@ -5,6 +5,41 @@ import { PROJECT_ROLE_LABELS } from '@/shared/lib/projectPermissions';
 import { Head, Link } from '@inertiajs/react';
 import { useDashboard } from './useDashboard';
 import type { DashboardProps, DashboardStatusFilter } from './types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
+import { Badge } from '@/Components/ui/badge';
+import { Button } from '@/Components/ui/button';
+import { Input } from '@/Components/ui/input';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/Components/ui/table';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/Components/ui/select';
+import {
+    FolderKanban,
+    GitBranch,
+    FileText,
+    CheckCircle2,
+    Search,
+    Plus,
+    ArrowRight,
+} from 'lucide-react';
+
+const metricIcons: Record<string, React.ReactNode> = {
+    Projects: <FolderKanban className="h-4 w-4" />,
+    Workflows: <GitBranch className="h-4 w-4" />,
+    Drafts: <FileText className="h-4 w-4" />,
+    Published: <CheckCircle2 className="h-4 w-4" />,
+};
 
 export default function DashboardPage(props: DashboardProps) {
     const dashboard = useDashboard(props);
@@ -15,21 +50,22 @@ export default function DashboardPage(props: DashboardProps) {
             header={
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <p className="eyebrow">Dashboard</p>
-                        <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
+                        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                            Dashboard
+                        </p>
+                        <h1 className="mt-1 text-2xl font-bold tracking-tight text-foreground">
                             Operations Overview
                         </h1>
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
                         {dashboard.canCreateProjects && (
-                            <button
-                                type="button"
+                            <Button
                                 onClick={() => dashboard.setProjectModalOpen(true)}
-                                className="btn-secondary px-4 py-2.5 text-sm"
                                 data-testid="create-project-open"
                             >
+                                <Plus className="mr-1.5 h-4 w-4" />
                                 New Project
-                            </button>
+                            </Button>
                         )}
                     </div>
                 </div>
@@ -37,106 +73,118 @@ export default function DashboardPage(props: DashboardProps) {
         >
             <Head title="Dashboard" />
 
-            <div className="space-y-6">
+            <div className="space-y-8">
+                {/* Metrics */}
                 <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
                     {dashboard.metrics.map(metric => (
-                        <article
-                            key={metric.label}
-                            className={`surface-card metric-card ${metric.accentClass}`}
-                        >
-                            <p className="eyebrow">{metric.label}</p>
-                            <p className="metric-value mt-4">{metric.value}</p>
-                            <p className="mt-3 max-w-[18rem] text-sm text-slate-600">
-                                {metric.detail}
-                            </p>
-                        </article>
+                        <Card key={metric.label} className="relative overflow-hidden">
+                            <CardHeader className="pb-2">
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                                        {metric.label}
+                                    </CardTitle>
+                                    <span className="text-muted-foreground">
+                                        {metricIcons[metric.label]}
+                                    </span>
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-3xl font-bold tracking-tight text-foreground">
+                                    {metric.value}
+                                </p>
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                    {metric.detail}
+                                </p>
+                            </CardContent>
+                            <div
+                                className="absolute inset-x-0 top-0 h-1"
+                                style={{
+                                    background: `var(--metric-accent, hsl(var(--primary)))`,
+                                }}
+                            />
+                        </Card>
                     ))}
                 </section>
 
-                <section className="surface-card table-shell">
-                    <div className="command-bar border-b border-slate-200/70">
-                        <div>
-                            <p className="eyebrow">Projects</p>
-                            <h2 className="panel-title mt-2">Your Workspaces</h2>
-                        </div>
-
-                        <div className="flex w-full flex-col gap-3 lg:w-auto lg:flex-row lg:items-center">
-                            <div className="min-w-[260px] lg:w-[320px]">
-                                <input
-                                    value={dashboard.query}
-                                    onChange={event => dashboard.setQuery(event.target.value)}
-                                    placeholder="Search projects"
-                                    className="input-shell"
-                                />
+                {/* Projects Table */}
+                <Card>
+                    <CardHeader>
+                        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                            <div>
+                                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                                    Projects
+                                </p>
+                                <CardTitle className="mt-1 text-base">Your Workspaces</CardTitle>
                             </div>
-                            <div className="min-w-[180px]">
-                                <select
+
+                            <div className="flex w-full flex-col gap-3 lg:w-auto lg:flex-row lg:items-center">
+                                <div className="relative min-w-[260px] lg:w-[320px]">
+                                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                    <Input
+                                        value={dashboard.query}
+                                        onChange={event => dashboard.setQuery(event.target.value)}
+                                        placeholder="Search projects"
+                                        className="pl-9"
+                                    />
+                                </div>
+                                <Select
                                     value={dashboard.statusFilter}
-                                    onChange={event =>
-                                        dashboard.setStatusFilter(
-                                            event.target.value as DashboardStatusFilter
-                                        )
+                                    onValueChange={value =>
+                                        dashboard.setStatusFilter(value as DashboardStatusFilter)
                                     }
-                                    className="select-shell"
                                 >
-                                    <option value="all">All statuses</option>
-                                    <option value="published">Has published</option>
-                                    <option value="draft">Has drafts</option>
-                                    <option value="empty">No workflows</option>
-                                </select>
+                                    <SelectTrigger className="min-w-[180px]">
+                                        <SelectValue placeholder="All statuses" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All statuses</SelectItem>
+                                        <SelectItem value="published">Has published</SelectItem>
+                                        <SelectItem value="draft">Has drafts</SelectItem>
+                                        <SelectItem value="empty">No workflows</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
-                    </div>
-
-                    <div className="overflow-x-auto px-6 pb-6">
+                    </CardHeader>
+                    <CardContent>
                         {dashboard.filteredProjects.length === 0 ? (
-                            <div className="empty-state py-12">
-                                No projects match the current filters.
+                            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12 text-center">
+                                <FolderKanban className="h-8 w-8 text-muted-foreground/50" />
+                                <p className="mt-2 text-sm text-muted-foreground">
+                                    No projects match the current filters.
+                                </p>
                             </div>
                         ) : (
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="border-b border-slate-200/70">
-                                        <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
-                                            Name
-                                        </th>
-                                        <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
-                                            Status
-                                        </th>
-                                        <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
-                                            Role
-                                        </th>
-                                        <th className="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
-                                            Workflows
-                                        </th>
-                                        <th className="px-4 py-4 text-right text-xs font-bold uppercase tracking-wider text-slate-500">
-                                            Actions
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Name</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead>Role</TableHead>
+                                        <TableHead>Workflows</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
                                     {dashboard.filteredProjects.map(project => (
-                                        <tr
-                                            key={project.id}
-                                            className="group transition-colors hover:bg-slate-50/80"
-                                        >
-                                            <td className="px-4 py-4">
+                                        <TableRow key={project.id} className="group cursor-pointer">
+                                            <TableCell>
                                                 <Link
                                                     href={route('projects.show', {
                                                         project: project.id,
                                                     })}
                                                     className="block"
                                                 >
-                                                    <p className="font-semibold text-slate-950 group-hover:text-blue-600">
+                                                    <p className="font-semibold text-foreground transition-colors group-hover:text-primary">
                                                         {project.name}
                                                     </p>
-                                                    <p className="mt-0.5 line-clamp-1 text-sm text-slate-500">
+                                                    <p className="mt-0.5 line-clamp-1 text-sm text-muted-foreground">
                                                         {project.description ||
                                                             'No project description'}
                                                     </p>
                                                 </Link>
-                                            </td>
-                                            <td className="px-4 py-4">
+                                            </TableCell>
+                                            <TableCell>
                                                 <div className="flex flex-wrap items-center gap-1.5">
                                                     <StatusBadge tone="brand">
                                                         {project.latest_revision_label}
@@ -145,46 +193,49 @@ export default function DashboardPage(props: DashboardProps) {
                                                         {project.status_summary}
                                                     </StatusBadge>
                                                 </div>
-                                            </td>
-                                            <td className="px-4 py-4">
+                                            </TableCell>
+                                            <TableCell>
                                                 {project.current_user_role ? (
-                                                    <span className="badge badge-neutral">
+                                                    <Badge variant="secondary">
                                                         {
                                                             PROJECT_ROLE_LABELS[
                                                                 project.current_user_role
                                                             ]
                                                         }
-                                                    </span>
+                                                    </Badge>
                                                 ) : (
-                                                    <span className="text-sm text-slate-400">
+                                                    <span className="text-sm text-muted-foreground">
                                                         —
                                                     </span>
                                                 )}
-                                            </td>
-                                            <td className="px-4 py-4">
-                                                <span className="badge badge-neutral">
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge variant="secondary">
                                                     {project.workflows_count} workflows
-                                                </span>
-                                            </td>
-                                            <td className="px-4 py-4 text-right">
-                                                <Link
-                                                    href={route('projects.show', {
-                                                        project: project.id,
-                                                    })}
-                                                    className="btn-secondary px-3 py-1.5 text-xs"
-                                                >
-                                                    View
-                                                </Link>
-                                            </td>
-                                        </tr>
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <Button variant="outline" size="sm" asChild>
+                                                    <Link
+                                                        href={route('projects.show', {
+                                                            project: project.id,
+                                                        })}
+                                                    >
+                                                        View
+                                                        <ArrowRight className="ml-1 h-3 w-3" />
+                                                    </Link>
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
                                     ))}
-                                </tbody>
-                            </table>
+                                </TableBody>
+                            </Table>
                         )}
-                    </div>
-                </section>
+                    </CardContent>
+                </Card>
             </div>
 
+            {/* Create Project Modal */}
             <Modal
                 show={dashboard.projectModalOpen}
                 onClose={dashboard.closeProjectModal}
@@ -192,59 +243,62 @@ export default function DashboardPage(props: DashboardProps) {
             >
                 <form onSubmit={dashboard.createProject} className="space-y-5 p-6 sm:p-7">
                     <div>
-                        <p className="eyebrow">Create Project</p>
-                        <h2 className="panel-title mt-2">Provision a new project workspace</h2>
-                        <p className="mt-3 text-sm text-slate-600">
+                        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                            Create Project
+                        </p>
+                        <h2 className="mt-1 text-base font-semibold">
+                            Provision a new project workspace
+                        </h2>
+                        <p className="mt-2 text-sm text-muted-foreground">
                             Create a project shell first, then attach workflows and revision-tracked
                             process maps.
                         </p>
                     </div>
 
-                    <label className="block text-sm font-medium text-slate-700">
+                    <label className="block text-sm font-medium text-foreground">
                         Project Name
-                        <input
+                        <Input
                             value={dashboard.projectName}
                             onChange={event => dashboard.setProjectName(event.target.value)}
                             required
                             disabled={!dashboard.canCreateProjects || dashboard.pendingProject}
-                            className="input-shell mt-2"
+                            className="mt-1.5"
                             data-testid="project-name-input"
                         />
                     </label>
 
-                    <label className="block text-sm font-medium text-slate-700">
+                    <label className="block text-sm font-medium text-foreground">
                         Description
                         <textarea
                             value={dashboard.projectDescription}
                             onChange={event => dashboard.setProjectDescription(event.target.value)}
                             disabled={!dashboard.canCreateProjects || dashboard.pendingProject}
-                            className="textarea-shell mt-2"
+                            className="mt-1.5 flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                             data-testid="project-description-input"
                         />
                     </label>
 
                     {dashboard.projectError && (
-                        <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                        <p className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                             {dashboard.projectError}
                         </p>
                     )}
 
                     <div className="flex justify-end gap-3">
-                        <button
+                        <Button
                             type="button"
+                            variant="outline"
                             onClick={dashboard.closeProjectModal}
-                            className="btn-ghost px-4 py-3 text-sm"
                         >
                             Cancel
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             type="submit"
                             disabled={!dashboard.canCreateProjects || dashboard.pendingProject}
-                            className="btn-primary px-4 py-3 text-sm"
                             data-testid="create-project-submit"
                         >
                             Create Project
-                        </button>
+                        </Button>
                     </div>
                 </form>
             </Modal>

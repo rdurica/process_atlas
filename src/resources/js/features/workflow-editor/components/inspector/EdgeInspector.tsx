@@ -1,5 +1,8 @@
 import { isConditionNodeKind } from '../../lib/utils';
 import type { EdgeInspectorProps } from './types';
+import { Button } from '@/Components/ui/button';
+import { Input } from '@/Components/ui/input';
+import { Label } from '@/Components/ui/label';
 
 export default function EdgeInspector({
     selectedEdge,
@@ -11,47 +14,41 @@ export default function EdgeInspector({
     removeSelectedEdge,
 }: EdgeInspectorProps) {
     return (
-        <form
-            onSubmit={saveSelectedEdgeLabel}
-            className="workflow-inline-form mt-5 flex flex-1 flex-col"
-        >
-            <div className="workflow-text-row workflow-field-row">
-                <p className="workflow-text-row-title">
+        <form onSubmit={saveSelectedEdgeLabel} className="mt-5 flex flex-1 flex-col gap-4">
+            <div className="rounded-lg border bg-muted/50 p-3">
+                <p className="text-sm font-semibold text-foreground">
                     {selectedEdge.source} to {selectedEdge.target}
                 </p>
-                <p className="workflow-text-row-meta">
+                <p className="text-xs text-muted-foreground">
                     {isConditionNodeKind(selectedEdgeSourceNode?.type)
                         ? 'Condition branch'
                         : 'Connection'}
                 </p>
             </div>
 
-            <label className="block text-sm font-medium text-slate-700">
-                Label
-                <input
+            <div className="space-y-1.5">
+                <Label htmlFor="edge-label">Label</Label>
+                <Input
+                    id="edge-label"
                     value={edgeDraftLabel}
                     onChange={event => setEdgeDraftLabel(event.target.value)}
                     disabled={!canEditWorkflows}
-                    className="input-shell mt-2"
                 />
-            </label>
+            </div>
 
-            <div className="workflow-inline-actions mt-auto">
-                <button
+            <div className="mt-auto flex justify-end gap-2">
+                <Button
                     type="button"
+                    variant="destructive"
+                    size="sm"
                     onClick={removeSelectedEdge}
                     disabled={!canEditWorkflows}
-                    className="btn-danger workflow-action-button"
                 >
                     Delete
-                </button>
-                <button
-                    type="submit"
-                    disabled={!canEditWorkflows}
-                    className="btn-primary workflow-action-button"
-                >
+                </Button>
+                <Button type="submit" size="sm" disabled={!canEditWorkflows}>
                     Save Label
-                </button>
+                </Button>
             </div>
         </form>
     );

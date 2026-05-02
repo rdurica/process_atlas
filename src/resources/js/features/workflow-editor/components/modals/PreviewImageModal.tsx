@@ -1,4 +1,6 @@
 import Modal from '@/Components/Modal';
+import { Button } from '@/Components/ui/button';
+import { X } from 'lucide-react';
 
 interface PreviewImageModalProps {
     previewImageUrl: string | null;
@@ -9,35 +11,20 @@ export default function PreviewImageModal({ previewImageUrl, onClose }: PreviewI
     return (
         <Modal show={previewImageUrl !== null} maxWidth="2xl" onClose={onClose}>
             {previewImageUrl && (
-                <div className="screen-preview-modal">
-                    <div className="screen-preview-modal-header">
-                        <span className="screen-preview-modal-title">Screen Preview</span>
-                        <button
-                            type="button"
-                            className="screen-preview-modal-close"
-                            onClick={onClose}
-                        >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                strokeWidth={2}
-                                stroke="currentColor"
-                                style={{ width: '1rem', height: '1rem' }}
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M6 18L18 6M6 6l12 12"
-                                />
-                            </svg>
+                <div className="overflow-hidden">
+                    <div className="flex items-center justify-between border-b px-4 py-3">
+                        <span className="text-sm font-semibold text-foreground">
+                            Screen Preview
+                        </span>
+                        <Button type="button" variant="ghost" size="sm" onClick={onClose}>
+                            <X className="mr-1 h-4 w-4" />
                             Close
-                        </button>
+                        </Button>
                     </div>
                     <img
                         src={previewImageUrl}
                         alt="Screen preview"
-                        className="screen-preview-modal-image"
+                        className="block max-h-[80vh] w-full bg-muted object-contain"
                     />
                 </div>
             )}

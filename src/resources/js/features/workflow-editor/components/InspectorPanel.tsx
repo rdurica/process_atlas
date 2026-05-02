@@ -1,4 +1,3 @@
-import StatusBadge from '@/Components/StatusBadge';
 import { workflowNodeKindLabel } from '../lib/utils';
 import type { InspectorTab, WorkflowNodeData, WorkflowNodeKind } from '../types';
 import type { Edge, Node } from '@xyflow/react';
@@ -6,6 +5,9 @@ import EdgeInspector from './inspector/EdgeInspector';
 import NodeInspector from './inspector/NodeInspector';
 import ScreenInspector from './inspector/ScreenInspector';
 import type { ScreenEditorState } from './inspector/types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
+import { Badge } from '@/Components/ui/badge';
+import { Tabs, TabsList, TabsTrigger } from '@/Components/ui/tabs';
 
 interface InspectorPanelProps {
     selectedNode: Node | null;
@@ -62,86 +64,90 @@ export default function InspectorPanel({
 
     return (
         <aside className="workflow-inspector-panel">
-            <section className="flex min-h-full flex-col">
-                <div className="flex items-start justify-between gap-3">
-                    <div>
-                        <p className="eyebrow">Inspector</p>
-                        <h2 className="panel-title mt-2">
-                            {selectedEdge
-                                ? 'Connection'
-                                : selectedNode
-                                  ? workflowNodeKindLabel(selectedNodeKind)
-                                  : null}
-                        </h2>
+            <Card className="glass-strong flex h-full flex-col">
+                <CardHeader className="pb-2">
+                    <div className="flex items-start justify-between gap-3">
+                        <div>
+                            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                                Inspector
+                            </p>
+                            <CardTitle className="mt-1 text-base">
+                                {selectedEdge
+                                    ? 'Connection'
+                                    : selectedNode
+                                      ? workflowNodeKindLabel(selectedNodeKind)
+                                      : null}
+                            </CardTitle>
+                        </div>
+                        {selectedEdge ? (
+                            <Badge variant="subtle">Edge</Badge>
+                        ) : selectedScreen ? (
+                            <Badge variant="subtle">Saved Screen</Badge>
+                        ) : selectedNode ? (
+                            <Badge variant="secondary">
+                                {workflowNodeKindLabel(selectedNodeKind)}
+                            </Badge>
+                        ) : null}
                     </div>
-                    {selectedEdge ? (
-                        <StatusBadge tone="brand">Edge</StatusBadge>
-                    ) : selectedScreen ? (
-                        <StatusBadge tone="brand">Saved Screen</StatusBadge>
-                    ) : selectedNode ? (
-                        <StatusBadge tone="neutral">
-                            {workflowNodeKindLabel(selectedNodeKind)}
-                        </StatusBadge>
-                    ) : null}
-                </div>
-
-                {selectedNode && selectedNodeInspectorTabs.length > 0 && (
-                    <div
-                        className="inspector-tabs mt-5"
-                        style={{
-                            gridTemplateColumns: `repeat(${selectedNodeInspectorTabs.length}, minmax(0, 1fr))`,
-                        }}
-                    >
-                        {selectedNodeInspectorTabs.map(([key, label]) => (
-                            <button
-                                key={key}
-                                type="button"
-                                onClick={() => setInspectorTab(key)}
-                                className={`inspector-tab ${
-                                    inspectorTab === key ? 'inspector-tab-active' : ''
-                                }`.trim()}
+                </CardHeader>
+                <CardContent className="flex-1 overflow-y-auto">
+                    {selectedNode && selectedNodeInspectorTabs.length > 0 && (
+                        <Tabs
+                            value={inspectorTab}
+                            onValueChange={value => setInspectorTab(value as InspectorTab)}
+                            className="mb-4"
+                        >
+                            <TabsList
+                                className="w-full"
+                                style={{
+                                    gridTemplateColumns: `repeat(${selectedNodeInspectorTabs.length}, minmax(0, 1fr))`,
+                                }}
                             >
-                                {label}
-                            </button>
-                        ))}
-                    </div>
-                )}
+                                {selectedNodeInspectorTabs.map(([key, label]) => (
+                                    <TabsTrigger key={key} value={key}>
+                                        {label}
+                                    </TabsTrigger>
+                                ))}
+                            </TabsList>
+                        </Tabs>
+                    )}
 
-                {selectedEdge ? (
-                    <EdgeInspector
-                        selectedEdge={selectedEdge}
-                        selectedEdgeSourceNode={selectedEdgeSourceNode}
-                        canEditWorkflows={canEditWorkflows}
-                        edgeDraftLabel={edgeDraftLabel}
-                        setEdgeDraftLabel={setEdgeDraftLabel}
-                        saveSelectedEdgeLabel={saveSelectedEdgeLabel}
-                        removeSelectedEdge={removeSelectedEdge}
-                    />
-                ) : selectedNode && selectedNodeKind !== 'screen' ? (
-                    <NodeInspector
-                        selectedNode={selectedNode}
-                        selectedNodeKind={selectedNodeKind}
-                        inspectorTab={inspectorTab}
-                        canEditWorkflows={canEditWorkflows}
-                        projectWorkflows={projectWorkflows}
-                        workflowId={workflowId}
-                        updateNodeData={handleNodeDataUpdate}
-                        removeWorkflowNode={removeWorkflowNode}
-                    />
-                ) : selectedNode ? (
-                    <ScreenInspector
-                        selectedNode={selectedNode}
-                        selectedScreen={selectedScreen}
-                        inspectorTab={inspectorTab}
-                        canEditWorkflows={canEditWorkflows}
-                        screenEditor={screenEditor}
-                        updateNodeData={handleNodeDataUpdate}
-                        removeWorkflowNode={removeWorkflowNode}
-                        setPreviewImageUrl={setPreviewImageUrl}
-                        setActionNotice={setActionNotice}
-                    />
-                ) : null}
-            </section>
+                    {selectedEdge ? (
+                        <EdgeInspector
+                            selectedEdge={selectedEdge}
+                            selectedEdgeSourceNode={selectedEdgeSourceNode}
+                            canEditWorkflows={canEditWorkflows}
+                            edgeDraftLabel={edgeDraftLabel}
+                            setEdgeDraftLabel={setEdgeDraftLabel}
+                            saveSelectedEdgeLabel={saveSelectedEdgeLabel}
+                            removeSelectedEdge={removeSelectedEdge}
+                        />
+                    ) : selectedNode && selectedNodeKind !== 'screen' ? (
+                        <NodeInspector
+                            selectedNode={selectedNode}
+                            selectedNodeKind={selectedNodeKind}
+                            inspectorTab={inspectorTab}
+                            canEditWorkflows={canEditWorkflows}
+                            projectWorkflows={projectWorkflows}
+                            workflowId={workflowId}
+                            updateNodeData={handleNodeDataUpdate}
+                            removeWorkflowNode={removeWorkflowNode}
+                        />
+                    ) : selectedNode ? (
+                        <ScreenInspector
+                            selectedNode={selectedNode}
+                            selectedScreen={selectedScreen}
+                            inspectorTab={inspectorTab}
+                            canEditWorkflows={canEditWorkflows}
+                            screenEditor={screenEditor}
+                            updateNodeData={handleNodeDataUpdate}
+                            removeWorkflowNode={removeWorkflowNode}
+                            setPreviewImageUrl={setPreviewImageUrl}
+                            setActionNotice={setActionNotice}
+                        />
+                    ) : null}
+                </CardContent>
+            </Card>
         </aside>
     );
 }

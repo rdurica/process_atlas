@@ -1,6 +1,17 @@
 import { Link } from '@inertiajs/react';
 import { isConditionNodeKind } from '../../lib/utils';
 import type { NotificationSeverity, NodeInspectorProps } from './types';
+import { Button } from '@/Components/ui/button';
+import { Input } from '@/Components/ui/input';
+import { Label } from '@/Components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/Components/ui/select';
+import { Textarea } from '@/Components/ui/textarea';
 
 export default function NodeInspector({
     selectedNode,
@@ -13,85 +24,91 @@ export default function NodeInspector({
     removeWorkflowNode,
 }: NodeInspectorProps) {
     return (
-        <div className="workflow-inline-form mt-5 flex flex-1 flex-col">
+        <div className="mt-5 flex flex-1 flex-col gap-4">
             {selectedNodeKind === 'notification' && (
                 <>
                     <div
-                        className={`workflow-text-row workflow-notification-row-${
-                            (selectedNode.data.severity as NotificationSeverity | undefined) ??
-                            'info'
+                        className={`rounded-lg border p-3 ${
+                            (selectedNode.data.severity as NotificationSeverity | undefined) ===
+                            'error'
+                                ? 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/20'
+                                : (selectedNode.data.severity as
+                                        | NotificationSeverity
+                                        | undefined) === 'warning'
+                                  ? 'border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/20'
+                                  : (selectedNode.data.severity as
+                                          | NotificationSeverity
+                                          | undefined) === 'success'
+                                    ? 'border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/20'
+                                    : 'border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/20'
                         }`}
                     >
-                        <p className="workflow-text-row-title">
+                        <p className="text-sm font-semibold text-foreground">
                             {(selectedNode.data.text as string | undefined) ?? 'Notification'}
                         </p>
-                        <p className="workflow-text-row-meta">
+                        <p className="text-xs capitalize text-muted-foreground">
                             {(selectedNode.data.severity as NotificationSeverity | undefined) ??
                                 'info'}
                         </p>
                     </div>
 
-                    <label className="block text-sm font-medium text-slate-700">
-                        Severity
-                        <select
+                    <div className="space-y-1.5">
+                        <Label>Severity</Label>
+                        <Select
                             value={
                                 (selectedNode.data.severity as NotificationSeverity | undefined) ??
                                 'info'
                             }
-                            onChange={event =>
-                                updateNodeData({
-                                    severity: event.target.value as NotificationSeverity,
-                                })
+                            onValueChange={value =>
+                                updateNodeData({ severity: value as NotificationSeverity })
                             }
                             disabled={!canEditWorkflows}
-                            className="select-shell mt-2"
                         >
-                            <option value="error">Error</option>
-                            <option value="warning">Warning</option>
-                            <option value="info">Info</option>
-                            <option value="success">Success</option>
-                        </select>
-                    </label>
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="error">Error</SelectItem>
+                                <SelectItem value="warning">Warning</SelectItem>
+                                <SelectItem value="info">Info</SelectItem>
+                                <SelectItem value="success">Success</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
 
-                    <label className="block text-sm font-medium text-slate-700">
-                        Text
-                        <textarea
+                    <div className="space-y-1.5">
+                        <Label>Text</Label>
+                        <Textarea
                             value={(selectedNode.data.text as string | undefined) ?? ''}
                             onChange={event => updateNodeData({ text: event.target.value })}
                             disabled={!canEditWorkflows}
-                            className="textarea-shell mt-2"
                         />
-                    </label>
+                    </div>
 
-                    <label className="block text-sm font-medium text-slate-700">
-                        Description
-                        <textarea
+                    <div className="space-y-1.5">
+                        <Label>Description</Label>
+                        <Textarea
                             value={(selectedNode.data.description as string | undefined) ?? ''}
-                            onChange={event =>
-                                updateNodeData({
-                                    description: event.target.value,
-                                })
-                            }
+                            onChange={event => updateNodeData({ description: event.target.value })}
                             disabled={!canEditWorkflows}
-                            className="textarea-shell textarea-shell-compact mt-2"
+                            className="min-h-[3.5rem]"
                         />
-                    </label>
+                    </div>
                 </>
             )}
 
             {isConditionNodeKind(selectedNodeKind) && (
                 <>
-                    <label className="block text-sm font-medium text-slate-700">
-                        Condition
-                        <textarea
+                    <div className="space-y-1.5">
+                        <Label>Condition</Label>
+                        <Textarea
                             value={(selectedNode.data.condition as string | undefined) ?? ''}
                             onChange={event => updateNodeData({ condition: event.target.value })}
                             disabled={!canEditWorkflows}
-                            className="textarea-shell mt-2"
                         />
-                    </label>
+                    </div>
 
-                    <div className="empty-state">
+                    <div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
                         Select an outgoing connection on the canvas to edit its label.
                     </div>
                 </>
@@ -101,35 +118,30 @@ export default function NodeInspector({
                 <>
                     {inspectorTab === 'general' && (
                         <>
-                            <label className="block text-sm font-medium text-slate-700">
-                                Title
-                                <textarea
+                            <div className="space-y-1.5">
+                                <Label>Title</Label>
+                                <Textarea
                                     value={(selectedNode.data.title as string | undefined) ?? ''}
                                     onChange={event =>
-                                        updateNodeData({
-                                            title: event.target.value,
-                                        })
+                                        updateNodeData({ title: event.target.value })
                                     }
                                     disabled={!canEditWorkflows}
-                                    className="textarea-shell mt-2"
                                 />
-                            </label>
+                            </div>
 
-                            <label className="block text-sm font-medium text-slate-700">
-                                Description
-                                <textarea
+                            <div className="space-y-1.5">
+                                <Label>Description</Label>
+                                <Textarea
                                     value={
                                         (selectedNode.data.description as string | undefined) ?? ''
                                     }
                                     onChange={event =>
-                                        updateNodeData({
-                                            description: event.target.value,
-                                        })
+                                        updateNodeData({ description: event.target.value })
                                     }
                                     disabled={!canEditWorkflows}
-                                    className="textarea-shell textarea-shell-compact mt-2"
+                                    className="min-h-[3.5rem]"
                                 />
-                            </label>
+                            </div>
                         </>
                     )}
 
@@ -148,7 +160,7 @@ export default function NodeInspector({
             {selectedNodeKind === 'start' && (
                 <>
                     {inspectorTab === 'general' && (
-                        <div className="empty-state">
+                        <div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
                             Entry point of the workflow — no configuration needed.
                         </div>
                     )}
@@ -167,27 +179,26 @@ export default function NodeInspector({
 
             {selectedNodeKind === 'end' && (
                 <>
-                    <label className="block text-sm font-medium text-slate-700">
-                        Label
-                        <input
+                    <div className="space-y-1.5">
+                        <Label>Label</Label>
+                        <Input
                             value={(selectedNode.data.label as string | undefined) ?? ''}
                             onChange={event => updateNodeData({ label: event.target.value })}
                             disabled={!canEditWorkflows}
-                            className="input-shell mt-2"
                         />
-                    </label>
+                    </div>
 
-                    <label className="block text-sm font-medium text-slate-700">
-                        Chain to workflow
-                        <select
+                    <div className="space-y-1.5">
+                        <Label>Chain to workflow</Label>
+                        <Select
                             value={String(
                                 (selectedNode.data.linked_workflow_id as
                                     | number
                                     | null
                                     | undefined) ?? ''
                             )}
-                            onChange={event => {
-                                const id = event.target.value ? Number(event.target.value) : null;
+                            onValueChange={value => {
+                                const id = value ? Number(value) : null;
                                 const name =
                                     projectWorkflows.find(workflow => workflow.id === id)?.name ??
                                     null;
@@ -197,26 +208,29 @@ export default function NodeInspector({
                                 });
                             }}
                             disabled={!canEditWorkflows}
-                            className="select-shell mt-2"
                         >
-                            <option value="">— None —</option>
-                            {projectWorkflows
-                                .filter(workflow => workflow.id !== workflowId)
-                                .map(workflow => (
-                                    <option key={workflow.id} value={workflow.id}>
-                                        {workflow.name}
-                                        {workflow.status === 'published' ? ' ✓' : ''}
-                                    </option>
-                                ))}
-                        </select>
-                    </label>
+                            <SelectTrigger>
+                                <SelectValue placeholder="— None —" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {projectWorkflows
+                                    .filter(workflow => workflow.id !== workflowId)
+                                    .map(workflow => (
+                                        <SelectItem key={workflow.id} value={String(workflow.id)}>
+                                            {workflow.name}
+                                            {workflow.status === 'published' ? ' ✓' : ''}
+                                        </SelectItem>
+                                    ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
 
                     {(selectedNode.data.linked_workflow_id as number | null | undefined) && (
                         <Link
                             href={route('workflows.editor', {
                                 workflow: selectedNode.data.linked_workflow_id as number,
                             })}
-                            className="mt-1 inline-flex items-center text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                            className="inline-flex items-center text-sm text-primary hover:text-primary/80 hover:underline"
                         >
                             Open workflow →
                         </Link>
@@ -225,33 +239,30 @@ export default function NodeInspector({
             )}
 
             {selectedNodeKind === 'timer' && (
-                <>
-                    <label className="block text-sm font-medium text-slate-700">
-                        Timer expression
-                        <textarea
-                            value={(selectedNode.data.text as string | undefined) ?? ''}
-                            onChange={event => updateNodeData({ text: event.target.value })}
-                            disabled={!canEditWorkflows}
-                            className="textarea-shell mt-2"
-                            placeholder="e.g. wait 2 hours, until next Monday 9:00"
-                        />
-                    </label>
-                </>
+                <div className="space-y-1.5">
+                    <Label>Timer expression</Label>
+                    <Textarea
+                        value={(selectedNode.data.text as string | undefined) ?? ''}
+                        onChange={event => updateNodeData({ text: event.target.value })}
+                        disabled={!canEditWorkflows}
+                        placeholder="e.g. wait 2 hours, until next Monday 9:00"
+                    />
+                </div>
             )}
 
             {selectedNodeKind === 'subprocess' && (
                 <>
-                    <label className="block text-sm font-medium text-slate-700">
-                        Sub-process workflow
-                        <select
+                    <div className="space-y-1.5">
+                        <Label>Sub-process workflow</Label>
+                        <Select
                             value={String(
                                 (selectedNode.data.linked_workflow_id as
                                     | number
                                     | null
                                     | undefined) ?? ''
                             )}
-                            onChange={event => {
-                                const id = event.target.value ? Number(event.target.value) : null;
+                            onValueChange={value => {
+                                const id = value ? Number(value) : null;
                                 const name =
                                     projectWorkflows.find(workflow => workflow.id === id)?.name ??
                                     null;
@@ -261,26 +272,29 @@ export default function NodeInspector({
                                 });
                             }}
                             disabled={!canEditWorkflows}
-                            className="select-shell mt-2"
                         >
-                            <option value="">— None —</option>
-                            {projectWorkflows
-                                .filter(workflow => workflow.id !== workflowId)
-                                .map(workflow => (
-                                    <option key={workflow.id} value={workflow.id}>
-                                        {workflow.name}
-                                        {workflow.status === 'published' ? ' ✓' : ''}
-                                    </option>
-                                ))}
-                        </select>
-                    </label>
+                            <SelectTrigger>
+                                <SelectValue placeholder="— None —" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {projectWorkflows
+                                    .filter(workflow => workflow.id !== workflowId)
+                                    .map(workflow => (
+                                        <SelectItem key={workflow.id} value={String(workflow.id)}>
+                                            {workflow.name}
+                                            {workflow.status === 'published' ? ' ✓' : ''}
+                                        </SelectItem>
+                                    ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
 
                     {(selectedNode.data.linked_workflow_id as number | null | undefined) && (
                         <Link
                             href={route('workflows.editor', {
                                 workflow: selectedNode.data.linked_workflow_id as number,
                             })}
-                            className="mt-1 inline-flex items-center text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                            className="inline-flex items-center text-sm text-primary hover:text-primary/80 hover:underline"
                         >
                             Open sub-process →
                         </Link>
@@ -289,27 +303,27 @@ export default function NodeInspector({
             )}
 
             {selectedNodeKind === 'note' && (
-                <label className="block text-sm font-medium text-slate-700">
-                    Note
-                    <textarea
+                <div className="space-y-1.5">
+                    <Label>Note</Label>
+                    <Textarea
                         value={(selectedNode.data.text as string | undefined) ?? ''}
                         onChange={event => updateNodeData({ text: event.target.value })}
                         disabled={!canEditWorkflows}
-                        className="textarea-shell mt-2"
                     />
-                </label>
+                </div>
             )}
 
             {selectedNode.type !== 'start' && (
-                <div className="workflow-inline-actions mt-auto">
-                    <button
+                <div className="mt-auto pt-4">
+                    <Button
                         type="button"
+                        variant="destructive"
+                        className="w-full"
                         onClick={() => removeWorkflowNode(selectedNode.id)}
                         disabled={!canEditWorkflows}
-                        className="btn-danger workflow-wide-button"
                     >
                         Delete Node
-                    </button>
+                    </Button>
                 </div>
             )}
         </div>
@@ -326,18 +340,16 @@ function SecurityRuleField({
     onChange: (value: string | null) => void;
 }) {
     return (
-        <div className="workflow-security-form">
-            <label className="workflow-security-label block text-sm font-medium text-slate-700">
-                Security rule (additional)
-                <textarea
-                    value={value}
-                    onChange={event =>
-                        onChange(event.target.value.length > 0 ? event.target.value : null)
-                    }
-                    disabled={disabled}
-                    className="textarea-shell textarea-shell-security mt-2"
-                />
-            </label>
+        <div className="space-y-1.5">
+            <Label>Security rule (additional)</Label>
+            <Textarea
+                value={value}
+                onChange={event =>
+                    onChange(event.target.value.length > 0 ? event.target.value : null)
+                }
+                disabled={disabled}
+                className="min-h-[16rem]"
+            />
         </div>
     );
 }

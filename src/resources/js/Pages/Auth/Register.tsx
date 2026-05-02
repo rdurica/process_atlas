@@ -1,7 +1,9 @@
 import InputError from '@/Components/InputError';
-import TextInput from '@/Components/TextInput';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
+import { Input } from '@/Components/ui/input';
+import { Button } from '@/Components/ui/button';
+import { Label } from '@/Components/ui/label';
 
 export default function Register() {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -13,7 +15,6 @@ export default function Register() {
 
     const submit: FormEventHandler = e => {
         e.preventDefault();
-
         post(route('register'), {
             onFinish: () => reset('password', 'password_confirmation'),
         });
@@ -29,50 +30,48 @@ export default function Register() {
                 </Link>
 
                 <div>
-                    <p className="eyebrow text-slate-500">Process Atlas</p>
+                    <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                        Process Atlas
+                    </p>
                     <h1 className="login-title">
                         Create your account and start mapping workflows.
                     </h1>
-                    <p className="mt-5 max-w-xl text-base leading-7 text-slate-600">
+                    <p className="mt-4 max-w-xl text-base leading-7 text-muted-foreground">
                         Build process models, collaborate with your team, and publish workflow
                         revisions from one focused workspace.
                     </p>
                 </div>
 
-                <div
-                    className="login-preview"
-                    aria-hidden="true"
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                >
+                <div className="login-preview flex items-center justify-center" aria-hidden="true">
                     <svg
                         viewBox="0 0 400 220"
                         width="100%"
                         height="100%"
                         preserveAspectRatio="xMidYMid meet"
-                        style={{ maxWidth: '360px' }}
+                        className="max-w-[360px]"
                     >
                         <defs>
                             <linearGradient id="nodeGrad" x1="0" y1="0" x2="1" y2="1">
-                                <stop offset="0%" stopColor="rgba(255,255,255,0.98)" />
-                                <stop offset="100%" stopColor="rgba(240,247,255,0.94)" />
+                                <stop offset="0%" stopColor="hsl(var(--card))" />
+                                <stop offset="100%" stopColor="hsl(var(--muted))" />
                             </linearGradient>
                             <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
                                 <feDropShadow
                                     dx="0"
-                                    dy="12"
-                                    stdDeviation="10"
-                                    floodColor="rgba(15,23,42,0.1)"
+                                    dy="8"
+                                    stdDeviation="8"
+                                    floodColor="hsl(var(--foreground))"
+                                    floodOpacity="0.08"
                                 />
                             </filter>
                         </defs>
 
-                        {/* Connection lines */}
                         <line
                             x1="110"
                             y1="85"
                             x2="200"
                             y2="65"
-                            stroke="#0f5ef7"
+                            stroke="hsl(var(--primary))"
                             strokeWidth="2"
                             opacity="0.35"
                         />
@@ -81,7 +80,7 @@ export default function Register() {
                             y1="65"
                             x2="290"
                             y2="85"
-                            stroke="#0f5ef7"
+                            stroke="hsl(var(--primary))"
                             strokeWidth="2"
                             opacity="0.35"
                         />
@@ -90,7 +89,7 @@ export default function Register() {
                             y1="155"
                             x2="200"
                             y2="65"
-                            stroke="#0f5ef7"
+                            stroke="hsl(var(--primary))"
                             strokeWidth="2"
                             opacity="0.25"
                         />
@@ -99,19 +98,19 @@ export default function Register() {
                             y1="65"
                             x2="245"
                             y2="155"
-                            stroke="#0f5ef7"
+                            stroke="hsl(var(--primary))"
                             strokeWidth="2"
                             opacity="0.25"
                         />
 
-                        {/* Nodes */}
                         <circle
                             cx="110"
                             cy="85"
                             r="28"
                             fill="url(#nodeGrad)"
-                            stroke="rgba(15,94,247,0.25)"
+                            stroke="hsl(var(--primary))"
                             strokeWidth="1.5"
+                            strokeOpacity="0.25"
                             filter="url(#shadow)"
                         />
                         <text
@@ -120,7 +119,7 @@ export default function Register() {
                             textAnchor="middle"
                             fontSize="11"
                             fontWeight="700"
-                            fill="#0f172a"
+                            fill="hsl(var(--foreground))"
                         >
                             Start
                         </text>
@@ -130,8 +129,9 @@ export default function Register() {
                             cy="65"
                             r="32"
                             fill="url(#nodeGrad)"
-                            stroke="rgba(15,94,247,0.3)"
+                            stroke="hsl(var(--primary))"
                             strokeWidth="1.5"
+                            strokeOpacity="0.3"
                             filter="url(#shadow)"
                         />
                         <text
@@ -140,7 +140,7 @@ export default function Register() {
                             textAnchor="middle"
                             fontSize="11"
                             fontWeight="700"
-                            fill="#0f172a"
+                            fill="hsl(var(--foreground))"
                         >
                             Design
                         </text>
@@ -150,8 +150,9 @@ export default function Register() {
                             cy="85"
                             r="28"
                             fill="url(#nodeGrad)"
-                            stroke="rgba(15,94,247,0.25)"
+                            stroke="hsl(var(--primary))"
                             strokeWidth="1.5"
+                            strokeOpacity="0.25"
                             filter="url(#shadow)"
                         />
                         <text
@@ -160,7 +161,7 @@ export default function Register() {
                             textAnchor="middle"
                             fontSize="11"
                             fontWeight="700"
-                            fill="#0f172a"
+                            fill="hsl(var(--foreground))"
                         >
                             Build
                         </text>
@@ -170,8 +171,9 @@ export default function Register() {
                             cy="155"
                             r="26"
                             fill="url(#nodeGrad)"
-                            stroke="rgba(15,94,247,0.2)"
+                            stroke="hsl(var(--primary))"
                             strokeWidth="1.5"
+                            strokeOpacity="0.2"
                             filter="url(#shadow)"
                         />
                         <text
@@ -180,7 +182,7 @@ export default function Register() {
                             textAnchor="middle"
                             fontSize="11"
                             fontWeight="700"
-                            fill="#0f172a"
+                            fill="hsl(var(--foreground))"
                         >
                             Review
                         </text>
@@ -190,8 +192,9 @@ export default function Register() {
                             cy="155"
                             r="26"
                             fill="url(#nodeGrad)"
-                            stroke="rgba(15,94,247,0.2)"
+                            stroke="hsl(var(--primary))"
                             strokeWidth="1.5"
+                            strokeOpacity="0.2"
                             filter="url(#shadow)"
                         />
                         <text
@@ -200,7 +203,7 @@ export default function Register() {
                             textAnchor="middle"
                             fontSize="11"
                             fontWeight="700"
-                            fill="#0f172a"
+                            fill="hsl(var(--foreground))"
                         >
                             Publish
                         </text>
@@ -211,76 +214,74 @@ export default function Register() {
             <section className="login-form-panel">
                 <div className="w-full max-w-md">
                     <div className="mb-8">
-                        <p className="eyebrow text-slate-500">Secure Workspace</p>
-                        <h2 className="mt-3 text-3xl font-bold text-slate-950">Create account</h2>
+                        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                            Secure Workspace
+                        </p>
+                        <h2 className="mt-2 text-2xl font-bold text-foreground">Create account</h2>
                     </div>
 
                     <form onSubmit={submit} className="space-y-5">
-                        <label className="block text-sm font-semibold text-slate-700">
-                            Name
-                            <TextInput
+                        <div className="space-y-1.5">
+                            <Label htmlFor="name">Name</Label>
+                            <Input
                                 id="name"
                                 name="name"
                                 value={data.name}
-                                className="login-input mt-2 block w-full"
                                 autoComplete="name"
-                                isFocused={true}
+                                autoFocus
                                 onChange={e => setData('name', e.target.value)}
                             />
-                            <InputError message={errors.name} className="mt-2" />
-                        </label>
+                            <InputError message={errors.name} />
+                        </div>
 
-                        <label className="block text-sm font-semibold text-slate-700">
-                            Email
-                            <TextInput
+                        <div className="space-y-1.5">
+                            <Label htmlFor="email">Email</Label>
+                            <Input
                                 id="email"
                                 type="email"
                                 name="email"
                                 value={data.email}
-                                className="login-input mt-2 block w-full"
                                 autoComplete="username"
                                 onChange={e => setData('email', e.target.value)}
                             />
-                            <InputError message={errors.email} className="mt-2" />
-                        </label>
+                            <InputError message={errors.email} />
+                        </div>
 
-                        <label className="block text-sm font-semibold text-slate-700">
-                            Password
-                            <TextInput
+                        <div className="space-y-1.5">
+                            <Label htmlFor="password">Password</Label>
+                            <Input
                                 id="password"
                                 type="password"
                                 name="password"
                                 value={data.password}
-                                className="login-input mt-2 block w-full"
                                 autoComplete="new-password"
                                 onChange={e => setData('password', e.target.value)}
                             />
-                            <InputError message={errors.password} className="mt-2" />
-                        </label>
+                            <InputError message={errors.password} />
+                        </div>
 
-                        <label className="block text-sm font-semibold text-slate-700">
-                            Confirm Password
-                            <TextInput
+                        <div className="space-y-1.5">
+                            <Label htmlFor="password_confirmation">Confirm Password</Label>
+                            <Input
                                 id="password_confirmation"
                                 type="password"
                                 name="password_confirmation"
                                 value={data.password_confirmation}
-                                className="login-input mt-2 block w-full"
                                 autoComplete="new-password"
                                 onChange={e => setData('password_confirmation', e.target.value)}
                             />
-                            <InputError message={errors.password_confirmation} className="mt-2" />
-                        </label>
+                            <InputError message={errors.password_confirmation} />
+                        </div>
 
-                        <button type="submit" className="login-submit" disabled={processing}>
+                        <Button type="submit" className="w-full" disabled={processing}>
                             Create account
-                        </button>
+                        </Button>
 
-                        <p className="text-center text-sm text-slate-600">
+                        <p className="text-center text-sm text-muted-foreground">
                             Already have an account?{' '}
                             <Link
                                 href={route('login')}
-                                className="font-semibold text-blue-700 underline-offset-4 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                className="font-medium text-primary underline-offset-4 hover:underline focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                             >
                                 Log in
                             </Link>

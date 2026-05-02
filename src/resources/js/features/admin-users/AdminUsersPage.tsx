@@ -6,6 +6,19 @@ import { formatDate } from '@/shared/lib/dates';
 import type { PageProps } from '@/types';
 import { ALL_ROLES } from './types';
 import { roleTone, useAdminUsers } from './useAdminUsers';
+import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
+import { Button } from '@/Components/ui/button';
+import { Input } from '@/Components/ui/input';
+
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/Components/ui/table';
+import { Search, UserPlus, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function AdminUsersPage() {
     const user = usePage<PageProps>().props.auth.user;
@@ -22,92 +35,81 @@ export default function AdminUsersPage() {
             header={
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <p className="eyebrow">Administration</p>
-                        <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
+                        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                            Administration
+                        </p>
+                        <h1 className="mt-1 text-2xl font-bold tracking-tight text-foreground">
                             User Administration
                         </h1>
                     </div>
-                    <button
-                        onClick={() => adminUsers.setShowCreateModal(true)}
-                        className="btn-secondary px-4 py-2.5 text-sm"
-                    >
+                    <Button onClick={() => adminUsers.setShowCreateModal(true)}>
+                        <UserPlus className="mr-1.5 h-4 w-4" />
                         Add User
-                    </button>
+                    </Button>
                 </div>
             }
         >
             <Head title="User Administration" />
 
-            <section className="surface-card table-shell">
-                <div className="command-bar border-b border-slate-200/70">
-                    <div>
-                        <p className="eyebrow">Users</p>
-                        <h2 className="panel-title mt-2">System Users</h2>
-                    </div>
-                    <div className="flex w-full flex-col gap-3 lg:w-auto lg:flex-row lg:items-center">
+            <Card>
+                <CardHeader>
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                        <div>
+                            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                                Users
+                            </p>
+                            <CardTitle className="mt-1 text-base">System Users</CardTitle>
+                        </div>
                         <div className="relative min-w-[260px] lg:w-[320px]">
-                            <input
+                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <Input
                                 type="text"
                                 value={adminUsers.searchQuery}
                                 onChange={event => adminUsers.setSearchQuery(event.target.value)}
                                 placeholder="Search by name or email..."
-                                className="input-shell"
+                                className="pl-9"
                             />
                             {adminUsers.loading && adminUsers.users.length > 0 && (
-                                <span className="absolute right-3 top-1/2 -translate-y-1/2">
-                                    <svg
-                                        className="h-4 w-4 animate-spin text-slate-400"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <circle
-                                            className="opacity-25"
-                                            cx="12"
-                                            cy="12"
-                                            r="10"
-                                            stroke="currentColor"
-                                            strokeWidth="4"
-                                        />
-                                        <path
-                                            className="opacity-75"
-                                            fill="currentColor"
-                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                        />
-                                    </svg>
-                                </span>
+                                <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
                             )}
                         </div>
                     </div>
-                </div>
-
-                <div className="overflow-x-auto px-6 pb-6">
+                </CardHeader>
+                <CardContent>
                     {adminUsers.loading && adminUsers.users.length === 0 ? (
-                        <div className="empty-state py-12">Loading users…</div>
+                        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12 text-center">
+                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground/50" />
+                            <p className="mt-2 text-sm text-muted-foreground">Loading users...</p>
+                        </div>
                     ) : adminUsers.users.length === 0 ? (
-                        <div className="empty-state py-12">No users found.</div>
+                        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12 text-center">
+                            <Search className="h-8 w-8 text-muted-foreground/50" />
+                            <p className="mt-2 text-sm text-muted-foreground">No users found.</p>
+                        </div>
                     ) : (
-                        <table className="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Email</th>
-                                    <th>Roles</th>
-                                    <th>Status</th>
-                                    <th>Created</th>
-                                    <th className="text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>Email</TableHead>
+                                    <TableHead>Roles</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead>Created</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
                                 {adminUsers.users.map(item => (
-                                    <tr key={item.id} className="data-row">
-                                        <td>
-                                            <p className="font-semibold text-slate-950">
+                                    <TableRow key={item.id}>
+                                        <TableCell>
+                                            <p className="font-semibold text-foreground">
                                                 {item.name}
                                             </p>
-                                        </td>
-                                        <td className="text-slate-600">{item.email}</td>
-                                        <td>
+                                        </TableCell>
+                                        <TableCell className="text-muted-foreground">
+                                            {item.email}
+                                        </TableCell>
+                                        <TableCell>
                                             <div className="flex flex-wrap gap-1.5">
                                                 {item.roles.map(role => (
                                                     <StatusBadge key={role} tone={roleTone(role)}>
@@ -115,33 +117,41 @@ export default function AdminUsersPage() {
                                                     </StatusBadge>
                                                 ))}
                                                 {item.roles.length === 0 && (
-                                                    <span className="text-sm text-slate-400">
+                                                    <span className="text-sm text-muted-foreground">
                                                         —
                                                     </span>
                                                 )}
                                             </div>
-                                        </td>
-                                        <td>
+                                        </TableCell>
+                                        <TableCell>
                                             <StatusBadge
                                                 tone={item.is_active ? 'success' : 'neutral'}
                                             >
                                                 {item.is_active ? 'Active' : 'Disabled'}
                                             </StatusBadge>
-                                        </td>
-                                        <td className="text-slate-600">
+                                        </TableCell>
+                                        <TableCell className="text-muted-foreground">
                                             {formatDate(item.created_at)}
-                                        </td>
-                                        <td className="text-right">
+                                        </TableCell>
+                                        <TableCell className="text-right">
                                             <div className="flex justify-end gap-2">
-                                                <button
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
                                                     onClick={() => adminUsers.openRolesModal(item)}
-                                                    className="btn-secondary px-2 py-1 text-xs"
                                                 >
                                                     Edit Roles
-                                                </button>
+                                                </Button>
                                                 {item.id !== user.id && (
                                                     <>
-                                                        <button
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className={
+                                                                item.is_active
+                                                                    ? 'text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30'
+                                                                    : ''
+                                                            }
                                                             onClick={() =>
                                                                 adminUsers.handleToggleActive(
                                                                     item.id
@@ -150,48 +160,46 @@ export default function AdminUsersPage() {
                                                             disabled={
                                                                 adminUsers.pendingToggle === item.id
                                                             }
-                                                            className={`px-2 py-1 text-xs ${
-                                                                item.is_active
-                                                                    ? 'btn-ghost text-amber-700 hover:bg-amber-50'
-                                                                    : 'btn-secondary'
-                                                            }`}
                                                         >
                                                             {adminUsers.pendingToggle === item.id
                                                                 ? '…'
                                                                 : item.is_active
                                                                   ? 'Disable'
                                                                   : 'Enable'}
-                                                        </button>
-                                                        <button
+                                                        </Button>
+                                                        <Button
+                                                            variant="destructive"
+                                                            size="sm"
                                                             onClick={() =>
                                                                 adminUsers.handleDelete(item.id)
                                                             }
                                                             disabled={
                                                                 adminUsers.pendingDelete === item.id
                                                             }
-                                                            className="btn-danger px-2 py-1 text-xs"
                                                         >
                                                             {adminUsers.pendingDelete === item.id
                                                                 ? '…'
                                                                 : 'Delete'}
-                                                        </button>
+                                                        </Button>
                                                     </>
                                                 )}
                                             </div>
-                                        </td>
-                                    </tr>
+                                        </TableCell>
+                                    </TableRow>
                                 ))}
-                            </tbody>
-                        </table>
+                            </TableBody>
+                        </Table>
                     )}
-                </div>
+                </CardContent>
                 {!adminUsers.loading && adminUsers.total > 0 && (
-                    <div className="flex items-center justify-between border-t border-slate-200/70 px-6 py-4">
-                        <p className="text-sm text-slate-500">
+                    <div className="flex items-center justify-between border-t px-6 py-4">
+                        <p className="text-sm text-muted-foreground">
                             Showing {adminUsers.from} to {adminUsers.to} of {adminUsers.total} users
                         </p>
                         <div className="flex items-center gap-2">
-                            <button
+                            <Button
+                                variant="outline"
+                                size="sm"
                                 onClick={() =>
                                     adminUsers.fetchUsers(
                                         adminUsers.page - 1,
@@ -199,14 +207,16 @@ export default function AdminUsersPage() {
                                     )
                                 }
                                 disabled={adminUsers.page <= 1}
-                                className="btn-ghost px-3 py-1.5 text-sm disabled:opacity-40"
                             >
+                                <ChevronLeft className="mr-1 h-4 w-4" />
                                 Previous
-                            </button>
-                            <span className="text-sm text-slate-600">
+                            </Button>
+                            <span className="text-sm text-muted-foreground">
                                 Page {adminUsers.page} of {adminUsers.lastPage}
                             </span>
-                            <button
+                            <Button
+                                variant="outline"
+                                size="sm"
                                 onClick={() =>
                                     adminUsers.fetchUsers(
                                         adminUsers.page + 1,
@@ -214,14 +224,14 @@ export default function AdminUsersPage() {
                                     )
                                 }
                                 disabled={adminUsers.page >= adminUsers.lastPage}
-                                className="btn-ghost px-3 py-1.5 text-sm disabled:opacity-40"
                             >
                                 Next
-                            </button>
+                                <ChevronRight className="ml-1 h-4 w-4" />
+                            </Button>
                         </div>
                     </div>
                 )}
-            </section>
+            </Card>
 
             <Modal
                 show={adminUsers.showCreateModal}
@@ -230,29 +240,33 @@ export default function AdminUsersPage() {
             >
                 <form onSubmit={adminUsers.handleCreate} className="space-y-5 p-6 sm:p-7">
                     <div>
-                        <p className="eyebrow">Create User</p>
-                        <h2 className="panel-title mt-2">Add a new system user</h2>
+                        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                            Create User
+                        </p>
+                        <h2 className="mt-1 text-base font-semibold">Add a new system user</h2>
                     </div>
 
-                    <label className="block text-sm font-medium text-slate-700">
-                        Name
-                        <input
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-medium text-foreground">Name</label>
+                        <Input
                             type="text"
                             value={adminUsers.form.name}
                             onChange={event =>
-                                adminUsers.setForm({ ...adminUsers.form, name: event.target.value })
+                                adminUsers.setForm({
+                                    ...adminUsers.form,
+                                    name: event.target.value,
+                                })
                             }
                             disabled={adminUsers.pendingCreate}
-                            className="input-shell mt-2"
                         />
-                    </label>
-                    {adminUsers.errors.name && (
-                        <p className="mt-1 text-xs text-red-600">{adminUsers.errors.name}</p>
-                    )}
+                        {adminUsers.errors.name && (
+                            <p className="text-xs text-destructive">{adminUsers.errors.name}</p>
+                        )}
+                    </div>
 
-                    <label className="block text-sm font-medium text-slate-700">
-                        Email
-                        <input
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-medium text-foreground">Email</label>
+                        <Input
                             type="email"
                             value={adminUsers.form.email}
                             onChange={event =>
@@ -262,16 +276,15 @@ export default function AdminUsersPage() {
                                 })
                             }
                             disabled={adminUsers.pendingCreate}
-                            className="input-shell mt-2"
                         />
-                    </label>
-                    {adminUsers.errors.email && (
-                        <p className="mt-1 text-xs text-red-600">{adminUsers.errors.email}</p>
-                    )}
+                        {adminUsers.errors.email && (
+                            <p className="text-xs text-destructive">{adminUsers.errors.email}</p>
+                        )}
+                    </div>
 
-                    <label className="block text-sm font-medium text-slate-700">
-                        Password
-                        <input
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-medium text-foreground">Password</label>
+                        <Input
                             type="password"
                             value={adminUsers.form.password}
                             onChange={event =>
@@ -281,15 +294,14 @@ export default function AdminUsersPage() {
                                 })
                             }
                             disabled={adminUsers.pendingCreate}
-                            className="input-shell mt-2"
                         />
-                    </label>
-                    {adminUsers.errors.password && (
-                        <p className="mt-1 text-xs text-red-600">{adminUsers.errors.password}</p>
-                    )}
+                        {adminUsers.errors.password && (
+                            <p className="text-xs text-destructive">{adminUsers.errors.password}</p>
+                        )}
+                    </div>
 
                     <div>
-                        <p className="block text-sm font-medium text-slate-700">Roles</p>
+                        <p className="text-sm font-medium text-foreground">Roles</p>
                         <div className="mt-2 flex flex-wrap gap-3">
                             {ALL_ROLES.map(role => (
                                 <label key={role} className="flex items-center gap-1.5 text-sm">
@@ -307,7 +319,7 @@ export default function AdminUsersPage() {
                                             })
                                         }
                                         disabled={adminUsers.pendingCreate}
-                                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                        className="rounded border-border text-primary focus:ring-ring"
                                     />
                                     {role}
                                 </label>
@@ -316,27 +328,23 @@ export default function AdminUsersPage() {
                     </div>
 
                     {adminUsers.formError && (
-                        <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                        <p className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                             {adminUsers.formError}
                         </p>
                     )}
 
                     <div className="flex justify-end gap-3">
-                        <button
+                        <Button
                             type="button"
+                            variant="outline"
                             onClick={adminUsers.closeCreateModal}
                             disabled={adminUsers.pendingCreate}
-                            className="btn-ghost px-4 py-3 text-sm"
                         >
                             Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={adminUsers.pendingCreate}
-                            className="btn-primary px-4 py-3 text-sm"
-                        >
+                        </Button>
+                        <Button type="submit" disabled={adminUsers.pendingCreate}>
                             {adminUsers.pendingCreate ? 'Creating…' : 'Create'}
-                        </button>
+                        </Button>
                     </div>
                 </form>
             </Modal>
@@ -348,8 +356,12 @@ export default function AdminUsersPage() {
             >
                 <form onSubmit={adminUsers.handleUpdateRoles} className="space-y-5 p-6 sm:p-7">
                     <div>
-                        <p className="eyebrow">Edit Roles</p>
-                        <h2 className="panel-title mt-2">{adminUsers.editingUser?.name}</h2>
+                        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                            Edit Roles
+                        </p>
+                        <h2 className="mt-1 text-base font-semibold">
+                            {adminUsers.editingUser?.name}
+                        </h2>
                     </div>
 
                     <div className="flex flex-wrap gap-3">
@@ -360,7 +372,7 @@ export default function AdminUsersPage() {
                                     checked={adminUsers.editingUser?.roles.includes(role) ?? false}
                                     onChange={() => adminUsers.toggleRole(role)}
                                     disabled={adminUsers.pendingRoles}
-                                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                    className="rounded border-border text-primary focus:ring-ring"
                                 />
                                 {role}
                             </label>
@@ -368,27 +380,23 @@ export default function AdminUsersPage() {
                     </div>
 
                     {adminUsers.formError && (
-                        <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                        <p className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                             {adminUsers.formError}
                         </p>
                     )}
 
                     <div className="flex justify-end gap-3">
-                        <button
+                        <Button
                             type="button"
+                            variant="outline"
                             onClick={adminUsers.closeRolesModal}
                             disabled={adminUsers.pendingRoles}
-                            className="btn-ghost px-4 py-3 text-sm"
                         >
                             Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={adminUsers.pendingRoles}
-                            className="btn-primary px-4 py-3 text-sm"
-                        >
+                        </Button>
+                        <Button type="submit" disabled={adminUsers.pendingRoles}>
                             {adminUsers.pendingRoles ? 'Saving…' : 'Save'}
-                        </button>
+                        </Button>
                     </div>
                 </form>
             </Modal>
