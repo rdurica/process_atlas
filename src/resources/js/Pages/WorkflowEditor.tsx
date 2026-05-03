@@ -156,7 +156,6 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
                 undo={editor.undo}
                 redo={editor.redo}
                 saveGraph={editor.saveGraph}
-                isArchived={editor.isArchived}
                 setRevisionsPanelOpen={editor.setRevisionsPanelOpen}
                 reloadWorkflow={editor.reloadWorkflow}
             />

@@ -1228,14 +1228,14 @@
         width: max-content;
         max-width: calc(100vw - 2rem);
         display: flex;
+        flex-direction: column;
         align-items: center;
-        gap: 0.75rem;
         border-radius: calc(var(--radius) - 2px);
         border: 1px solid hsl(var(--border));
         background: hsl(var(--card) / 0.95);
-        padding: 0.5rem 0.75rem;
         box-shadow: var(--shadow-soft-lg);
         backdrop-filter: blur(12px);
+        overflow: hidden;
     }
 
     .workflow-actions {
