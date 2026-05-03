@@ -151,10 +151,10 @@ export default function ScreenInspector({
                     </div>
 
                     <div className="space-y-1.5">
-                        <Label>Description</Label>
+                        <Label>Note</Label>
                         <Textarea
-                            value={screenEditor.description}
-                            onChange={event => screenEditor.setDescription(event.target.value)}
+                            value={screenEditor.note}
+                            onChange={event => screenEditor.setNote(event.target.value)}
                             className="min-h-[8rem]"
                         />
                     </div>

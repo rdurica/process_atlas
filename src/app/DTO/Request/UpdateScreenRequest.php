@@ -9,8 +9,8 @@ final readonly class UpdateScreenRequest
         public bool $hasTitle,
         public ?string $subtitle,
         public bool $hasSubtitle,
-        public ?string $description,
-        public bool $hasDescription,
+        public ?string $note,
+        public bool $hasNote,
     ) {}
 
     /**
@@ -23,8 +23,8 @@ final readonly class UpdateScreenRequest
             hasTitle: array_key_exists('title', $payload),
             subtitle: array_key_exists('subtitle', $payload) ? self::nullableString($payload['subtitle']) : null,
             hasSubtitle: array_key_exists('subtitle', $payload),
-            description: array_key_exists('description', $payload) ? self::nullableString($payload['description']) : null,
-            hasDescription: array_key_exists('description', $payload),
+            note: array_key_exists('note', $payload) ? self::nullableString($payload['note']) : null,
+            hasNote: array_key_exists('note', $payload),
         );
     }
 
@@ -45,9 +45,9 @@ final readonly class UpdateScreenRequest
             $data['subtitle'] = $this->subtitle;
         }
 
-        if ($this->hasDescription)
+        if ($this->hasNote)
         {
-            $data['description'] = $this->description;
+            $data['note'] = $this->note;
         }
 
         return $data;

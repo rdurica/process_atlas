@@ -19,9 +19,9 @@ class UpdateScreenRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title'       => ['nullable', 'string', 'max:255'],
-            'subtitle'    => ['nullable', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
+            'title'    => ['nullable', 'string', 'max:255'],
+            'subtitle' => ['nullable', 'string', 'max:255'],
+            'note'     => ['nullable', 'string'],
         ];
     }
 

@@ -16,8 +16,8 @@ export interface ScreenEditorState {
     setTitle: (title: string) => void;
     subtitle: string;
     setSubtitle: (subtitle: string) => void;
-    description: string;
-    setDescription: (description: string) => void;
+    note: string;
+    setNote: (note: string) => void;
     imageFile: File | null;
     setImageFile: (file: File | null) => void;
     drawingJson: string;

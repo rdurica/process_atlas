@@ -45,7 +45,7 @@ export function nodeDisplayLabel(node: Node): string {
         case 'start':
             return (data.label as string) || 'Start';
         case 'end':
-            return (data.label as string) || 'End';
+            return (data.title as string) || 'End';
         default:
             return node.id;
     }

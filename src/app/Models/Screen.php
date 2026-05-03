@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
 
-#[Fillable(['workflow_revision_id', 'node_id', 'title', 'subtitle', 'description', 'image_path', 'drawing_json', 'drawing_image_path', 'created_by', 'updated_by'])]
+#[Fillable(['workflow_revision_id', 'node_id', 'title', 'subtitle', 'note', 'image_path', 'drawing_json', 'drawing_image_path', 'created_by', 'updated_by'])]
 #[Appends(['image_url', 'drawing_image_url'])]
 class Screen extends Model
 {

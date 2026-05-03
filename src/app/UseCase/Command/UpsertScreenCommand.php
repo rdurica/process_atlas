@@ -75,9 +75,9 @@ final class UpsertScreenCommand
                     'subtitle' => $request->hasSubtitle
                         ? $request->subtitle
                         : $screen->subtitle,
-                    'description' => $request->hasDescription
-                        ? $request->description
-                        : $screen->description,
+                    'note' => $request->hasNote
+                        ? $request->note
+                        : $screen->note,
                     'image_path'   => $imagePath,
                     'drawing_json' => $request->hasDrawingJson
                         ? $request->drawingJson

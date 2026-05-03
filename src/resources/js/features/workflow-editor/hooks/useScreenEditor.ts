@@ -25,8 +25,8 @@ interface UseScreenEditorReturn {
     setTitle: (title: string) => void;
     subtitle: string;
     setSubtitle: (subtitle: string) => void;
-    description: string;
-    setDescription: (description: string) => void;
+    note: string;
+    setNote: (note: string) => void;
     imageFile: File | null;
     setImageFile: (file: File | null) => void;
     drawingJson: string;
@@ -81,7 +81,7 @@ export function useScreenEditor({
     const [isSavingScreen, setIsSavingScreen] = useState(false);
     const [title, setTitle] = useState('');
     const [subtitle, setSubtitle] = useState('');
-    const [description, setDescription] = useState('');
+    const [note, setNote] = useState('');
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [drawingJson, setDrawingJson] = useState('');
     const [drawingChanged, setDrawingChanged] = useState(false);
@@ -108,10 +108,10 @@ export function useScreenEditor({
     const lastSavedScreenRef = useRef<{
         title: string;
         subtitle: string;
-        description: string;
+        note: string;
         drawingJson: string;
         nodeId: string | null;
-    }>({ title: '', subtitle: '', description: '', drawingJson: '', nodeId: null });
+    }>({ title: '', subtitle: '', note: '', drawingJson: '', nodeId: null });
 
     // Sync form state when selected screen changes
     useEffect(() => {
@@ -119,13 +119,13 @@ export function useScreenEditor({
         lastSavedScreenRef.current = {
             title: selectedScreen?.title ?? '',
             subtitle: selectedScreen?.subtitle ?? '',
-            description: selectedScreen?.description ?? '',
+            note: selectedScreen?.note ?? '',
             drawingJson: selectedScreen?.drawing_json ?? '',
             nodeId: selectedScreen?.node_id ?? null,
         };
         setTitle(selectedScreen?.title ?? '');
         setSubtitle(selectedScreen?.subtitle ?? '');
-        setDescription(selectedScreen?.description ?? '');
+        setNote(selectedScreen?.note ?? '');
         setImageFile(null);
         setDrawingJson(selectedScreen?.drawing_json ?? '');
         setDrawingChanged(false);
@@ -172,12 +172,12 @@ export function useScreenEditor({
         form.append('node_id', selectedNodeId ?? '');
         form.append('title', title);
         form.append('subtitle', subtitle);
-        form.append('description', description);
+        form.append('note', note);
         if (imageFile) form.append('image', imageFile);
         if (drawingJson) form.append('drawing_json', drawingJson);
 
         return form;
-    }, [latestRevisionId, selectedNodeId, title, subtitle, description, imageFile, drawingJson]);
+    }, [latestRevisionId, selectedNodeId, title, subtitle, note, imageFile, drawingJson]);
 
     const saveScreenData = useCallback(async (): Promise<Screen | null> => {
         if (!latestRevisionId || !selectedNodeId) {
@@ -228,7 +228,7 @@ export function useScreenEditor({
                 form.append('node_id', selectedNodeId);
                 form.append('title', title);
                 form.append('subtitle', subtitle);
-                form.append('description', description);
+                form.append('note', note);
                 if (imageFile) form.append('image', imageFile);
                 if (currentJson) form.append('drawing_json', currentJson);
                 if (pngBlob) {
@@ -269,7 +269,7 @@ export function useScreenEditor({
             canEdit,
             title,
             subtitle,
-            description,
+            note,
             imageFile,
             setScreens,
             updateNodeData,
@@ -293,7 +293,7 @@ export function useScreenEditor({
                 form.append('node_id', selectedNodeId);
                 form.append('title', title);
                 form.append('subtitle', subtitle);
-                form.append('description', description);
+                form.append('note', note);
                 if (imageFile) form.append('image', imageFile);
                 if (json) form.append('drawing_json', json);
                 if (blob) {
@@ -335,7 +335,7 @@ export function useScreenEditor({
             canEdit,
             title,
             subtitle,
-            description,
+            note,
             imageFile,
             setScreens,
             updateNodeData,
@@ -354,7 +354,7 @@ export function useScreenEditor({
             if (
                 title === last.title &&
                 subtitle === last.subtitle &&
-                description === last.description &&
+                note === last.note &&
                 selectedNodeId === last.nodeId
             ) {
                 return;
@@ -368,7 +368,7 @@ export function useScreenEditor({
                 lastSavedScreenRef.current = {
                     title,
                     subtitle,
-                    description,
+                    note,
                     drawingJson: lastSavedScreenRef.current.drawingJson,
                     nodeId: selectedNodeId,
                 };
@@ -380,7 +380,7 @@ export function useScreenEditor({
                 setIsSavingScreen(false);
             }
         },
-        dependencies: [title, subtitle, description],
+        dependencies: [title, subtitle, note],
         delay: 1000,
         enabled: canEdit && selectedNodeId !== null,
     });
@@ -563,8 +563,8 @@ export function useScreenEditor({
         setTitle,
         subtitle,
         setSubtitle,
-        description,
-        setDescription,
+        note,
+        setNote,
         imageFile,
         setImageFile,
         drawingJson,

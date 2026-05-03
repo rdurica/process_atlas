@@ -12,7 +12,7 @@ export default function ActionNode({ data }: NodeProps<Node<ActionNodeData>>) {
                 </span>
                 <p className="rf-node-title">{data.title ?? 'Action'}</p>
             </div>
-            {data.description && <p className="rf-node-body">{data.description}</p>}
+            {data.note && <p className="rf-node-body">{data.note}</p>}
             <Handle type="source" position={Position.Right} />
         </div>
     );

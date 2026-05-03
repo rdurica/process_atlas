@@ -23,7 +23,7 @@ class UpsertScreenRequest extends FormRequest
             'node_id'              => ['required', 'string', 'max:255'],
             'title'                => ['nullable', 'string', 'max:255'],
             'subtitle'             => ['nullable', 'string', 'max:255'],
-            'description'          => ['nullable', 'string'],
+            'note'                 => ['nullable', 'string'],
             'image'                => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
             'drawing_json'         => ['nullable', 'string'],
             'drawing_image'        => ['nullable', 'file', 'mimes:png', 'max:4096'],

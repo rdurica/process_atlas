@@ -67,7 +67,7 @@ export interface Screen {
     node_id: string;
     title?: string | null;
     subtitle?: string | null;
-    description?: string | null;
+    note?: string | null;
     image_url?: string | null;
     drawing_json?: string | null;
     drawing_image_url?: string | null;

@@ -55,7 +55,7 @@ final class McpToolCatalog
                         'node_id'              => ['type' => 'string', 'minLength' => 1],
                         'title'                => ['type' => ['string', 'null']],
                         'subtitle'             => ['type' => ['string', 'null']],
-                        'description'          => ['type' => ['string', 'null']],
+                        'note'                 => ['type' => ['string', 'null']],
                     ],
                     'required'             => ['workflow_revision_id', 'node_id'],
                     'additionalProperties' => false,

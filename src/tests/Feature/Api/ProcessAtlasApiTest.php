@@ -81,7 +81,7 @@ it('creates a workflow and edits screen properties via api', function (): void
         'node_id'              => 'screen-1',
         'title'                => 'Checkout Start',
         'subtitle'             => 'Card capture',
-        'description'          => 'The first checkout step.',
+        'note'                 => 'The first checkout step.',
     ])->assertOk()
         ->assertJsonPath('data.subtitle', 'Card capture');
 

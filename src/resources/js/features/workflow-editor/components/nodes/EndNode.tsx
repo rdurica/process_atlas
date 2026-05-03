@@ -17,7 +17,7 @@ export default function EndNode({ data }: NodeProps<Node<EndNodeData>>) {
                         <rect x="4" y="4" width="12" height="12" rx="2" />
                     </svg>
                 </span>
-                <span className="rf-terminal-node-label">{data.label ?? 'End'}</span>
+                <span className="rf-terminal-node-label">{data.title ?? 'End'}</span>
             </div>
             {data.linked_workflow_name && (
                 <span className="rf-end-node-chain">{data.linked_workflow_name}</span>

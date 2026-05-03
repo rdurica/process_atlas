@@ -144,24 +144,26 @@ export function useWorkflowGraph({
                     : nodeKind === 'condition'
                       ? {
                             condition: `Condition ${labelIndex}`,
+                            note: '',
                         }
                       : nodeKind === 'timer'
-                        ? { text: `Timer ${labelIndex}` }
+                        ? { text: `Timer ${labelIndex}`, note: '' }
                         : nodeKind === 'subprocess'
-                          ? { linked_workflow_id: null, linked_workflow_name: null }
+                          ? { linked_workflow_id: null, linked_workflow_name: null, note: '' }
                           : nodeKind === 'note'
                             ? { text: `Note ${labelIndex}` }
                             : nodeKind === 'start'
                               ? { label: 'Start', security_rule: null }
                               : nodeKind === 'end'
                                 ? {
-                                      label: 'End',
+                                      title: 'End',
                                       linked_workflow_id: null,
                                       linked_workflow_name: null,
+                                      note: '',
                                   }
                                 : {
                                       title: `Action ${labelIndex}`,
-                                      description: '',
+                                      note: '',
                                       security_rule: null,
                                   };
 

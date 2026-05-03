@@ -35,21 +35,24 @@ export type NotificationNodeData = Record<string, unknown> & {
 
 export type ConditionNodeData = Record<string, unknown> & {
     condition?: string;
+    note?: string;
 };
 
 export type ActionNodeData = Record<string, unknown> & {
     title?: string;
-    description?: string;
+    note?: string;
     security_rule?: string | null;
 };
 
 export type TimerNodeData = Record<string, unknown> & {
     text?: string;
+    note?: string;
 };
 
 export type SubprocessNodeData = Record<string, unknown> & {
     linked_workflow_id?: number | null;
     linked_workflow_name?: string | null;
+    note?: string;
 };
 
 export type NoteNodeData = Record<string, unknown> & {
@@ -62,9 +65,10 @@ export type StartNodeData = Record<string, unknown> & {
 };
 
 export type EndNodeData = Record<string, unknown> & {
-    label?: string;
+    title?: string;
     linked_workflow_id?: number | null;
     linked_workflow_name?: string | null;
+    note?: string;
 };
 
 export type WorkflowNodeData =

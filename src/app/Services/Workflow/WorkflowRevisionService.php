@@ -159,7 +159,7 @@ final class WorkflowRevisionService
                 'node_id'              => $sourceScreen->node_id,
                 'title'                => $sourceScreen->title,
                 'subtitle'             => $sourceScreen->subtitle,
-                'description'          => $sourceScreen->description,
+                'note'                 => $sourceScreen->note,
                 'image_path'           => $sourceScreen->image_path,
                 'created_by'           => $sourceScreen->created_by,
                 'updated_by'           => $sourceScreen->updated_by,

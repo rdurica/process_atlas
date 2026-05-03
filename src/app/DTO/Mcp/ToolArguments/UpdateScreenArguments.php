@@ -11,7 +11,7 @@ final readonly class UpdateScreenArguments
         public string $nodeId,
         public ?string $title,
         public ?string $subtitle,
-        public ?string $description,
+        public ?string $note,
         public ?string $drawingJson,
     ) {}
 
@@ -22,7 +22,7 @@ final readonly class UpdateScreenArguments
             nodeId: trim($params->string('node_id')),
             title: $params->nullableString('title'),
             subtitle: $params->nullableString('subtitle'),
-            description: $params->nullableString('description'),
+            note: $params->nullableString('note'),
             drawingJson: $params->nullableString('drawing_json'),
         );
     }
@@ -37,7 +37,7 @@ final readonly class UpdateScreenArguments
             'node_id'              => $this->nodeId,
             'title'                => $this->title,
             'subtitle'             => $this->subtitle,
-            'description'          => $this->description,
+            'note'                 => $this->note,
             'drawing_json'         => $this->drawingJson,
         ];
     }

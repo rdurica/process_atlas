@@ -83,6 +83,16 @@ export default function NodeInspector({
                         />
                     </div>
 
+                    <div className="space-y-1.5">
+                        <Label>Note</Label>
+                        <Textarea
+                            value={(selectedNode.data.note as string | undefined) ?? ''}
+                            onChange={event => updateNodeData({ note: event.target.value })}
+                            disabled={!canEditWorkflows}
+                            className="min-h-[3.5rem]"
+                        />
+                    </div>
+
                     <div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
                         Select an outgoing connection on the canvas to edit its label.
                     </div>
@@ -105,14 +115,10 @@ export default function NodeInspector({
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label>Description</Label>
+                                <Label>Note</Label>
                                 <Textarea
-                                    value={
-                                        (selectedNode.data.description as string | undefined) ?? ''
-                                    }
-                                    onChange={event =>
-                                        updateNodeData({ description: event.target.value })
-                                    }
+                                    value={(selectedNode.data.note as string | undefined) ?? ''}
+                                    onChange={event => updateNodeData({ note: event.target.value })}
                                     disabled={!canEditWorkflows}
                                     className="min-h-[3.5rem]"
                                 />
@@ -155,11 +161,21 @@ export default function NodeInspector({
             {selectedNodeKind === 'end' && (
                 <>
                     <div className="space-y-1.5">
-                        <Label>Label</Label>
+                        <Label>Title</Label>
                         <Input
-                            value={(selectedNode.data.label as string | undefined) ?? ''}
-                            onChange={event => updateNodeData({ label: event.target.value })}
+                            value={(selectedNode.data.title as string | undefined) ?? ''}
+                            onChange={event => updateNodeData({ title: event.target.value })}
                             disabled={!canEditWorkflows}
+                        />
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <Label>Note</Label>
+                        <Textarea
+                            value={(selectedNode.data.note as string | undefined) ?? ''}
+                            onChange={event => updateNodeData({ note: event.target.value })}
+                            disabled={!canEditWorkflows}
+                            className="min-h-[3.5rem]"
                         />
                     </div>
 
@@ -214,15 +230,26 @@ export default function NodeInspector({
             )}
 
             {selectedNodeKind === 'timer' && (
-                <div className="space-y-1.5">
-                    <Label>Timer expression</Label>
-                    <Textarea
-                        value={(selectedNode.data.text as string | undefined) ?? ''}
-                        onChange={event => updateNodeData({ text: event.target.value })}
-                        disabled={!canEditWorkflows}
-                        placeholder="e.g. wait 2 hours, until next Monday 9:00"
-                    />
-                </div>
+                <>
+                    <div className="space-y-1.5">
+                        <Label>Timer expression</Label>
+                        <Textarea
+                            value={(selectedNode.data.text as string | undefined) ?? ''}
+                            onChange={event => updateNodeData({ text: event.target.value })}
+                            disabled={!canEditWorkflows}
+                            placeholder="e.g. wait 2 hours, until next Monday 9:00"
+                        />
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label>Note</Label>
+                        <Textarea
+                            value={(selectedNode.data.note as string | undefined) ?? ''}
+                            onChange={event => updateNodeData({ note: event.target.value })}
+                            disabled={!canEditWorkflows}
+                            className="min-h-[3.5rem]"
+                        />
+                    </div>
+                </>
             )}
 
             {selectedNodeKind === 'subprocess' && (
@@ -274,6 +301,16 @@ export default function NodeInspector({
                             Open sub-process →
                         </Link>
                     )}
+
+                    <div className="space-y-1.5">
+                        <Label>Note</Label>
+                        <Textarea
+                            value={(selectedNode.data.note as string | undefined) ?? ''}
+                            onChange={event => updateNodeData({ note: event.target.value })}
+                            disabled={!canEditWorkflows}
+                            className="min-h-[3.5rem]"
+                        />
+                    </div>
                 </>
             )}
 
