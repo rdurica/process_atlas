@@ -8,6 +8,8 @@ import type { ScreenEditorState } from './inspector/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
 import { Badge } from '@/Components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/Components/ui/tabs';
+import { Copy } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface InspectorPanelProps {
     selectedNode: Node | null;
@@ -91,6 +93,26 @@ export default function InspectorPanel({
                     </div>
                 </CardHeader>
                 <CardContent className="flex-1 overflow-y-auto">
+                    {selectedNode && (
+                        <div className="mb-3 flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2">
+                            <span className="text-xs font-medium text-muted-foreground">ID:</span>
+                            <code className="flex-1 break-all font-mono text-xs text-foreground">
+                                {selectedNode.id}
+                            </code>
+                            <button
+                                type="button"
+                                className="inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                                onClick={() => {
+                                    navigator.clipboard.writeText(selectedNode.id);
+                                    toast.success('Node ID copied');
+                                }}
+                                title="Copy node ID"
+                            >
+                                <Copy className="h-3.5 w-3.5" />
+                            </button>
+                        </div>
+                    )}
+
                     {selectedNode && selectedNodeInspectorTabs.length > 0 && (
                         <Tabs
                             value={inspectorTab}

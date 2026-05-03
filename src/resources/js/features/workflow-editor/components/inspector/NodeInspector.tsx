@@ -27,31 +27,6 @@ export default function NodeInspector({
         <div className="mt-5 flex flex-1 flex-col gap-4">
             {selectedNodeKind === 'notification' && (
                 <>
-                    <div
-                        className={`rounded-lg border p-3 ${
-                            (selectedNode.data.severity as NotificationSeverity | undefined) ===
-                            'error'
-                                ? 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/20'
-                                : (selectedNode.data.severity as
-                                        | NotificationSeverity
-                                        | undefined) === 'warning'
-                                  ? 'border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/20'
-                                  : (selectedNode.data.severity as
-                                          | NotificationSeverity
-                                          | undefined) === 'success'
-                                    ? 'border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/20'
-                                    : 'border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/20'
-                        }`}
-                    >
-                        <p className="text-sm font-semibold text-foreground">
-                            {(selectedNode.data.text as string | undefined) ?? 'Notification'}
-                        </p>
-                        <p className="text-xs capitalize text-muted-foreground">
-                            {(selectedNode.data.severity as NotificationSeverity | undefined) ??
-                                'info'}
-                        </p>
-                    </div>
-
                     <div className="space-y-1.5">
                         <Label>Severity</Label>
                         <Select

@@ -12,7 +12,7 @@ import {
 import { Textarea } from '@/Components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { Upload, ImageIcon, Search, Trash2, X, Check, Pencil } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import DrawingEditorModal from '@/features/workflow-editor/components/modals/DrawingEditorModal';
 
 export default function ScreenInspector({
@@ -28,6 +28,14 @@ export default function ScreenInspector({
 }: ScreenInspectorProps) {
     const [activeVisualTab, setActiveVisualTab] = useState<'image' | 'drawing'>('image');
     const [drawingModalOpen, setDrawingModalOpen] = useState(false);
+
+    useEffect(() => {
+        if (!selectedScreen) {
+            return;
+        }
+        setActiveVisualTab(selectedScreen.image_url ? 'image' : 'drawing');
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedScreen?.node_id]);
 
     return (
         <div className="mt-5 flex flex-1 flex-col gap-4">
@@ -68,6 +76,7 @@ export default function ScreenInspector({
                             <>
                                 <ScreenPreview
                                     selectedScreenImageUrl={selectedScreen?.image_url ?? null}
+                                    drawingImageUrl={null}
                                     imageFile={screenEditor.imageFile}
                                     title={screenEditor.title}
                                     subtitle={screenEditor.subtitle}
@@ -101,15 +110,14 @@ export default function ScreenInspector({
 
                         {activeVisualTab === 'drawing' && (
                             <div className="space-y-2">
-                                {selectedScreen?.drawing_image_url && (
-                                    <div className="flex justify-center py-2">
-                                        <img
-                                            src={selectedScreen.drawing_image_url}
-                                            alt="Drawing preview"
-                                            className="w-32 rounded-md border border-border object-contain"
-                                        />
-                                    </div>
-                                )}
+                                <ScreenPreview
+                                    selectedScreenImageUrl={null}
+                                    drawingImageUrl={selectedScreen?.drawing_image_url ?? null}
+                                    imageFile={null}
+                                    title={screenEditor.title}
+                                    subtitle={screenEditor.subtitle}
+                                    setPreviewImageUrl={setPreviewImageUrl}
+                                />
                                 <Button
                                     type="button"
                                     variant="outline"
@@ -221,18 +229,22 @@ export default function ScreenInspector({
 
 function ScreenPreview({
     selectedScreenImageUrl,
+    drawingImageUrl,
     imageFile,
     title,
     subtitle,
     setPreviewImageUrl,
 }: {
     selectedScreenImageUrl: string | null;
+    drawingImageUrl?: string | null;
     imageFile: File | null;
     title: string;
     subtitle: string;
     setPreviewImageUrl: (url: string | null) => void;
 }) {
-    const previewUrl = imageFile ? URL.createObjectURL(imageFile) : selectedScreenImageUrl;
+    const previewUrl = imageFile
+        ? URL.createObjectURL(imageFile)
+        : (selectedScreenImageUrl ?? drawingImageUrl);
 
     return (
         <div className="flex justify-center py-2">

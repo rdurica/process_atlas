@@ -1,6 +1,7 @@
 import { Handle, Node, NodeProps, Position } from '@xyflow/react';
 import type { ScreenNodeData } from '../../types';
 import { ScreenIcon } from './icons';
+import { Pencil } from 'lucide-react';
 
 export default function ScreenNode({ data }: NodeProps<Node<ScreenNodeData>>) {
     const visualUrl = data.image_url ?? data.drawing_image_url ?? null;
@@ -23,12 +24,17 @@ export default function ScreenNode({ data }: NodeProps<Node<ScreenNodeData>>) {
         );
     }
 
+    const hasDrawing = Boolean(data.drawing_json);
+
     return (
         <div className="rf-screen-node">
             <Handle type="target" position={Position.Left} />
             <div className="rf-node-box">
-                <span className="rf-node-box-icon" style={{ color: '#0f5ef7' }}>
-                    <ScreenIcon />
+                <span
+                    className="rf-node-box-icon"
+                    style={{ color: hasDrawing ? '#f59e0b' : '#0f5ef7' }}
+                >
+                    {hasDrawing ? <Pencil size={16} /> : <ScreenIcon />}
                 </span>
                 {data.label ?? 'Screen'}
             </div>
