@@ -8,8 +8,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreProjectRequest;
 use App\Http\Requests\Api\UpdateProjectRequest;
 use App\Models\Project;
+use App\UseCase\Command\ArchiveProjectCommand;
 use App\UseCase\Command\CreateProjectCommand;
 use App\UseCase\Command\DeleteProjectCommand;
+use App\UseCase\Command\UnarchiveProjectCommand;
 use App\UseCase\Command\UpdateProjectCommand;
 use App\UseCase\Query\ProjectQueryService;
 use Illuminate\Http\JsonResponse;
@@ -22,11 +24,20 @@ class ProjectController extends Controller
         private readonly CreateProjectCommand $createProject,
         private readonly UpdateProjectCommand $updateProject,
         private readonly DeleteProjectCommand $deleteProject,
+        private readonly ArchiveProjectCommand $archiveProject,
+        private readonly UnarchiveProjectCommand $unarchiveProject,
     ) {}
 
     public function index(Request $request): JsonResponse
     {
-        return response()->json(['data' => $this->projects->listForApi($this->user())]);
+        $page = (int) $request->input('page', 1);
+        $perPage = (int) $request->input('per_page', 20);
+        $search = $request->input('search');
+        $includeArchived = $request->boolean('include_archived');
+
+        return response()->json(
+            $this->projects->listForApi($this->user(), $page, $perPage, $search, $includeArchived),
+        );
     }
 
     public function store(StoreProjectRequest $request): JsonResponse
@@ -61,5 +72,23 @@ class ProjectController extends Controller
         $this->deleteProject->execute($this->user(), $project);
 
         return response()->json(status: 204);
+    }
+
+    public function archive(Request $request, Project $project): JsonResponse
+    {
+        $this->authorize('archive', $project);
+
+        $this->archiveProject->execute($this->user(), $project);
+
+        return response()->json(['data' => ['archived_at' => now()->toIso8601String()]]);
+    }
+
+    public function unarchive(Request $request, Project $project): JsonResponse
+    {
+        $this->authorize('unarchive', $project);
+
+        $this->unarchiveProject->execute($this->user(), $project);
+
+        return response()->json(['data' => ['archived_at' => null]]);
     }
 }

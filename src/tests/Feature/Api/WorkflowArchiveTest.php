@@ -80,7 +80,7 @@ it('denies archive action for editor role', function (): void
 {
     $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
     $editor = User::factory()->create(['email' => 'editor-role@example.com']);
-    $editor->assignRole('editor');
+    $editor->assignRole('user');
 
     $this->actingAs($owner);
     $projectResponse = $this->postJson('/api/v1/projects', [
@@ -106,7 +106,7 @@ it('denies archive action for editor role', function (): void
 it('denies archive action for viewer role', function (): void
 {
     $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
-    $viewer = User::query()->where('email', 'viewer@example.com')->firstOrFail();
+    $viewer = User::query()->where('email', 'user@example.com')->firstOrFail();
 
     $this->actingAs($owner);
     $projectResponse = $this->postJson('/api/v1/projects', [

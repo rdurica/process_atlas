@@ -9,6 +9,8 @@ final readonly class UpdateProjectRequest
         public bool $hasName,
         public ?string $description,
         public bool $hasDescription,
+        public ?bool $isPublic,
+        public bool $hasIsPublic,
     ) {}
 
     /**
@@ -23,11 +25,13 @@ final readonly class UpdateProjectRequest
                 ? (string) $payload['description']
                 : null,
             hasDescription: array_key_exists('description', $payload),
+            isPublic: array_key_exists('is_public', $payload) ? (bool) $payload['is_public'] : null,
+            hasIsPublic: array_key_exists('is_public', $payload),
         );
     }
 
     /**
-     * @return array<string, string|null>
+     * @return array<string, mixed>
      */
     public function toArray(): array
     {
@@ -41,6 +45,11 @@ final readonly class UpdateProjectRequest
         if ($this->hasDescription)
         {
             $data['description'] = $this->description;
+        }
+
+        if ($this->hasIsPublic)
+        {
+            $data['is_public'] = $this->isPublic;
         }
 
         return $data;

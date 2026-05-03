@@ -46,7 +46,7 @@ it('renders dashboard with enterprise summary and activity props', function (): 
 
 it('shares read only permissions for viewer dashboard access', function (): void
 {
-    $viewer = User::query()->where('email', 'viewer@example.com')->firstOrFail();
+    $viewer = User::query()->where('email', 'user@example.com')->firstOrFail();
     $this->actingAs($viewer);
 
     $this->get('/dashboard')
@@ -55,8 +55,8 @@ it('shares read only permissions for viewer dashboard access', function (): void
             ->component('Dashboard')
             ->where('auth.user.permissions', fn ($permissions): bool => collect($permissions)->contains('projects.view')
                 && collect($permissions)->contains('workflows.view')
-                && ! collect($permissions)->contains('projects.manage')
-                && ! collect($permissions)->contains('workflows.edit'),
+                && ! collect($permissions)->contains('projects.create')
+                && ! collect($permissions)->contains('mcp.use'),
             ));
 });
 

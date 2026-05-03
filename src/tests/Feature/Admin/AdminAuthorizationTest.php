@@ -25,7 +25,7 @@ it('allows admin to access admin users page', function (): void
 
 it('forbids non-admin from accessing admin users page', function (): void
 {
-    $viewer = User::query()->where('email', 'viewer@example.com')->firstOrFail();
+    $viewer = User::query()->where('email', 'user@example.com')->firstOrFail();
 
     $this->actingAs($viewer)
         ->get(route('admin.users'))
@@ -47,7 +47,7 @@ it('allows admin to list users via api', function (): void
 
 it('forbids non-admin from listing users via api', function (): void
 {
-    $viewer = User::query()->where('email', 'viewer@example.com')->firstOrFail();
+    $viewer = User::query()->where('email', 'user@example.com')->firstOrFail();
 
     $this->actingAs($viewer)
         ->getJson('/api/v1/admin/users')
@@ -56,7 +56,7 @@ it('forbids non-admin from listing users via api', function (): void
 
 it('forbids non-admin from creating users via api', function (): void
 {
-    $viewer = User::query()->where('email', 'viewer@example.com')->firstOrFail();
+    $viewer = User::query()->where('email', 'user@example.com')->firstOrFail();
 
     $this->actingAs($viewer)
         ->postJson('/api/v1/admin/users', [
@@ -69,19 +69,19 @@ it('forbids non-admin from creating users via api', function (): void
 
 it('forbids non-admin from updating user roles via api', function (): void
 {
-    $viewer = User::query()->where('email', 'viewer@example.com')->firstOrFail();
+    $viewer = User::query()->where('email', 'user@example.com')->firstOrFail();
     $target = User::query()->where('email', 'owner@example.com')->firstOrFail();
 
     $this->actingAs($viewer)
         ->patchJson("/api/v1/admin/users/{$target->id}/roles", [
-            'roles' => ['editor'],
+            'roles' => ['user'],
         ])
         ->assertForbidden();
 });
 
 it('forbids non-admin from toggling user active status via api', function (): void
 {
-    $viewer = User::query()->where('email', 'viewer@example.com')->firstOrFail();
+    $viewer = User::query()->where('email', 'user@example.com')->firstOrFail();
     $target = User::query()->where('email', 'owner@example.com')->firstOrFail();
 
     $this->actingAs($viewer)
@@ -91,7 +91,7 @@ it('forbids non-admin from toggling user active status via api', function (): vo
 
 it('forbids non-admin from deleting users via api', function (): void
 {
-    $viewer = User::query()->where('email', 'viewer@example.com')->firstOrFail();
+    $viewer = User::query()->where('email', 'user@example.com')->firstOrFail();
     $target = User::factory()->create();
 
     $this->actingAs($viewer)
@@ -105,7 +105,7 @@ it('forbids non-admin from deleting users via api', function (): void
 
 it('forbids deactivated user from accessing authenticated web routes', function (): void
 {
-    $viewer = User::query()->where('email', 'viewer@example.com')->firstOrFail();
+    $viewer = User::query()->where('email', 'user@example.com')->firstOrFail();
     $viewer->update(['is_active' => false]);
 
     $this->actingAs($viewer)
@@ -115,7 +115,7 @@ it('forbids deactivated user from accessing authenticated web routes', function 
 
 it('forbids deactivated user from accessing authenticated api routes', function (): void
 {
-    $viewer = User::query()->where('email', 'viewer@example.com')->firstOrFail();
+    $viewer = User::query()->where('email', 'user@example.com')->firstOrFail();
     $viewer->update(['is_active' => false]);
 
     $this->actingAs($viewer)
@@ -178,7 +178,7 @@ it('allows project member to view project via web route', function (): void
 it('forbids non-member from viewing project via web route', function (): void
 {
     $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
-    $viewer = User::query()->where('email', 'viewer@example.com')->firstOrFail();
+    $viewer = User::query()->where('email', 'user@example.com')->firstOrFail();
 
     $projectResponse = $this->actingAs($owner)
         ->postJson('/api/v1/projects', [

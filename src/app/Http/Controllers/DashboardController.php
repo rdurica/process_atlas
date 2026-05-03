@@ -17,7 +17,19 @@ class DashboardController extends Controller
 
     public function __invoke(Request $request): Response
     {
-        $data = $this->dashboard->getDashboardData($this->user());
+        $page = (int) $request->input('page', 1);
+        $search = $request->input('search');
+        $status = $request->input('status');
+        $includeArchived = $request->boolean('include_archived');
+
+        $data = $this->dashboard->getDashboardData(
+            $this->user(),
+            $page,
+            20,
+            $search,
+            $status,
+            $includeArchived,
+        );
         $data['recentActivity'] = $this->activity->latestForDashboard();
 
         return Inertia::render('Dashboard', $data);

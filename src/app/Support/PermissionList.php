@@ -13,6 +13,9 @@ final class PermissionList
     /** Can use MCP integration */
     public const MCP_USE = 'mcp.use';
 
+    /** Can manage users globally (admin panel) */
+    public const USERS_MANAGE = 'users.manage';
+
     /**
      * @return list<string>
      */
@@ -22,6 +25,7 @@ final class PermissionList
             self::PROJECTS_CREATE,
             self::PROJECTS_ADMIN,
             self::MCP_USE,
+            self::USERS_MANAGE,
         ];
     }
 }

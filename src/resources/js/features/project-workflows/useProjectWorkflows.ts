@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useMemo, useState } from 'react';
 import type { WorkflowSummary } from '@/types/processAtlas';
 import { processAtlasApi } from '@/shared/api/processAtlasApi';
 import { resolveApiError } from '@/shared/lib/apiErrors';
@@ -9,13 +9,15 @@ export function workflowTone(status: WorkflowSummary['status']) {
     return status === 'published' ? 'success' : 'warning';
 }
 
-export function useProjectWorkflows({ project, workflows }: ProjectWorkflowsProps) {
+export function useProjectWorkflows({
+    project,
+    workflows,
+    current_page,
+    last_page,
+}: ProjectWorkflowsProps) {
     const [statusFilter, setStatusFilter] = useState<WorkflowStatusFilter>('all');
     const [query, setQuery] = useState('');
     const [showArchived, setShowArchived] = useState(false);
-    const [archivedWorkflows, setArchivedWorkflows] = useState<WorkflowSummary[]>([]);
-    const [loadingArchived, setLoadingArchived] = useState(false);
-
     const [workflowModalOpen, setWorkflowModalOpen] = useState(false);
     const [workflowName, setWorkflowName] = useState('');
     const [pendingWorkflow, setPendingWorkflow] = useState(false);
@@ -25,55 +27,48 @@ export function useProjectWorkflows({ project, workflows }: ProjectWorkflowsProp
     const [pendingArchive, setPendingArchive] = useState(false);
     const [archiveError, setArchiveError] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (!showArchived) {
-            setArchivedWorkflows([]);
-            return;
-        }
+    const isArchived = project.archived_at !== null;
 
-        const controller = new AbortController();
-
-        setLoadingArchived(true);
-        processAtlasApi.projects
-            .workflows(project.id, true, controller.signal)
-            .then(response => {
-                const archived = response.data.data.filter(workflow => workflow.archived_at);
-                setArchivedWorkflows(archived);
-            })
-            .catch(() => {
-                if (!controller.signal.aborted) {
-                    setArchivedWorkflows([]);
-                }
-            })
-            .finally(() => {
-                if (!controller.signal.aborted) {
-                    setLoadingArchived(false);
-                }
+    const reloadWithParams = useCallback(
+        (
+            newPage?: number,
+            newSearch?: string,
+            newStatus?: WorkflowStatusFilter,
+            newArchived?: boolean
+        ) => {
+            router.reload({
+                only: ['workflows', 'project', 'current_page', 'last_page', 'total', 'from', 'to'],
+                data: {
+                    page: newPage ?? current_page,
+                    search: newSearch ?? query,
+                    status: newStatus ?? statusFilter,
+                    include_archived: (newArchived ?? showArchived) ? 1 : undefined,
+                },
             });
+        },
+        [current_page, query, statusFilter, showArchived]
+    );
 
-        return () => controller.abort();
-    }, [showArchived, project.id]);
+    const handlePageChange = (newPage: number) => {
+        reloadWithParams(newPage);
+    };
 
-    const displayedWorkflows = useMemo(() => {
-        const source = showArchived ? [...workflows, ...archivedWorkflows] : workflows;
-        const normalizedQuery = query.trim().toLowerCase();
+    const handleSearchChange = (value: string) => {
+        setQuery(value);
+        reloadWithParams(1, value);
+    };
 
-        return source.filter(workflow => {
-            const matchesQuery =
-                normalizedQuery.length === 0 ||
-                workflow.name.toLowerCase().includes(normalizedQuery);
+    const handleStatusChange = (value: WorkflowStatusFilter) => {
+        setStatusFilter(value);
+        reloadWithParams(1, undefined, value);
+    };
 
-            if (!matchesQuery) {
-                return false;
-            }
+    const handleArchivedChange = (value: boolean) => {
+        setShowArchived(value);
+        reloadWithParams(1, undefined, undefined, value);
+    };
 
-            if (statusFilter === 'all') {
-                return true;
-            }
-
-            return workflow.status === statusFilter;
-        });
-    }, [archivedWorkflows, query, showArchived, statusFilter, workflows]);
+    const displayedWorkflows = useMemo(() => workflows, [workflows]);
 
     const closeWorkflowModal = () => {
         setWorkflowModalOpen(false);
@@ -102,7 +97,7 @@ export function useProjectWorkflows({ project, workflows }: ProjectWorkflowsProp
                 return;
             }
 
-            router.reload({ only: ['workflows'] });
+            router.reload({ only: ['workflows', 'project'] });
         } catch (error) {
             setWorkflowError(resolveApiError(error, 'The workflow could not be created.'));
         } finally {
@@ -131,7 +126,6 @@ export function useProjectWorkflows({ project, workflows }: ProjectWorkflowsProp
 
         try {
             await processAtlasApi.workflows.unarchive(workflowId);
-            setArchivedWorkflows(prev => prev.filter(workflow => workflow.id !== workflowId));
             router.reload({ only: ['workflows', 'project'] });
         } catch (error) {
             setArchiveError(resolveApiError(error, 'The workflow could not be unarchived.'));
@@ -142,13 +136,15 @@ export function useProjectWorkflows({ project, workflows }: ProjectWorkflowsProp
 
     return {
         statusFilter,
-        setStatusFilter,
+        setStatusFilter: handleStatusChange,
         query,
-        setQuery,
+        setQuery: handleSearchChange,
         showArchived,
-        setShowArchived,
-        loadingArchived,
+        setShowArchived: handleArchivedChange,
         displayedWorkflows,
+        currentPage: current_page,
+        lastPage: last_page,
+        isArchived,
         workflowModalOpen,
         setWorkflowModalOpen,
         workflowName,
@@ -163,5 +159,6 @@ export function useProjectWorkflows({ project, workflows }: ProjectWorkflowsProp
         archiveError,
         archiveWorkflow,
         unarchiveWorkflow,
+        handlePageChange,
     };
 }

@@ -26,7 +26,7 @@ class StoreUserRequest extends FormRequest
             'email'    => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8'],
             'roles'    => ['nullable', 'array'],
-            'roles.*'  => ['string', Rule::in(['admin', 'process_owner', 'editor', 'viewer'])],
+            'roles.*'  => ['string', Rule::in(['admin', 'process_owner', 'user'])],
         ];
     }
 

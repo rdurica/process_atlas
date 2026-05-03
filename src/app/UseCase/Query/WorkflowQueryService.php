@@ -14,21 +14,40 @@ final class WorkflowQueryService
     public function __construct(private readonly PublishedWorkflowCacheService $cache) {}
 
     /**
-     * @return Collection<int, Workflow>
+     * @return array<string, mixed>
      */
-    public function listForProject(Project $project, bool $includeArchived = false): Collection
+    public function listForProject(Project $project, bool $includeArchived = false, int $page = 1, int $perPage = 20, ?string $search = null, ?string $status = null): array
     {
         $query = $project
             ->workflows()
             ->with(['latestRevision', 'publishedRevision'])
-            ->orderBy('id');
+            ->orderBy('name');
 
         if (! $includeArchived)
         {
             $query->notArchived();
         }
 
-        return $query->get();
+        if ($search)
+        {
+            $query->where('name', 'ilike', "%{$search}%");
+        }
+
+        if ($status && $status !== 'all')
+        {
+            $query->where('status', $status);
+        }
+
+        $paginator = $query->paginate(perPage: $perPage, page: $page);
+
+        return [
+            'data'         => $paginator->items(),
+            'current_page' => $paginator->currentPage(),
+            'last_page'    => $paginator->lastPage(),
+            'total'        => $paginator->total(),
+            'from'         => $paginator->firstItem(),
+            'to'           => $paginator->lastItem(),
+        ];
     }
 
     /** @return Workflow|array<string, mixed> */
@@ -105,8 +124,18 @@ final class WorkflowQueryService
             throw new ConsistencyException('Workflow is missing a project.');
         }
 
-        return $user->isAdmin()
-            ? 'process_owner'
-            : (string) $user->projectRoleIn($project);
+        if ($user->isAdmin())
+        {
+            return 'process_owner';
+        }
+
+        $role = $user->projectRoleIn($project);
+
+        if ($role === null && $project->isPublic())
+        {
+            return 'viewer';
+        }
+
+        return (string) $role;
     }
 }

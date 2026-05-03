@@ -6,7 +6,6 @@ use App\Models\Project;
 use App\Models\User;
 use App\Support\PermissionList;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Collection;
 
 final class ProjectQueryService
 {
@@ -17,19 +16,47 @@ final class ProjectQueryService
     {
         return Project::query()->when(
             ! $user->can(PermissionList::PROJECTS_ADMIN),
-            fn (Builder $query) => $query->whereHas('members', fn ($q) => $q->where('user_id', $user->id)),
+            fn (Builder $query) => $query->where(function (Builder $q) use ($user): void
+            {
+                $q->where('is_public', true)
+                    ->orWhereHas('members', fn ($m) => $m->where('user_id', $user->id));
+            }),
         );
     }
 
     /**
-     * @return Collection<int, Project>
+     * @return array<string, mixed>
      */
-    public function listForApi(User $user): Collection
+    public function listForApi(User $user, int $page = 1, int $perPage = 20, ?string $search = null, bool $includeArchived = false): array
     {
-        return $this->accessibleQuery($user)
-            ->withCount('workflows')
-            ->orderBy('id')
-            ->get();
+        $query = $this->accessibleQuery($user);
+
+        if (! $includeArchived)
+        {
+            $query->notArchived();
+        }
+
+        if ($search)
+        {
+            $query->where(function (Builder $q) use ($search): void
+            {
+                $q->where('name', 'ilike', "%{$search}%")
+                    ->orWhere('description', 'ilike', "%{$search}%");
+            });
+        }
+
+        $paginator = $query->withCount('workflows')
+            ->orderBy('name')
+            ->paginate(perPage: $perPage, page: $page);
+
+        return [
+            'data'         => $paginator->items(),
+            'current_page' => $paginator->currentPage(),
+            'last_page'    => $paginator->lastPage(),
+            'total'        => $paginator->total(),
+            'from'         => $paginator->firstItem(),
+            'to'           => $paginator->lastItem(),
+        ];
     }
 
     public function detailForApi(Project $project): Project

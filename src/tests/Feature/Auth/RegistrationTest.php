@@ -23,5 +23,5 @@ test('new users can register', function ()
 
     $user = User::query()->where('email', 'test@example.com')->first();
     expect($user)->not->toBeNull();
-    expect($user?->hasRole('editor'))->toBeTrue();
+    expect($user?->hasRole('user'))->toBeTrue();
 });

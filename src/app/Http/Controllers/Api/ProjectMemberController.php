@@ -10,6 +10,7 @@ use App\Http\Requests\Api\StoreProjectMemberRequest;
 use App\Http\Requests\Api\UpdateProjectMemberRequest;
 use App\Models\Project;
 use App\Models\User;
+use App\Support\PermissionList;
 use App\UseCase\Command\AddProjectMemberCommand;
 use App\UseCase\Command\RemoveProjectMemberCommand;
 use App\UseCase\Command\UpdateProjectMemberRoleCommand;
@@ -53,6 +54,12 @@ class ProjectMemberController extends Controller
     {
         $this->authorize('manageMembers', $project);
 
+        // Prevent process owner from removing their own role
+        if ($user->id === $this->user()->id && ! $this->user()->can(PermissionList::PROJECTS_ADMIN))
+        {
+            abort(403, 'You cannot change your own role in this project.');
+        }
+
         $response = $this->updateMemberRole->execute(
             $this->user(),
             $project,
@@ -66,6 +73,12 @@ class ProjectMemberController extends Controller
     public function destroy(Request $request, Project $project, User $user): JsonResponse
     {
         $this->authorize('manageMembers', $project);
+
+        // Prevent process owner from removing themselves
+        if ($user->id === $this->user()->id && ! $this->user()->can(PermissionList::PROJECTS_ADMIN))
+        {
+            abort(403, 'You cannot remove yourself from this project.');
+        }
 
         $this->removeMember->execute($this->user(), $project, $user);
 

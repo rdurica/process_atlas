@@ -1,9 +1,13 @@
 import Modal from '@/Components/Modal';
 import StatusBadge from '@/Components/StatusBadge';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { canArchiveInProject, canEditInProject } from '@/shared/lib/projectPermissions';
+import {
+    canArchiveInProject,
+    canEditInProject,
+    canManageMembersInProject,
+} from '@/shared/lib/projectPermissions';
 import { formatDateTime } from '@/shared/lib/dates';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import {
     useProjectWorkflows,
     workflowTone,
@@ -37,11 +41,25 @@ import {
     BreadcrumbSeparator,
 } from '@/Components/ui/breadcrumb';
 import { cn } from '@/lib/utils';
-import { Search, Plus, ArrowRight, GitBranch, Archive, RotateCcw } from 'lucide-react';
+import {
+    Search,
+    Plus,
+    ArrowRight,
+    GitBranch,
+    Archive,
+    RotateCcw,
+    ChevronLeft,
+    ChevronRight,
+    Settings,
+} from 'lucide-react';
+import ProjectSettingsModal from '@/features/project-settings/ProjectSettingsModal';
+import { useState } from 'react';
 
 export default function ProjectWorkflowsPage(props: ProjectWorkflowsProps) {
-    const { project, workflows } = props;
+    const { project } = props;
     const page = useProjectWorkflows(props);
+    const user = usePage().props.auth.user;
+    const [settingsOpen, setSettingsOpen] = useState(false);
 
     return (
         <AuthenticatedLayout
@@ -62,9 +80,13 @@ export default function ProjectWorkflowsPage(props: ProjectWorkflowsProps) {
                                 </BreadcrumbItem>
                             </BreadcrumbList>
                         </Breadcrumb>
-                        <h1 className="mt-1 text-2xl font-bold tracking-tight text-foreground">
-                            {project.name}
-                        </h1>
+                        <div className="mt-1 flex items-center gap-3">
+                            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                                {project.name}
+                            </h1>
+                            {project.is_public && <Badge variant="secondary">Public</Badge>}
+                            {page.isArchived && <Badge variant="destructive">Archived</Badge>}
+                        </div>
                         {project.description && (
                             <p className="mt-1 text-sm text-muted-foreground">
                                 {project.description}
@@ -72,7 +94,18 @@ export default function ProjectWorkflowsPage(props: ProjectWorkflowsProps) {
                         )}
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
-                        {canEditInProject(project.current_user_role) && (
+                        {(canManageMembersInProject(project.current_user_role) ||
+                            user?.is_admin) && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setSettingsOpen(true)}
+                            >
+                                <Settings className="mr-1.5 h-4 w-4" />
+                                Settings
+                            </Button>
+                        )}
+                        {canEditInProject(project.current_user_role) && !page.isArchived && (
                             <Button
                                 onClick={() => page.setWorkflowModalOpen(true)}
                                 data-testid="create-workflow-open"
@@ -88,6 +121,12 @@ export default function ProjectWorkflowsPage(props: ProjectWorkflowsProps) {
             <Head title={project.name} />
 
             <div className="space-y-8">
+                {page.isArchived && (
+                    <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                        This project is archived. Workflows are read-only.
+                    </div>
+                )}
+
                 <Card>
                     <CardHeader>
                         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -144,7 +183,7 @@ export default function ProjectWorkflowsPage(props: ProjectWorkflowsProps) {
                             <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12 text-center">
                                 <GitBranch className="h-8 w-8 text-muted-foreground/50" />
                                 <p className="mt-2 text-sm text-muted-foreground">
-                                    {workflows.length === 0 && !page.showArchived
+                                    {props.workflows.length === 0 && !page.showArchived
                                         ? 'This project does not have any workflows yet.'
                                         : 'No workflows match the current filters.'}
                                 </p>
@@ -242,6 +281,7 @@ export default function ProjectWorkflowsPage(props: ProjectWorkflowsProps) {
                                                         {canArchiveInProject(
                                                             project.current_user_role
                                                         ) &&
+                                                            !page.isArchived &&
                                                             (isArchived ? (
                                                                 <Button
                                                                     variant="outline"
@@ -279,10 +319,34 @@ export default function ProjectWorkflowsPage(props: ProjectWorkflowsProps) {
                                 </TableBody>
                             </Table>
                         )}
-                        {page.loadingArchived && (
-                            <p className="py-4 text-center text-sm text-muted-foreground">
-                                Loading archived workflows…
-                            </p>
+
+                        {/* Pagination */}
+                        {page.lastPage > 1 && (
+                            <div className="mt-4 flex items-center justify-between border-t pt-4">
+                                <p className="text-sm text-muted-foreground">
+                                    Page {page.currentPage} of {page.lastPage}
+                                </p>
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => page.handlePageChange(page.currentPage - 1)}
+                                        disabled={page.currentPage <= 1}
+                                    >
+                                        <ChevronLeft className="mr-1 h-4 w-4" />
+                                        Previous
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => page.handlePageChange(page.currentPage + 1)}
+                                        disabled={page.currentPage >= page.lastPage}
+                                    >
+                                        Next
+                                        <ChevronRight className="ml-1 h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
                         )}
                     </CardContent>
                 </Card>
@@ -380,6 +444,19 @@ export default function ProjectWorkflowsPage(props: ProjectWorkflowsProps) {
                     </div>
                 </div>
             </Modal>
+
+            <ProjectSettingsModal
+                projectId={project.id}
+                projectName={project.name}
+                projectDescription={project.description ?? null}
+                isPublic={project.is_public}
+                isArchived={page.isArchived}
+                isOpen={settingsOpen}
+                onClose={() => setSettingsOpen(false)}
+                canManage={
+                    canManageMembersInProject(project.current_user_role) || user?.is_admin || false
+                }
+            />
         </AuthenticatedLayout>
     );
 }

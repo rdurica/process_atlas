@@ -40,13 +40,14 @@ class HandleInertiaRequests extends Middleware
             $permissions = $user->getAllPermissions()->pluck('name');
             $permissions->push('projects.view', 'workflows.view');
 
-            if ($user->can(PermissionList::PROJECTS_ADMIN) || $user->hasRole('process_owner'))
+            if ($user->can(PermissionList::PROJECTS_CREATE))
             {
-                $permissions->push('projects.manage', 'workflows.edit');
+                $permissions->push('projects.create');
             }
-            elseif ($user->hasRole('editor'))
+
+            if ($user->can(PermissionList::MCP_USE))
             {
-                $permissions->push('workflows.edit');
+                $permissions->push('mcp.use');
             }
         }
 
@@ -57,11 +58,13 @@ class HandleInertiaRequests extends Middleware
             $projects = Project::query()
                 ->when(
                     ! $isAdmin,
-                    fn ($query) => $query->whereHas(
-                        'members',
-                        fn ($q) => $q->where('user_id', $user->id),
-                    ),
+                    fn ($query) => $query->where(function ($q) use ($user): void
+                    {
+                        $q->where('is_public', true)
+                            ->orWhereHas('members', fn ($m) => $m->where('user_id', $user->id));
+                    }),
                 )
+                ->notArchived()
                 ->orderBy('name')
                 ->get()
                 ->map(function (Project $project) use ($user, $isAdmin)
@@ -69,6 +72,12 @@ class HandleInertiaRequests extends Middleware
                     $currentUserRole = $isAdmin
                         ? 'process_owner'
                         : $user->projectRoleIn($project);
+
+                    // If user is not an explicit member but project is public, show as viewer
+                    if ($currentUserRole === null && $project->isPublic())
+                    {
+                        $currentUserRole = 'viewer';
+                    }
 
                     return [
                         'id'                => $project->id,

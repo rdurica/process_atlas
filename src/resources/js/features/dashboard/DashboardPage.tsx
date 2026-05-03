@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
 import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
+import { Switch } from '@/Components/ui/switch';
 import {
     Table,
     TableBody,
@@ -31,6 +32,8 @@ import {
     Search,
     Plus,
     ArrowRight,
+    ChevronLeft,
+    ChevronRight,
 } from 'lucide-react';
 
 const metricIcons: Record<string, React.ReactNode> = {
@@ -142,11 +145,26 @@ export default function DashboardPage(props: DashboardProps) {
                                         <SelectItem value="empty">No workflows</SelectItem>
                                     </SelectContent>
                                 </Select>
+                                <div className="flex items-center gap-2">
+                                    <Switch
+                                        id="show-archived"
+                                        checked={dashboard.includeArchived}
+                                        onCheckedChange={checked =>
+                                            dashboard.setIncludeArchived(checked)
+                                        }
+                                    />
+                                    <label
+                                        htmlFor="show-archived"
+                                        className="cursor-pointer text-sm text-muted-foreground"
+                                    >
+                                        Show archived
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </CardHeader>
                     <CardContent>
-                        {dashboard.filteredProjects.length === 0 ? (
+                        {dashboard.projects.length === 0 ? (
                             <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12 text-center">
                                 <FolderKanban className="h-8 w-8 text-muted-foreground/50" />
                                 <p className="mt-2 text-sm text-muted-foreground">
@@ -164,7 +182,7 @@ export default function DashboardPage(props: DashboardProps) {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {dashboard.filteredProjects.map(project => (
+                                    {dashboard.projects.map(project => (
                                         <TableRow key={project.id} className="group cursor-pointer">
                                             <TableCell>
                                                 <Link
@@ -173,9 +191,21 @@ export default function DashboardPage(props: DashboardProps) {
                                                     })}
                                                     className="block"
                                                 >
-                                                    <p className="font-semibold text-foreground transition-colors group-hover:text-primary">
-                                                        {project.name}
-                                                    </p>
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="font-semibold text-foreground transition-colors group-hover:text-primary">
+                                                            {project.name}
+                                                        </p>
+                                                        {project.is_public && (
+                                                            <Badge variant="secondary">
+                                                                Public
+                                                            </Badge>
+                                                        )}
+                                                        {project.archived_at && (
+                                                            <Badge variant="outline">
+                                                                Archived
+                                                            </Badge>
+                                                        )}
+                                                    </div>
                                                     <p className="mt-0.5 line-clamp-1 text-sm text-muted-foreground">
                                                         {project.description ||
                                                             'No project description'}
@@ -223,6 +253,39 @@ export default function DashboardPage(props: DashboardProps) {
                                 </TableBody>
                             </Table>
                         )}
+
+                        {/* Pagination */}
+                        {dashboard.lastPage > 1 && (
+                            <div className="mt-4 flex items-center justify-between border-t pt-4">
+                                <p className="text-sm text-muted-foreground">
+                                    Page {dashboard.currentPage} of {dashboard.lastPage}
+                                </p>
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                            dashboard.handlePageChange(dashboard.currentPage - 1)
+                                        }
+                                        disabled={dashboard.currentPage <= 1}
+                                    >
+                                        <ChevronLeft className="mr-1 h-4 w-4" />
+                                        Previous
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                            dashboard.handlePageChange(dashboard.currentPage + 1)
+                                        }
+                                        disabled={dashboard.currentPage >= dashboard.lastPage}
+                                    >
+                                        Next
+                                        <ChevronRight className="ml-1 h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>
@@ -269,6 +332,21 @@ export default function DashboardPage(props: DashboardProps) {
                             data-testid="project-description-input"
                         />
                     </label>
+
+                    <div className="flex items-center gap-3">
+                        <Switch
+                            id="project-is-public"
+                            checked={dashboard.projectIsPublic}
+                            onCheckedChange={checked => dashboard.setProjectIsPublic(checked)}
+                            disabled={!dashboard.canCreateProjects || dashboard.pendingProject}
+                        />
+                        <label htmlFor="project-is-public" className="text-sm text-foreground">
+                            Public project
+                        </label>
+                        <p className="text-xs text-muted-foreground">
+                            All registered users will be able to view this project.
+                        </p>
+                    </div>
 
                     {dashboard.projectError && (
                         <p className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">

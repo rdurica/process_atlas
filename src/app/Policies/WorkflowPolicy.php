@@ -60,6 +60,6 @@ final class WorkflowPolicy
             return false;
         }
 
-        return $this->access->canPublish($user, $project);
+        return $this->access->canArchive($user, $project);
     }
 }

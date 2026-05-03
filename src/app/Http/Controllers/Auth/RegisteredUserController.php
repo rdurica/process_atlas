@@ -43,8 +43,8 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        $editorRole = Role::findOrCreate('editor', 'web');
-        $user->assignRole($editorRole);
+        $userRole = Role::findOrCreate('user', 'web');
+        $user->assignRole($userRole);
 
         event(new Registered($user));
 

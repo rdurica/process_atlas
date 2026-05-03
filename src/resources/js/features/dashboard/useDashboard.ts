@@ -1,20 +1,22 @@
 import { router, usePage } from '@inertiajs/react';
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useMemo, useState } from 'react';
 import type { PageProps } from '@/types';
 import { processAtlasApi } from '@/shared/api/processAtlasApi';
 import { resolveApiError } from '@/shared/lib/apiErrors';
 import type { DashboardProps, DashboardStatusFilter } from './types';
 
-export function useDashboard({ summary, projects }: DashboardProps) {
+export function useDashboard({ summary, projects, current_page, last_page }: DashboardProps) {
     const page = usePage<PageProps>();
     const permissions = new Set(page.props.auth.user?.permissions ?? []);
     const canCreateProjects = permissions.has('projects.create');
 
     const [statusFilter, setStatusFilter] = useState<DashboardStatusFilter>('all');
     const [query, setQuery] = useState('');
+    const [includeArchived, setIncludeArchived] = useState(false);
     const [projectModalOpen, setProjectModalOpen] = useState(false);
     const [projectName, setProjectName] = useState('');
     const [projectDescription, setProjectDescription] = useState('');
+    const [projectIsPublic, setProjectIsPublic] = useState(false);
     const [pendingProject, setPendingProject] = useState(false);
     const [projectError, setProjectError] = useState<string | null>(null);
 
@@ -48,42 +50,51 @@ export function useDashboard({ summary, projects }: DashboardProps) {
         [summary]
     );
 
-    const filteredProjects = useMemo(() => {
-        const normalizedQuery = query.trim().toLowerCase();
+    const reloadWithParams = useCallback(
+        (
+            newPage?: number,
+            newSearch?: string,
+            newStatus?: DashboardStatusFilter,
+            newArchived?: boolean
+        ) => {
+            router.reload({
+                only: ['summary', 'projects', 'current_page', 'last_page', 'total', 'from', 'to'],
+                data: {
+                    page: newPage ?? current_page,
+                    search: newSearch ?? query,
+                    status: newStatus ?? statusFilter,
+                    include_archived: (newArchived ?? includeArchived) ? 1 : undefined,
+                },
+            });
+        },
+        [current_page, query, statusFilter, includeArchived]
+    );
 
-        return projects.filter(project => {
-            const matchesQuery =
-                normalizedQuery.length === 0 ||
-                project.name.toLowerCase().includes(normalizedQuery) ||
-                (project.description ?? '').toLowerCase().includes(normalizedQuery);
+    const handlePageChange = (newPage: number) => {
+        reloadWithParams(newPage);
+    };
 
-            if (!matchesQuery) {
-                return false;
-            }
+    const handleSearchChange = (value: string) => {
+        setQuery(value);
+        reloadWithParams(1, value);
+    };
 
-            if (statusFilter === 'all') {
-                return true;
-            }
+    const handleStatusChange = (value: DashboardStatusFilter) => {
+        setStatusFilter(value);
+        reloadWithParams(1, undefined, value);
+    };
 
-            if (statusFilter === 'empty') {
-                return project.workflows_count === 0;
-            }
-
-            if (statusFilter === 'published') {
-                return project.workflows.some(workflow => workflow.published_revision !== null);
-            }
-
-            return project.workflows.some(
-                workflow => workflow.latest_revision?.is_published === false
-            );
-        });
-    }, [projects, query, statusFilter]);
+    const handleArchivedChange = (value: boolean) => {
+        setIncludeArchived(value);
+        reloadWithParams(1, undefined, undefined, value);
+    };
 
     const closeProjectModal = () => {
         setProjectModalOpen(false);
         setProjectError(null);
         setProjectName('');
         setProjectDescription('');
+        setProjectIsPublic(false);
     };
 
     const createProject = async (event: FormEvent) => {
@@ -101,10 +112,13 @@ export function useDashboard({ summary, projects }: DashboardProps) {
             await processAtlasApi.projects.create({
                 name: projectName,
                 description: projectDescription || null,
+                is_public: projectIsPublic,
             });
 
             closeProjectModal();
-            router.reload({ only: ['summary', 'projects'] });
+            router.reload({
+                only: ['summary', 'projects', 'current_page', 'last_page', 'total', 'from', 'to'],
+            });
         } catch (error) {
             setProjectError(resolveApiError(error, 'The project could not be created.'));
         } finally {
@@ -115,20 +129,27 @@ export function useDashboard({ summary, projects }: DashboardProps) {
     return {
         canCreateProjects,
         metrics,
-        filteredProjects,
+        projects,
+        currentPage: current_page,
+        lastPage: last_page,
         statusFilter,
-        setStatusFilter,
+        setStatusFilter: handleStatusChange,
         query,
-        setQuery,
+        setQuery: handleSearchChange,
+        includeArchived,
+        setIncludeArchived: handleArchivedChange,
         projectModalOpen,
         setProjectModalOpen,
         projectName,
         setProjectName,
         projectDescription,
         setProjectDescription,
+        projectIsPublic,
+        setProjectIsPublic,
         pendingProject,
         projectError,
         closeProjectModal,
         createProject,
+        handlePageChange,
     };
 }

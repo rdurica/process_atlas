@@ -13,7 +13,7 @@ beforeEach(function (): void
 it('forbids unverified users from accessing api routes', function (): void
 {
     $user = User::factory()->unverified()->create();
-    $user->assignRole('editor');
+    $user->assignRole('user');
 
     $token = $user->createToken('api-test')->plainTextToken;
 
@@ -25,7 +25,7 @@ it('forbids unverified users from accessing api routes', function (): void
 it('forbids unverified users from accessing mcp route', function (): void
 {
     $user = User::factory()->unverified()->create();
-    $user->assignRole('editor');
+    $user->assignRole('user');
 
     $token = $user->createToken('mcp-test', ['mcp:use'])->plainTextToken;
 

@@ -1,4 +1,9 @@
-import type { WorkflowRevisionSummary, WorkflowSummary } from '@/types/processAtlas';
+import type {
+    WorkflowRevisionSummary,
+    WorkflowSummary,
+    PaginatedResponse,
+    ProjectMember,
+} from '@/types/processAtlas';
 
 export type CreateUserPayload = {
     name: string;
@@ -27,16 +32,42 @@ export type AdminUsersResponse = {
 
 export const processAtlasApi = {
     projects: {
-        create(payload: { name: string; description: string | null }) {
+        create(payload: { name: string; description: string | null; is_public: boolean }) {
             return window.axios.post('/api/v1/projects', payload);
         },
-        workflows(projectId: number, includeArchived = false, signal?: AbortSignal) {
-            return window.axios.get<{ data: WorkflowSummary[] }>(
+        list(params: {
+            page: number;
+            per_page?: number;
+            search?: string;
+            include_archived?: boolean;
+        }) {
+            return window.axios.get<PaginatedResponse<unknown>>('/api/v1/projects', { params });
+        },
+        update(
+            projectId: number,
+            payload: { name?: string; description?: string | null; is_public?: boolean }
+        ) {
+            return window.axios.patch(`/api/v1/projects/${projectId}`, payload);
+        },
+        archive(projectId: number) {
+            return window.axios.post(`/api/v1/projects/${projectId}/archive`);
+        },
+        unarchive(projectId: number) {
+            return window.axios.post(`/api/v1/projects/${projectId}/unarchive`);
+        },
+        workflows(
+            projectId: number,
+            params: {
+                page?: number;
+                per_page?: number;
+                include_archived?: boolean;
+                search?: string;
+                status?: string;
+            }
+        ) {
+            return window.axios.get<PaginatedResponse<WorkflowSummary>>(
                 `/api/v1/projects/${projectId}/workflows`,
-                {
-                    params: includeArchived ? { include_archived: 1 } : undefined,
-                    signal,
-                }
+                { params }
             );
         },
         createWorkflow(projectId: number, payload: { name: string }) {
@@ -44,6 +75,26 @@ export const processAtlasApi = {
                 `/api/v1/projects/${projectId}/workflows`,
                 payload
             );
+        },
+        members(projectId: number) {
+            return window.axios.get<{ data: ProjectMember[] }>(
+                `/api/v1/projects/${projectId}/members`
+            );
+        },
+        addMember(projectId: number, payload: { email: string; role: string }) {
+            return window.axios.post<{ data: ProjectMember }>(
+                `/api/v1/projects/${projectId}/members`,
+                payload
+            );
+        },
+        updateMember(projectId: number, userId: number, payload: { role: string }) {
+            return window.axios.patch<{ data: ProjectMember }>(
+                `/api/v1/projects/${projectId}/members/${userId}`,
+                payload
+            );
+        },
+        removeMember(projectId: number, userId: number) {
+            return window.axios.delete(`/api/v1/projects/${projectId}/members/${userId}`);
         },
     },
     workflows: {

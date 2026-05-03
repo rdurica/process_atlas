@@ -40,6 +40,8 @@ export interface ProjectSummary {
     id: number;
     name: string;
     description?: string | null;
+    is_public: boolean;
+    archived_at?: string | null;
     workflows_count: number;
     latest_revision_label: string;
     status_summary: string;
@@ -54,6 +56,15 @@ export interface DashboardSummary {
     workflows: number;
     unreleased_workflows: number;
     released_workflows: number;
+}
+
+export interface PaginatedResponse<T> {
+    data: T[];
+    current_page: number;
+    last_page: number;
+    total: number;
+    from: number;
+    to: number;
 }
 
 export interface ScreenCustomField {

@@ -61,7 +61,7 @@ it('allows user to delete their token', function (): void
 
 it('forbids token generation for user without mcp.use permission', function (): void
 {
-    $viewer = User::query()->where('email', 'viewer@example.com')->firstOrFail();
+    $viewer = User::query()->where('email', 'user@example.com')->firstOrFail();
 
     $this
         ->actingAs($viewer)
@@ -71,7 +71,7 @@ it('forbids token generation for user without mcp.use permission', function (): 
 
 it('forbids token deletion for user without mcp.use permission', function (): void
 {
-    $viewer = User::query()->where('email', 'viewer@example.com')->firstOrFail();
+    $viewer = User::query()->where('email', 'user@example.com')->firstOrFail();
 
     $this
         ->actingAs($viewer)

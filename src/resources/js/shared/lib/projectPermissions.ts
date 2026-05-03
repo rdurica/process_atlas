@@ -15,5 +15,13 @@ export function canArchiveInProject(role: ProjectRole | null): boolean {
 }
 
 export function canPublishInProject(role: ProjectRole | null): boolean {
+    return role === 'process_owner' || role === 'editor';
+}
+
+export function canManageMembersInProject(role: ProjectRole | null): boolean {
     return role === 'process_owner';
+}
+
+export function canArchiveProject(role: ProjectRole | null, isAdmin: boolean): boolean {
+    return role === 'process_owner' || isAdmin;
 }

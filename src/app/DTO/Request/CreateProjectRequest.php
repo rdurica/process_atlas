@@ -7,6 +7,7 @@ final readonly class CreateProjectRequest
     public function __construct(
         public string $name,
         public ?string $description,
+        public bool $isPublic = false,
     ) {}
 
     /**
@@ -19,6 +20,7 @@ final readonly class CreateProjectRequest
             description: array_key_exists('description', $payload) && $payload['description'] !== null
                 ? (string) $payload['description']
                 : null,
+            isPublic: (bool) ($payload['is_public'] ?? false),
         );
     }
 }

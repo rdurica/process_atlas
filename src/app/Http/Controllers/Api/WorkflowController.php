@@ -32,8 +32,14 @@ class WorkflowController extends Controller
         $this->authorize('view', $project);
 
         $includeArchived = $request->boolean('include_archived');
+        $page = (int) $request->input('page', 1);
+        $perPage = (int) $request->input('per_page', 20);
+        $search = $request->input('search');
+        $status = $request->input('status');
 
-        return response()->json(['data' => $this->workflows->listForProject($project, $includeArchived)]);
+        return response()->json(
+            $this->workflows->listForProject($project, $includeArchived, $page, $perPage, $search, $status),
+        );
     }
 
     public function store(StoreWorkflowRequest $request, Project $project): JsonResponse

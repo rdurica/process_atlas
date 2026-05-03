@@ -116,27 +116,23 @@ it('creates a workflow and edits screen properties via api', function (): void
         ->toBe('user.department == "finance"');
 });
 
-it('denies project creation for viewer role', function (): void
+it('denies project creation for user role', function (): void
 {
-    $viewer = User::query()->where('email', 'viewer@example.com')->firstOrFail();
-    $this->actingAs($viewer);
+    $user = User::query()->where('email', 'user@example.com')->firstOrFail();
+    $this->actingAs($user);
 
     $this->postJson('/api/v1/projects', [
         'name' => 'Not Allowed',
     ])->assertForbidden();
 });
 
-it('allows project creation for editor role', function (): void
+it('allows project creation for process_owner role', function (): void
 {
-    $editor = User::factory()->create([
-        'email' => 'editor@example.com',
-    ]);
-    $editor->assignRole('editor');
-
-    $this->actingAs($editor);
+    $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
+    $this->actingAs($owner);
 
     $this->postJson('/api/v1/projects', [
-        'name' => 'Allowed for editor',
+        'name' => 'Allowed for process_owner',
     ])->assertCreated();
 });
 
@@ -165,7 +161,7 @@ it('does not allow direct workflow status updates', function (): void
         ->assertJsonPath('data.status', 'draft');
 });
 
-it('prevents demoting the last process owner in a project', function (): void
+it('prevents process owner from changing their own role', function (): void
 {
     $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
     $this->actingAs($owner);
@@ -175,9 +171,10 @@ it('prevents demoting the last process owner in a project', function (): void
     ])->assertCreated();
     $projectId = (int) $projectResponse->json('data.id');
 
+    // Owner cannot demote themselves even if they are the only process owner
     $this->patchJson("/api/v1/projects/{$projectId}/members/{$owner->id}", [
         'role' => 'viewer',
-    ])->assertUnprocessable();
+    ])->assertForbidden();
 
     $secondOwner = User::factory()->create(['email' => 'second-owner@example.com']);
 
@@ -186,10 +183,10 @@ it('prevents demoting the last process owner in a project', function (): void
         'role'  => 'process_owner',
     ])->assertCreated();
 
+    // Owner still cannot change their own role even with another process owner present
     $this->patchJson("/api/v1/projects/{$projectId}/members/{$owner->id}", [
         'role' => 'viewer',
-    ])->assertOk()
-        ->assertJsonPath('data.role', 'viewer');
+    ])->assertForbidden();
 });
 
 it('keeps screen image metadata when creating a draft revision', function (): void
@@ -419,8 +416,8 @@ it('calls mcp tools and reports revision conflicts', function (): void
 
 it('forbids mcp access without mcp.use permission', function (): void
 {
-    $viewer = User::query()->where('email', 'viewer@example.com')->firstOrFail();
-    $token = $viewer->createToken('mcp-test-forbidden', ['mcp:use'])->plainTextToken;
+    $user = User::query()->where('email', 'user@example.com')->firstOrFail();
+    $token = $user->createToken('mcp-test-forbidden', ['mcp:use'])->plainTextToken;
 
     $this->withHeader('Authorization', "Bearer {$token}")
         ->postJson('/api/mcp', [

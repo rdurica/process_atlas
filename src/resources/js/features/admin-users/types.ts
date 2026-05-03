@@ -4,4 +4,4 @@ export type UserItem = AdminUserItem;
 
 export type UserFormState = CreateUserPayload;
 
-export const ALL_ROLES = ['admin', 'process_owner', 'editor', 'viewer'];
+export const ALL_ROLES = ['admin', 'process_owner', 'user'];

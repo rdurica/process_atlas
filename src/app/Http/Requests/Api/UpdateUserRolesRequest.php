@@ -23,7 +23,7 @@ class UpdateUserRolesRequest extends FormRequest
     {
         return [
             'roles'   => ['required', 'array'],
-            'roles.*' => ['string', Rule::in(['admin', 'process_owner', 'editor', 'viewer'])],
+            'roles.*' => ['string', Rule::in(['admin', 'process_owner', 'user'])],
         ];
     }
 

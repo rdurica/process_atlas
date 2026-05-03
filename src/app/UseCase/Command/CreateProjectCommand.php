@@ -25,6 +25,7 @@ final class CreateProjectCommand
                 'name'        => $request->name,
                 'description' => $request->description,
                 'created_by'  => $actor->id,
+                'is_public'   => $request->isPublic,
             ]);
 
             $project->members()->attach($actor->id, ['role' => 'process_owner']);

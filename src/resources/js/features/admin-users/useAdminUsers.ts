@@ -17,8 +17,8 @@ export function roleTone(role: string): 'neutral' | 'brand' | 'success' | 'warni
             return 'danger';
         case 'process_owner':
             return 'brand';
-        case 'editor':
-            return 'warning';
+        case 'user':
+            return 'success';
         default:
             return 'neutral';
     }

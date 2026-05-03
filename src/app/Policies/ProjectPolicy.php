@@ -45,4 +45,14 @@ final class ProjectPolicy
     {
         return $this->access->canPublish($user, $project);
     }
+
+    public function archive(User $user, Project $project): bool
+    {
+        return $this->access->canArchive($user, $project);
+    }
+
+    public function unarchive(User $user, Project $project): bool
+    {
+        return $this->access->canUnarchive($user, $project);
+    }
 }

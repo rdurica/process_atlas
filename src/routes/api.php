@@ -17,6 +17,8 @@ Route::middleware(['auth:sanctum', 'verified', 'throttle:api'])->prefix('v1')->g
     Route::get('/projects/{project}', [ProjectController::class, 'show']);
     Route::patch('/projects/{project}', [ProjectController::class, 'update']);
     Route::delete('/projects/{project}', [ProjectController::class, 'destroy']);
+    Route::post('/projects/{project}/archive', [ProjectController::class, 'archive']);
+    Route::post('/projects/{project}/unarchive', [ProjectController::class, 'unarchive']);
 
     Route::get('/projects/{project}/members', [ProjectMemberController::class, 'index']);
     Route::post('/projects/{project}/members', [ProjectMemberController::class, 'store']);

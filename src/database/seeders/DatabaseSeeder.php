@@ -25,8 +25,7 @@ class DatabaseSeeder extends Seeder
 
         $adminRole = Role::query()->firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
         $processOwnerRole = Role::query()->firstOrCreate(['name' => 'process_owner', 'guard_name' => 'web']);
-        $editorRole = Role::query()->firstOrCreate(['name' => 'editor', 'guard_name' => 'web']);
-        $viewerRole = Role::query()->firstOrCreate(['name' => 'viewer', 'guard_name' => 'web']);
+        $userRole = Role::query()->firstOrCreate(['name' => 'user', 'guard_name' => 'web']);
 
         $adminRole->syncPermissions(PermissionList::all());
 
@@ -35,12 +34,7 @@ class DatabaseSeeder extends Seeder
             PermissionList::MCP_USE,
         ]);
 
-        $editorRole->syncPermissions([
-            PermissionList::PROJECTS_CREATE,
-            PermissionList::MCP_USE,
-        ]);
-
-        $viewerRole->syncPermissions([]);
+        $userRole->syncPermissions([]);
 
         $admin = User::query()->firstOrCreate(
             ['email' => 'admin@example.com'],
@@ -48,17 +42,16 @@ class DatabaseSeeder extends Seeder
         );
         $admin->syncRoles(['admin']);
 
-        // Keep owner@example.com as process_owner for backwards compatibility
         $owner = User::query()->firstOrCreate(
             ['email' => 'owner@example.com'],
             ['name' => 'Owner', 'password' => 'password', 'email_verified_at' => now()],
         );
         $owner->syncRoles(['process_owner']);
 
-        $viewer = User::query()->firstOrCreate(
-            ['email' => 'viewer@example.com'],
-            ['name' => 'Viewer', 'password' => 'password', 'email_verified_at' => now()],
+        $user = User::query()->firstOrCreate(
+            ['email' => 'user@example.com'],
+            ['name' => 'User', 'password' => 'password', 'email_verified_at' => now()],
         );
-        $viewer->syncRoles(['viewer']);
+        $user->syncRoles(['user']);
     }
 }
