@@ -79,6 +79,7 @@ export function buildInitialNodes(nodes: Node[] | undefined, screens: Screen[] =
                           label: screen?.title ?? node.data?.label,
                           subtitle: screen?.subtitle ?? node.data?.subtitle ?? '',
                           image_url: screen?.image_url ?? null,
+                          drawing_image_url: screen?.drawing_image_url ?? null,
                       }
                     : {}),
             },

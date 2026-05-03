@@ -1,5 +1,6 @@
 import type { Edge, Node } from '@xyflow/react';
 import type { Screen, ScreenCustomField } from '@/types/processAtlas';
+import type { DrawingTool } from './drawing';
 import type {
     FieldEditorMode,
     NotificationSeverity,
@@ -19,6 +20,16 @@ export interface ScreenEditorState {
     setDescription: (description: string) => void;
     imageFile: File | null;
     setImageFile: (file: File | null) => void;
+    drawingJson: string;
+    setDrawingJson: (json: string) => void;
+    drawingChanged: boolean;
+    setDrawingChanged: (changed: boolean) => void;
+    drawingTool: DrawingTool;
+    setDrawingTool: (tool: DrawingTool) => void;
+    drawingColor: string;
+    setDrawingColor: (color: string) => void;
+    drawingStrokeWidth: number;
+    setDrawingStrokeWidth: (width: number) => void;
     fieldEditorMode: FieldEditorMode;
     editingFieldId: number | null;
     newCustomKey: string;
@@ -33,6 +44,13 @@ export interface ScreenEditorState {
     openCreateFieldEditor: () => void;
     openEditFieldEditor: (field: ScreenCustomField) => void;
     closeFieldEditor: () => void;
+    saveDrawing: (
+        canvasRef: React.RefObject<{
+            getShapesJson: () => string;
+            getPngBlob: () => Promise<Blob | null>;
+        }>
+    ) => Promise<void>;
+    saveDrawingDirect: (json: string, blob: Blob | null) => Promise<void>;
     upsertScreen: (event: React.FormEvent) => Promise<void>;
     submitFieldEditor: (event: React.FormEvent) => Promise<void>;
     removeCustomField: (fieldId: number) => Promise<boolean>;

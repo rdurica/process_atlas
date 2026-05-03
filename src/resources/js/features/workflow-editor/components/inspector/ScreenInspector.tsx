@@ -11,7 +11,9 @@ import {
 } from '@/Components/ui/select';
 import { Textarea } from '@/Components/ui/textarea';
 import { cn } from '@/lib/utils';
-import { Upload, ImageIcon, Search, Trash2, X, Check } from 'lucide-react';
+import { Upload, ImageIcon, Search, Trash2, X, Check, Pencil } from 'lucide-react';
+import { useState } from 'react';
+import DrawingEditorModal from '@/features/workflow-editor/components/modals/DrawingEditorModal';
 
 export default function ScreenInspector({
     selectedNode,
@@ -24,37 +26,103 @@ export default function ScreenInspector({
     setPreviewImageUrl,
     setActionNotice,
 }: ScreenInspectorProps) {
+    const [activeVisualTab, setActiveVisualTab] = useState<'image' | 'drawing'>('image');
+    const [drawingModalOpen, setDrawingModalOpen] = useState(false);
+
     return (
         <div className="mt-5 flex flex-1 flex-col gap-4">
             {inspectorTab === 'screen' && (
                 <form onSubmit={screenEditor.upsertScreen} className="space-y-4">
-                    <ScreenPreview
-                        selectedScreenImageUrl={selectedScreen?.image_url ?? null}
-                        imageFile={screenEditor.imageFile}
-                        title={screenEditor.title}
-                        subtitle={screenEditor.subtitle}
-                        setPreviewImageUrl={setPreviewImageUrl}
-                    />
+                    {/* Visual preview section */}
+                    <div className="space-y-2">
+                        <div className="flex gap-1 rounded-lg border bg-card p-1">
+                            <button
+                                type="button"
+                                onClick={() => setActiveVisualTab('image')}
+                                className={cn(
+                                    'flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
+                                    activeVisualTab === 'image'
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'text-muted-foreground hover:bg-accent'
+                                )}
+                            >
+                                <ImageIcon className="h-3.5 w-3.5" />
+                                Image
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setActiveVisualTab('drawing')}
+                                className={cn(
+                                    'flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
+                                    activeVisualTab === 'drawing'
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'text-muted-foreground hover:bg-accent'
+                                )}
+                            >
+                                <Pencil className="h-3.5 w-3.5" />
+                                Drawing
+                            </button>
+                        </div>
 
-                    <div className="flex flex-col items-center gap-2">
-                        <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-dashed border-border bg-muted px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary">
-                            <Upload className="h-4 w-4" />
-                            {screenEditor.imageFile ? 'Change image' : 'Upload screen image'}
-                            <input
-                                type="file"
-                                accept="image/*"
-                                disabled={!canEditWorkflows}
-                                className="hidden"
-                                onChange={event => {
-                                    const file = event.target.files?.[0] ?? null;
-                                    screenEditor.setImageFile(file);
-                                }}
-                            />
-                        </label>
-                        {screenEditor.imageFile && (
-                            <span className="text-xs text-muted-foreground">
-                                {screenEditor.imageFile.name}
-                            </span>
+                        {activeVisualTab === 'image' && (
+                            <>
+                                <ScreenPreview
+                                    selectedScreenImageUrl={selectedScreen?.image_url ?? null}
+                                    imageFile={screenEditor.imageFile}
+                                    title={screenEditor.title}
+                                    subtitle={screenEditor.subtitle}
+                                    setPreviewImageUrl={setPreviewImageUrl}
+                                />
+                                <div className="flex flex-col items-center gap-2">
+                                    <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-dashed border-border bg-muted px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary">
+                                        <Upload className="h-4 w-4" />
+                                        {screenEditor.imageFile
+                                            ? 'Change image'
+                                            : 'Upload screen image'}
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            disabled={!canEditWorkflows}
+                                            className="hidden"
+                                            onChange={event => {
+                                                const file = event.target.files?.[0] ?? null;
+                                                screenEditor.setImageFile(file);
+                                            }}
+                                        />
+                                    </label>
+                                    {screenEditor.imageFile && (
+                                        <span className="text-xs text-muted-foreground">
+                                            {screenEditor.imageFile.name}
+                                        </span>
+                                    )}
+                                </div>
+                            </>
+                        )}
+
+                        {activeVisualTab === 'drawing' && (
+                            <div className="space-y-2">
+                                {selectedScreen?.drawing_image_url && (
+                                    <div className="flex justify-center py-2">
+                                        <img
+                                            src={selectedScreen.drawing_image_url}
+                                            alt="Drawing preview"
+                                            className="w-32 rounded-md border border-border object-contain"
+                                        />
+                                    </div>
+                                )}
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="w-full"
+                                    onClick={() => setDrawingModalOpen(true)}
+                                    disabled={!canEditWorkflows}
+                                >
+                                    <Pencil className="mr-1.5 h-4 w-4" />
+                                    {selectedScreen?.drawing_json
+                                        ? 'Edit Drawing'
+                                        : 'Create Drawing'}
+                                </Button>
+                            </div>
                         )}
                     </div>
 
@@ -134,6 +202,19 @@ export default function ScreenInspector({
                     </Button>
                 </div>
             )}
+
+            <DrawingEditorModal
+                open={drawingModalOpen}
+                onClose={() => setDrawingModalOpen(false)}
+                initialShapesJson={selectedScreen?.drawing_json ?? null}
+                onSave={async (json, blob) => {
+                    screenEditor.setDrawingJson(json);
+                    screenEditor.setDrawingChanged(true);
+                    await screenEditor.saveDrawingDirect(json, blob);
+                    setDrawingModalOpen(false);
+                }}
+                canEdit={canEditWorkflows}
+            />
         </div>
     );
 }

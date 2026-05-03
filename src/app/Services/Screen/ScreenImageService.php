@@ -39,6 +39,26 @@ final class ScreenImageService
         return $imagePath;
     }
 
+    public function storeDrawingImage(UploadedFile $image): string
+    {
+        $imagePath = $image->store('screens/drawings', 'public');
+
+        if ($imagePath === false)
+        {
+            throw new \RuntimeException('Failed to store drawing image.');
+        }
+
+        $fullPath = Storage::disk('public')->path($imagePath);
+
+        if (getimagesize($fullPath) === false)
+        {
+            Storage::disk('public')->delete($imagePath);
+            throw new \InvalidArgumentException('Uploaded drawing file is not a valid image.');
+        }
+
+        return $imagePath;
+    }
+
     public function delete(?string $path): void
     {
         if ($path)

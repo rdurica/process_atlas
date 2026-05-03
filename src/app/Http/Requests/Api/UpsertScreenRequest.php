@@ -25,6 +25,8 @@ class UpsertScreenRequest extends FormRequest
             'subtitle'             => ['nullable', 'string', 'max:255'],
             'description'          => ['nullable', 'string'],
             'image'                => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'drawing_json'         => ['nullable', 'string'],
+            'drawing_image'        => ['nullable', 'file', 'mimes:png', 'max:4096'],
         ];
     }
 
@@ -33,6 +35,6 @@ class UpsertScreenRequest extends FormRequest
         /** @var array<string, mixed> $validated */
         $validated = $this->validated();
 
-        return UpsertScreenDto::fromArray($validated, $this->file('image'));
+        return UpsertScreenDto::fromArray($validated, $this->file('image'), $this->file('drawing_image'));
     }
 }

@@ -22,6 +22,7 @@ export type ScreenNodeData = Record<string, unknown> & {
     label?: string;
     subtitle?: string;
     image_url?: string | null;
+    drawing_image_url?: string | null;
     security_rule?: string | null;
 };
 

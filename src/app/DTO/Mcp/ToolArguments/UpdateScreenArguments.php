@@ -12,6 +12,7 @@ final readonly class UpdateScreenArguments
         public ?string $title,
         public ?string $subtitle,
         public ?string $description,
+        public ?string $drawingJson,
     ) {}
 
     public static function fromParams(McpParams $params): self
@@ -22,6 +23,7 @@ final readonly class UpdateScreenArguments
             title: $params->nullableString('title'),
             subtitle: $params->nullableString('subtitle'),
             description: $params->nullableString('description'),
+            drawingJson: $params->nullableString('drawing_json'),
         );
     }
 
@@ -36,6 +38,7 @@ final readonly class UpdateScreenArguments
             'title'                => $this->title,
             'subtitle'             => $this->subtitle,
             'description'          => $this->description,
+            'drawing_json'         => $this->drawingJson,
         ];
     }
 }

@@ -5,7 +5,7 @@ interface ModalProps {
     show: boolean;
     onClose: () => void;
     children: ReactNode;
-    maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+    maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | 'full';
     closeable?: boolean;
 }
 
@@ -15,6 +15,10 @@ const maxWidthClasses: Record<string, string> = {
     lg: 'sm:max-w-lg',
     xl: 'sm:max-w-xl',
     '2xl': 'sm:max-w-2xl',
+    '3xl': 'sm:max-w-3xl',
+    '4xl': 'sm:max-w-4xl',
+    '5xl': 'sm:max-w-5xl',
+    full: 'sm:max-w-[95vw]',
 };
 
 export default function Modal({

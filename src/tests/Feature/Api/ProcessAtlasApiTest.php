@@ -232,6 +232,46 @@ it('keeps screen image metadata when creating a draft revision', function (): vo
         ->assertJsonPath('data.screens.0.image_path', $imagePath);
 });
 
+it('saves screen drawing with json and image', function (): void
+{
+    $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();
+    $this->actingAs($owner);
+
+    $projectResponse = $this->postJson('/api/v1/projects', [
+        'name' => 'Drawing Test Project',
+    ])->assertCreated();
+    $projectId = (int) $projectResponse->json('data.id');
+
+    $workflowResponse = $this->postJson("/api/v1/projects/{$projectId}/workflows", [
+        'name' => 'Drawing Test Workflow',
+    ])->assertCreated();
+    $workflowId = (int) $workflowResponse->json('data.id');
+
+    $workflowShow = $this->getJson("/api/v1/workflows/{$workflowId}")->assertOk();
+    $versionId = (int) $workflowShow->json('data.latest_revision.id');
+
+    $drawingJson = json_encode([
+        ['id' => '1', 'type' => 'pen', 'color' => '#000', 'strokeWidth' => 2, 'points' => [['x' => 10, 'y' => 10], ['x' => 50, 'y' => 50]]],
+    ]);
+
+    $drawingImage = UploadedFile::fake()->image('drawing.png', 100, 200);
+
+    $screenResponse = $this->post('/api/v1/screens/upsert', [
+        'workflow_revision_id' => $versionId,
+        'node_id'              => 'screen-drawing-1',
+        'title'                => 'Drawing screen',
+        'drawing_json'         => $drawingJson,
+        'drawing_image'        => $drawingImage,
+    ])->assertOk();
+
+    $screenResponse->assertJsonPath('data.drawing_json', $drawingJson);
+    $screenResponse->assertJsonPath('data.drawing_image_url', fn (string $url) => str_contains($url, 'screens/drawings/'));
+
+    $drawingImagePath = $screenResponse->json('data.drawing_image_path');
+    expect($drawingImagePath)->not->toBeNull();
+    Storage::disk('public')->assertExists($drawingImagePath);
+});
+
 it('handles standard mcp initialize requests over api endpoint', function (): void
 {
     $owner = User::query()->where('email', 'owner@example.com')->firstOrFail();

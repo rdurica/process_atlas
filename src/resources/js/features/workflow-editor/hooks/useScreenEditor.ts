@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Screen, ScreenCustomField } from '@/types/processAtlas';
+import type { DrawingTool } from '../components/inspector/drawing';
+import { DEFAULT_DRAWING_COLOR, DEFAULT_STROKE_WIDTH } from '../components/inspector/drawing';
 import type { FieldEditorMode, WorkflowNodeData } from '../types';
 import { resolveApiError } from '@/shared/lib/apiErrors';
 import { useAutosave } from '@/hooks/useAutosave';
@@ -27,6 +29,16 @@ interface UseScreenEditorReturn {
     setDescription: (description: string) => void;
     imageFile: File | null;
     setImageFile: (file: File | null) => void;
+    drawingJson: string;
+    setDrawingJson: (json: string) => void;
+    drawingChanged: boolean;
+    setDrawingChanged: (changed: boolean) => void;
+    drawingTool: DrawingTool;
+    setDrawingTool: (tool: DrawingTool) => void;
+    drawingColor: string;
+    setDrawingColor: (color: string) => void;
+    drawingStrokeWidth: number;
+    setDrawingStrokeWidth: (width: number) => void;
     fieldEditorMode: FieldEditorMode;
     editingFieldId: number | null;
     newCustomKey: string;
@@ -39,6 +51,13 @@ interface UseScreenEditorReturn {
     setNewCustomValue: (value: string) => void;
     setNewCustomFieldType: (type: ScreenCustomField['field_type']) => void;
     saveScreenData: () => Promise<Screen | null>;
+    saveDrawing: (
+        canvasRef: React.RefObject<{
+            getShapesJson: () => string;
+            getPngBlob: () => Promise<Blob | null>;
+        }>
+    ) => Promise<void>;
+    saveDrawingDirect: (json: string, blob: Blob | null) => Promise<void>;
     upsertScreen: (event: React.FormEvent) => Promise<void>;
     upsertCustomField: () => Promise<void>;
     submitFieldEditor: (event: React.FormEvent) => Promise<void>;
@@ -64,6 +83,11 @@ export function useScreenEditor({
     const [subtitle, setSubtitle] = useState('');
     const [description, setDescription] = useState('');
     const [imageFile, setImageFile] = useState<File | null>(null);
+    const [drawingJson, setDrawingJson] = useState('');
+    const [drawingChanged, setDrawingChanged] = useState(false);
+    const [drawingTool, setDrawingTool] = useState<DrawingTool>('pen');
+    const [drawingColor, setDrawingColor] = useState(DEFAULT_DRAWING_COLOR);
+    const [drawingStrokeWidth, setDrawingStrokeWidth] = useState(DEFAULT_STROKE_WIDTH);
     const [fieldEditorMode, setFieldEditorMode] = useState<FieldEditorMode>('hidden');
     const [editingFieldId, setEditingFieldId] = useState<number | null>(null);
     const [newCustomKey, setNewCustomKey] = useState('');
@@ -85,8 +109,9 @@ export function useScreenEditor({
         title: string;
         subtitle: string;
         description: string;
+        drawingJson: string;
         nodeId: string | null;
-    }>({ title: '', subtitle: '', description: '', nodeId: null });
+    }>({ title: '', subtitle: '', description: '', drawingJson: '', nodeId: null });
 
     // Sync form state when selected screen changes
     useEffect(() => {
@@ -95,12 +120,18 @@ export function useScreenEditor({
             title: selectedScreen?.title ?? '',
             subtitle: selectedScreen?.subtitle ?? '',
             description: selectedScreen?.description ?? '',
+            drawingJson: selectedScreen?.drawing_json ?? '',
             nodeId: selectedScreen?.node_id ?? null,
         };
         setTitle(selectedScreen?.title ?? '');
         setSubtitle(selectedScreen?.subtitle ?? '');
         setDescription(selectedScreen?.description ?? '');
         setImageFile(null);
+        setDrawingJson(selectedScreen?.drawing_json ?? '');
+        setDrawingChanged(false);
+        setDrawingTool('pen');
+        setDrawingColor(DEFAULT_DRAWING_COLOR);
+        setDrawingStrokeWidth(DEFAULT_STROKE_WIDTH);
     }, [selectedScreen]);
 
     const resetFieldDraft = useCallback(() => {
@@ -135,18 +166,25 @@ export function useScreenEditor({
         [setActionError, setActionNotice]
     );
 
+    const buildFormData = useCallback((): FormData => {
+        const form = new FormData();
+        form.append('workflow_revision_id', String(latestRevisionId));
+        form.append('node_id', selectedNodeId ?? '');
+        form.append('title', title);
+        form.append('subtitle', subtitle);
+        form.append('description', description);
+        if (imageFile) form.append('image', imageFile);
+        if (drawingJson) form.append('drawing_json', drawingJson);
+
+        return form;
+    }, [latestRevisionId, selectedNodeId, title, subtitle, description, imageFile, drawingJson]);
+
     const saveScreenData = useCallback(async (): Promise<Screen | null> => {
         if (!latestRevisionId || !selectedNodeId) {
             return null;
         }
 
-        const form = new FormData();
-        form.append('workflow_revision_id', String(latestRevisionId));
-        form.append('node_id', selectedNodeId);
-        form.append('title', title);
-        form.append('subtitle', subtitle);
-        form.append('description', description);
-        if (imageFile) form.append('image', imageFile);
+        const form = buildFormData();
 
         const response = await processAtlasApi.screens.upsert(form);
 
@@ -161,19 +199,150 @@ export function useScreenEditor({
             label: updatedScreen.title,
             subtitle: updatedScreen.subtitle ?? '',
             image_url: updatedScreen.image_url ?? null,
+            drawing_image_url: updatedScreen.drawing_image_url ?? null,
         });
 
         return updatedScreen;
-    }, [
-        latestRevisionId,
-        selectedNodeId,
-        title,
-        subtitle,
-        description,
-        imageFile,
-        setScreens,
-        updateNodeData,
-    ]);
+    }, [latestRevisionId, selectedNodeId, buildFormData, setScreens, updateNodeData]);
+
+    const saveDrawing = useCallback(
+        async (
+            canvasRef: React.RefObject<{
+                getShapesJson: () => string;
+                getPngBlob: () => Promise<Blob | null>;
+            }>
+        ) => {
+            if (!latestRevisionId || !selectedNodeId || !canEdit) {
+                return;
+            }
+
+            setIsSavingScreen(true);
+            setActionError(null);
+
+            try {
+                const currentJson = canvasRef.current?.getShapesJson() ?? '';
+                const pngBlob = await canvasRef.current?.getPngBlob();
+
+                const form = new FormData();
+                form.append('workflow_revision_id', String(latestRevisionId));
+                form.append('node_id', selectedNodeId);
+                form.append('title', title);
+                form.append('subtitle', subtitle);
+                form.append('description', description);
+                if (imageFile) form.append('image', imageFile);
+                if (currentJson) form.append('drawing_json', currentJson);
+                if (pngBlob) {
+                    form.append('drawing_image', pngBlob, 'drawing.png');
+                }
+
+                const response = await processAtlasApi.screens.upsert(form);
+                const updatedScreen: Screen = response.data.data;
+
+                setScreens(current => {
+                    const withoutUpdated = current.filter(screen => screen.id !== updatedScreen.id);
+                    return [...withoutUpdated, updatedScreen];
+                });
+
+                updateNodeData(updatedScreen.node_id, {
+                    label: updatedScreen.title,
+                    subtitle: updatedScreen.subtitle ?? '',
+                    image_url: updatedScreen.image_url ?? null,
+                    drawing_image_url: updatedScreen.drawing_image_url ?? null,
+                });
+
+                lastSavedScreenRef.current = {
+                    ...lastSavedScreenRef.current,
+                    drawingJson: currentJson,
+                };
+                setDrawingJson(currentJson);
+                setDrawingChanged(false);
+                setActionNotice('Drawing saved.');
+            } catch (error) {
+                setActionError(resolveApiError(error, 'Drawing save failed.'));
+            } finally {
+                setIsSavingScreen(false);
+            }
+        },
+        [
+            latestRevisionId,
+            selectedNodeId,
+            canEdit,
+            title,
+            subtitle,
+            description,
+            imageFile,
+            setScreens,
+            updateNodeData,
+            setActionError,
+            setActionNotice,
+        ]
+    );
+
+    const saveDrawingDirect = useCallback(
+        async (json: string, blob: Blob | null) => {
+            if (!latestRevisionId || !selectedNodeId || !canEdit) {
+                return;
+            }
+
+            setIsSavingScreen(true);
+            setActionError(null);
+
+            try {
+                const form = new FormData();
+                form.append('workflow_revision_id', String(latestRevisionId));
+                form.append('node_id', selectedNodeId);
+                form.append('title', title);
+                form.append('subtitle', subtitle);
+                form.append('description', description);
+                if (imageFile) form.append('image', imageFile);
+                if (json) form.append('drawing_json', json);
+                if (blob) {
+                    form.append('drawing_image', blob, 'drawing.png');
+                }
+
+                const response = await processAtlasApi.screens.upsert(form);
+                const updatedScreen: Screen = response.data.data;
+
+                setScreens(current => {
+                    const withoutUpdated = current.filter(screen => screen.id !== updatedScreen.id);
+                    return [...withoutUpdated, updatedScreen];
+                });
+
+                updateNodeData(updatedScreen.node_id, {
+                    label: updatedScreen.title,
+                    subtitle: updatedScreen.subtitle ?? '',
+                    image_url: updatedScreen.image_url ?? null,
+                    drawing_image_url: updatedScreen.drawing_image_url ?? null,
+                });
+
+                lastSavedScreenRef.current = {
+                    ...lastSavedScreenRef.current,
+                    drawingJson: json,
+                };
+                setDrawingJson(json);
+                setDrawingChanged(false);
+                setActionNotice('Drawing saved.');
+            } catch (error) {
+                console.error('[saveDrawingDirect] error:', error);
+                setActionError(resolveApiError(error, 'Drawing save failed.'));
+            } finally {
+                setIsSavingScreen(false);
+            }
+        },
+        [
+            latestRevisionId,
+            selectedNodeId,
+            canEdit,
+            title,
+            subtitle,
+            description,
+            imageFile,
+            setScreens,
+            updateNodeData,
+            setActionError,
+            setActionNotice,
+        ]
+    );
 
     const { clearTimer: clearScreenAutosave } = useAutosave({
         saveFn: async () => {
@@ -200,6 +369,7 @@ export function useScreenEditor({
                     title,
                     subtitle,
                     description,
+                    drawingJson: lastSavedScreenRef.current.drawingJson,
                     nodeId: selectedNodeId,
                 };
                 setActionNotice('Screen metadata autosaved.');
@@ -397,6 +567,16 @@ export function useScreenEditor({
         setDescription,
         imageFile,
         setImageFile,
+        drawingJson,
+        setDrawingJson,
+        drawingChanged,
+        setDrawingChanged,
+        drawingTool,
+        setDrawingTool,
+        drawingColor,
+        setDrawingColor,
+        drawingStrokeWidth,
+        setDrawingStrokeWidth,
         fieldEditorMode,
         editingFieldId,
         newCustomKey,
@@ -409,6 +589,8 @@ export function useScreenEditor({
         setNewCustomValue,
         setNewCustomFieldType,
         saveScreenData,
+        saveDrawing,
+        saveDrawingDirect,
         upsertScreen,
         upsertCustomField,
         submitFieldEditor,

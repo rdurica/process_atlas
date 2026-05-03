@@ -28,6 +28,8 @@ final class UpsertScreenCommand
 
         $newImagePath = null;
         $previousImagePath = null;
+        $newDrawingImagePath = null;
+        $previousDrawingImagePath = null;
 
         try
         {
@@ -37,6 +39,8 @@ final class UpsertScreenCommand
                 $request,
                 &$newImagePath,
                 &$previousImagePath,
+                &$newDrawingImagePath,
+                &$previousDrawingImagePath,
             ): Screen {
                 $screen = Screen::query()->firstOrCreate(
                     [
@@ -56,6 +60,14 @@ final class UpsertScreenCommand
                     $imagePath = $newImagePath;
                 }
 
+                $drawingImagePath = $screen->drawing_image_path;
+                if ($request->drawingImage !== null)
+                {
+                    $previousDrawingImagePath = $screen->drawing_image_path;
+                    $newDrawingImagePath = $this->imageService->storeDrawingImage($request->drawingImage);
+                    $drawingImagePath = $newDrawingImagePath;
+                }
+
                 $screen->update([
                     'title' => $request->hasTitle
                         ? $request->title
@@ -66,8 +78,12 @@ final class UpsertScreenCommand
                     'description' => $request->hasDescription
                         ? $request->description
                         : $screen->description,
-                    'image_path' => $imagePath,
-                    'updated_by' => $actor->id,
+                    'image_path'   => $imagePath,
+                    'drawing_json' => $request->hasDrawingJson
+                        ? $request->drawingJson
+                        : $screen->drawing_json,
+                    'drawing_image_path' => $drawingImagePath,
+                    'updated_by'         => $actor->id,
                 ]);
 
                 AuditLogger::log($actor, $screen, 'updated', 'Screen upserted');
@@ -84,6 +100,7 @@ final class UpsertScreenCommand
         catch (Throwable $exception)
         {
             $this->imageService->delete($newImagePath);
+            $this->imageService->delete($newDrawingImagePath);
 
             throw $exception;
         }
@@ -91,6 +108,11 @@ final class UpsertScreenCommand
         if ($newImagePath !== null)
         {
             $this->imageService->delete($previousImagePath);
+        }
+
+        if ($newDrawingImagePath !== null)
+        {
+            $this->imageService->delete($previousDrawingImagePath);
         }
 
         return ScreenResponse::fromModel($screen);

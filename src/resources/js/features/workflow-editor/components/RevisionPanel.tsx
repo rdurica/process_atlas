@@ -272,8 +272,16 @@ function RevisionItem({
     onDelete?: () => void;
 }) {
     return (
-        <button
+        <div
+            role="button"
+            tabIndex={0}
             onClick={onClick}
+            onKeyDown={e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onClick();
+                }
+            }}
             className={cn(
                 'w-full rounded-lg border p-3 text-left transition-all',
                 isActive
@@ -334,6 +342,6 @@ function RevisionItem({
                         </Button>
                     )}
             </div>
-        </button>
+        </div>
     );
 }

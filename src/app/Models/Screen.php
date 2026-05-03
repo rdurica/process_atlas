@@ -12,8 +12,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
 
-#[Fillable(['workflow_revision_id', 'node_id', 'title', 'subtitle', 'description', 'image_path', 'created_by', 'updated_by'])]
-#[Appends(['image_url'])]
+#[Fillable(['workflow_revision_id', 'node_id', 'title', 'subtitle', 'description', 'image_path', 'drawing_json', 'drawing_image_path', 'created_by', 'updated_by'])]
+#[Appends(['image_url', 'drawing_image_url'])]
 class Screen extends Model
 {
     /** @use HasFactory<ScreenFactory> */
@@ -27,6 +27,18 @@ class Screen extends Model
         return Attribute::make(
             get: fn () => $this->image_path
                 ? Storage::disk('public')->url($this->image_path)
+                : null,
+        );
+    }
+
+    /**
+     * @return Attribute<string|null, never>
+     */
+    protected function drawingImageUrl(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->drawing_image_path
+                ? Storage::disk('public')->url($this->drawing_image_path)
                 : null,
         );
     }
