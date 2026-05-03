@@ -1,7 +1,6 @@
 import Modal from '@/Components/Modal';
 import StatusBadge from '@/Components/StatusBadge';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { PROJECT_ROLE_LABELS } from '@/shared/lib/projectPermissions';
 import { Head, Link } from '@inertiajs/react';
 import { useDashboard } from './useDashboard';
 import type { DashboardProps, DashboardStatusFilter } from './types';
@@ -160,7 +159,6 @@ export default function DashboardPage(props: DashboardProps) {
                                     <TableRow>
                                         <TableHead>Name</TableHead>
                                         <TableHead>Status</TableHead>
-                                        <TableHead>Role</TableHead>
                                         <TableHead>Workflows</TableHead>
                                         <TableHead className="text-right">Actions</TableHead>
                                     </TableRow>
@@ -186,28 +184,22 @@ export default function DashboardPage(props: DashboardProps) {
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex flex-wrap items-center gap-1.5">
-                                                    <StatusBadge tone="brand">
-                                                        {project.latest_revision_label}
-                                                    </StatusBadge>
-                                                    <StatusBadge tone="neutral">
-                                                        {project.status_summary}
-                                                    </StatusBadge>
+                                                    {project.released_count > 0 && (
+                                                        <StatusBadge tone="success">
+                                                            {project.released_count} released
+                                                        </StatusBadge>
+                                                    )}
+                                                    {project.unreleased_count > 0 && (
+                                                        <StatusBadge tone="neutral">
+                                                            {project.unreleased_count} unreleased
+                                                        </StatusBadge>
+                                                    )}
+                                                    {project.workflows_count === 0 && (
+                                                        <StatusBadge tone="neutral">
+                                                            No workflows
+                                                        </StatusBadge>
+                                                    )}
                                                 </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                {project.current_user_role ? (
-                                                    <Badge variant="secondary">
-                                                        {
-                                                            PROJECT_ROLE_LABELS[
-                                                                project.current_user_role
-                                                            ]
-                                                        }
-                                                    </Badge>
-                                                ) : (
-                                                    <span className="text-sm text-muted-foreground">
-                                                        —
-                                                    </span>
-                                                )}
                                             </TableCell>
                                             <TableCell>
                                                 <Badge variant="secondary">

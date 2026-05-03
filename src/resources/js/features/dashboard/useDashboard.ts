@@ -33,16 +33,16 @@ export function useDashboard({ summary, projects }: DashboardProps) {
                 accentClass: 'metric-card-workflows',
             },
             {
-                label: 'Draft Revisions',
-                value: summary.draft_revisions,
-                detail: 'Unpublished changes waiting for review or release.',
-                accentClass: 'metric-card-drafts',
-            },
-            {
-                label: 'Published Workflows',
-                value: summary.published_workflows,
+                label: 'Released Workflows',
+                value: summary.released_workflows,
                 detail: 'Processes with a live published revision.',
                 accentClass: 'metric-card-published',
+            },
+            {
+                label: 'Unreleased',
+                value: summary.unreleased_workflows,
+                detail: 'Workflows with unpublished changes.',
+                accentClass: 'metric-card-drafts',
             },
         ],
         [summary]
@@ -69,7 +69,13 @@ export function useDashboard({ summary, projects }: DashboardProps) {
                 return project.workflows_count === 0;
             }
 
-            return project.workflows.some(workflow => workflow.status === statusFilter);
+            if (statusFilter === 'published') {
+                return project.workflows.some(workflow => workflow.published_revision !== null);
+            }
+
+            return project.workflows.some(
+                workflow => workflow.latest_revision?.is_published === false
+            );
         });
     }, [projects, query, statusFilter]);
 

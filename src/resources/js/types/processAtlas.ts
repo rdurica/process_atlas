@@ -43,6 +43,8 @@ export interface ProjectSummary {
     workflows_count: number;
     latest_revision_label: string;
     status_summary: string;
+    released_count: number;
+    unreleased_count: number;
     current_user_role: ProjectRole | null;
     workflows: WorkflowSummary[];
 }
@@ -50,8 +52,8 @@ export interface ProjectSummary {
 export interface DashboardSummary {
     projects: number;
     workflows: number;
-    draft_revisions: number;
-    published_workflows: number;
+    unreleased_workflows: number;
+    released_workflows: number;
 }
 
 export interface ScreenCustomField {

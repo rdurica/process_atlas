@@ -34,23 +34,26 @@ final class DashboardQueryService
 
         $projectIds = $projects->pluck('id');
 
+        $allWorkflows = Workflow::query()
+            ->whereIn('project_id', $projectIds)
+            ->with(['latestRevision', 'publishedRevision'])
+            ->get();
+
         $summary = [
-            'projects'        => $projects->count(),
-            'workflows'       => Workflow::query()->whereIn('project_id', $projectIds)->count(),
-            'draft_revisions' => WorkflowRevision::query()
-                ->whereHas('workflow', fn ($q) => $q->whereIn('project_id', $projectIds))
-                ->where('is_published', false)
+            'projects'             => $projects->count(),
+            'workflows'            => $allWorkflows->count(),
+            'unreleased_workflows' => $allWorkflows
+                ->filter(fn (Workflow $w) => $w->latestRevision && ! $w->latestRevision->is_published)
                 ->count(),
-            'published_workflows' => Workflow::query()
-                ->whereIn('project_id', $projectIds)
-                ->where('status', 'published')
-                ->count(),
+            'released_workflows' => $allWorkflows->whereNotNull('published_revision_id')->count(),
         ];
 
         $serializedProjects = $projects->map(function (Project $project) use ($user, $isAdmin): array
         {
-            $publishedCount = $project->workflows->where('status', 'published')->count();
-            $draftCount = $project->workflows->where('status', 'draft')->count();
+            $publishedCount = $project->workflows->whereNotNull('published_revision_id')->count();
+            $draftCount = $project->workflows->filter(
+                fn (Workflow $w) => $w->latestRevision && ! $w->latestRevision->is_published,
+            )->count();
             $latestRevision = $project->workflows
                 ->pluck('latestRevision')
                 ->filter()
@@ -78,10 +81,12 @@ final class DashboardQueryService
                 'status_summary'        => match (true)
                 {
                     $project->workflows_count === 0        => 'No workflows',
-                    $publishedCount > 0 && $draftCount > 0 => $publishedCount . ' published / ' . $draftCount . ' draft',
-                    $publishedCount > 0                    => $publishedCount . ' published',
-                    default                                => $draftCount . ' draft',
+                    $publishedCount > 0 && $draftCount > 0 => $publishedCount . ' released / ' . $draftCount . ' unreleased',
+                    $publishedCount > 0                    => $publishedCount . ' released',
+                    default                                => $draftCount . ' unreleased',
                 },
+                'released_count'    => $publishedCount,
+                'unreleased_count'  => $draftCount,
                 'current_user_role' => $currentUserRole,
                 'workflows'         => $project->workflows->map(fn (Workflow $workflow): array => [
                     'id'              => $workflow->id,
