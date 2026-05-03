@@ -167,26 +167,36 @@ export default function ProjectWorkflowsPage(props: ProjectWorkflowsProps) {
                                         return (
                                             <TableRow
                                                 key={workflow.id}
-                                                className={isArchived ? 'bg-muted/30' : ''}
+                                                className={cn(
+                                                    'group cursor-pointer',
+                                                    isArchived && 'bg-muted/30'
+                                                )}
                                             >
                                                 <TableCell>
-                                                    <div className="flex items-center gap-2">
-                                                        <span
-                                                            className={cn(
-                                                                'font-semibold',
-                                                                isArchived
-                                                                    ? 'text-muted-foreground'
-                                                                    : 'text-foreground'
+                                                    <Link
+                                                        href={route('workflows.editor', {
+                                                            workflow: workflow.id,
+                                                        })}
+                                                        className="block"
+                                                    >
+                                                        <div className="flex items-center gap-2">
+                                                            <span
+                                                                className={cn(
+                                                                    'font-semibold transition-colors group-hover:text-primary',
+                                                                    isArchived
+                                                                        ? 'text-muted-foreground'
+                                                                        : 'text-foreground'
+                                                                )}
+                                                            >
+                                                                {workflow.name}
+                                                            </span>
+                                                            {isArchived && (
+                                                                <Badge variant="secondary">
+                                                                    Archived
+                                                                </Badge>
                                                             )}
-                                                        >
-                                                            {workflow.name}
-                                                        </span>
-                                                        {isArchived && (
-                                                            <Badge variant="secondary">
-                                                                Archived
-                                                            </Badge>
-                                                        )}
-                                                    </div>
+                                                        </div>
+                                                    </Link>
                                                 </TableCell>
                                                 <TableCell>
                                                     <StatusBadge
