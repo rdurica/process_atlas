@@ -27,15 +27,15 @@ Process Atlas is the living map that agents read.
 ## Screenshots
 
 <p align="center">
-  <img src="docs/images/workflow-editor.webp" alt="Workflow Editor" width="100%">
+  <img src="docs/images/workflow-editor.webp" alt="Workflow Editor — Dark Mode" width="100%">
 </p>
 
 <p align="center">
-  <img src="docs/images/login.webp" alt="Login" width="32%">
+  <img src="docs/images/login.webp" alt="Login — Light Mode" width="32%">
   &nbsp;
-  <img src="docs/images/dashboard.webp" alt="Dashboard" width="32%">
+  <img src="docs/images/dashboard.webp" alt="Dashboard — Light Mode" width="32%">
   &nbsp;
-  <img src="docs/images/project-overview.webp" alt="Project Overview" width="32%">
+  <img src="docs/images/project-overview.webp" alt="Project Overview — Dark Mode" width="32%">
 </p>
 
 ---
