@@ -25,9 +25,17 @@ wait_for() {
 wait_for "${DB_HOST:-postgres}" "${DB_PORT:-5432}" "PostgreSQL"
 wait_for "${REDIS_HOST:-redis}" "${REDIS_PORT:-6379}" "Redis"
 
-if grep -q 'CHANGE-ME' .env 2>/dev/null || ! grep -q 'APP_KEY=base64:' .env 2>/dev/null; then
+if [ "$APP_KEY" = "CHANGE-ME" ] || [ -z "$APP_KEY" ] || ! grep -q 'APP_KEY=base64:' .env 2>/dev/null; then
     echo "Generating APP_KEY..."
-    php artisan key:generate --force
+    KEY=$(php -r "echo base64_encode(random_bytes(32));")
+    export APP_KEY="base64:${KEY}"
+
+    if grep -q '^APP_KEY=' .env 2>/dev/null; then
+        sed -i.bak "s|^APP_KEY=.*|APP_KEY=${APP_KEY}|" .env
+        rm -f .env.bak
+    else
+        echo "APP_KEY=${APP_KEY}" >> .env
+    fi
 fi
 
 echo "Running migrations..."
