@@ -112,9 +112,20 @@ npm run lint
 npm run format:check
 ```
 
+## Deployment & Distribution
+
+- **GHCR image**: `ghcr.io/rdurica/process_atlas` — built automatically on GitHub Release via `build.yaml`
+- **Quick start**: `docker compose -f compose.demo.yaml up` (self-contained with PG + Redis)
+- **Production**: Use `ghcr.io/rdurica/process_atlas` image with external PG/Redis. Default CMD runs `docker-entrypoint.sh` (wait + migrate + start). Override `command: ["/usr/local/bin/start.sh"]` for K8s where migrate is a separate Job.
+- **Demo entrypoint**: `build/prod/docker-entrypoint.sh` — waits for DB/Redis, runs migrate, then starts app
+- **Production entrypoint**: `build/prod/supervisord/start.sh` — just php-fpm + nginx (for K8s where migrate is a separate Job)
+- **K8s manifest**: `build/prod/manifest-template.yaml` — full deployment template with Traefik IngressRoute
+
 ## Important Gotchas
 
 - `make init` moves `build/dev/.github` to `.github` — do not edit the former directly
 - The Docker network `apps` must exist before `make up` (created by `make init`)
 - `composer setup` must be run inside the php container, not on the host
 - Node modules are in a Docker volume; use `make node-sync` to copy them to host if needed
+- `demo.env` is for the demo compose only — never use it in production
+- The prod Dockerfile CMD is `start.sh` (no wait/migrate). Override with `command: /usr/local/bin/docker-entrypoint.sh` in compose for self-hosted setups

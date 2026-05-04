@@ -10,6 +10,7 @@ RUN apk update && apk add --no-cache \
     nginx \
     bash \
     curl \
+    netcat-openbsd \
     libpq-dev \
     libzip-dev \
     zlib-dev \
@@ -64,8 +65,9 @@ COPY build/prod/nginx/nginx.conf /etc/nginx/nginx.conf
 COPY build/prod/nginx/default.conf /etc/nginx/http.d/default.conf
 COPY build/prod/supervisord/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY build/prod/supervisord/start.sh /usr/local/bin/start.sh
+COPY build/prod/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
-RUN chmod +x /usr/local/bin/start.sh && \
+RUN chmod +x /usr/local/bin/start.sh /usr/local/bin/docker-entrypoint.sh && \
     addgroup robbyte nginx && \
     mkdir -p /var/lib/nginx && \
     mkdir -p var/cache var/log && \
@@ -86,4 +88,7 @@ USER robbyte
 
 EXPOSE 80
 
-CMD ["/usr/local/bin/start.sh", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost/up || exit 1
+
+CMD ["/usr/local/bin/docker-entrypoint.sh"]
