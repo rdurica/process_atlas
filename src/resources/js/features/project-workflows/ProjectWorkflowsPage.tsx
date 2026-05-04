@@ -7,7 +7,7 @@ import {
     canManageMembersInProject,
 } from '@/shared/lib/projectPermissions';
 import { formatDateTime } from '@/shared/lib/dates';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     useProjectWorkflows,
     workflowTone,
@@ -210,6 +210,15 @@ export default function ProjectWorkflowsPage(props: ProjectWorkflowsProps) {
                                                     'group cursor-pointer',
                                                     isArchived && 'bg-muted/30'
                                                 )}
+                                                onClick={e => {
+                                                    if (!e.defaultPrevented) {
+                                                        router.visit(
+                                                            route('workflows.editor', {
+                                                                workflow: workflow.id,
+                                                            })
+                                                        );
+                                                    }
+                                                }}
                                             >
                                                 <TableCell>
                                                     <Link
@@ -286,11 +295,12 @@ export default function ProjectWorkflowsPage(props: ProjectWorkflowsProps) {
                                                                 <Button
                                                                     variant="outline"
                                                                     size="sm"
-                                                                    onClick={() =>
+                                                                    onClick={e => {
+                                                                        e.stopPropagation();
                                                                         page.unarchiveWorkflow(
                                                                             workflow.id
-                                                                        )
-                                                                    }
+                                                                        );
+                                                                    }}
                                                                     disabled={page.pendingArchive}
                                                                 >
                                                                     <RotateCcw className="mr-1 h-3 w-3" />
@@ -301,11 +311,12 @@ export default function ProjectWorkflowsPage(props: ProjectWorkflowsProps) {
                                                                     variant="outline"
                                                                     size="sm"
                                                                     className="text-destructive hover:bg-destructive/10"
-                                                                    onClick={() =>
+                                                                    onClick={e => {
+                                                                        e.stopPropagation();
                                                                         page.setConfirmArchiveId(
                                                                             workflow.id
-                                                                        )
-                                                                    }
+                                                                        );
+                                                                    }}
                                                                 >
                                                                     <Archive className="mr-1 h-3 w-3" />
                                                                     Archive

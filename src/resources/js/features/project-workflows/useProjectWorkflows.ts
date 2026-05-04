@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import { FormEvent, useCallback, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { WorkflowSummary } from '@/types/processAtlas';
 import { processAtlasApi } from '@/shared/api/processAtlasApi';
 import { resolveApiError } from '@/shared/lib/apiErrors';
@@ -29,6 +29,17 @@ export function useProjectWorkflows({
 
     const isArchived = project.archived_at !== null;
 
+    const queryRef = useRef(query);
+    const statusFilterRef = useRef(statusFilter);
+    const showArchivedRef = useRef(showArchived);
+    const currentPageRef = useRef(current_page);
+    const isFirstSearchEffect = useRef(true);
+
+    queryRef.current = query;
+    statusFilterRef.current = statusFilter;
+    showArchivedRef.current = showArchived;
+    currentPageRef.current = current_page;
+
     const reloadWithParams = useCallback(
         (
             newPage?: number,
@@ -39,14 +50,14 @@ export function useProjectWorkflows({
             router.reload({
                 only: ['workflows', 'project', 'current_page', 'last_page', 'total', 'from', 'to'],
                 data: {
-                    page: newPage ?? current_page,
-                    search: newSearch ?? query,
-                    status: newStatus ?? statusFilter,
-                    include_archived: (newArchived ?? showArchived) ? 1 : undefined,
+                    page: newPage ?? currentPageRef.current,
+                    search: newSearch ?? queryRef.current,
+                    status: newStatus ?? statusFilterRef.current,
+                    include_archived: (newArchived ?? showArchivedRef.current) ? 1 : undefined,
                 },
             });
         },
-        [current_page, query, statusFilter, showArchived]
+        []
     );
 
     const handlePageChange = (newPage: number) => {
@@ -55,8 +66,20 @@ export function useProjectWorkflows({
 
     const handleSearchChange = (value: string) => {
         setQuery(value);
-        reloadWithParams(1, value);
     };
+
+    useEffect(() => {
+        if (isFirstSearchEffect.current) {
+            isFirstSearchEffect.current = false;
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            reloadWithParams(1, query);
+        }, 400);
+
+        return () => clearTimeout(timer);
+    }, [query, reloadWithParams]);
 
     const handleStatusChange = (value: WorkflowStatusFilter) => {
         setStatusFilter(value);

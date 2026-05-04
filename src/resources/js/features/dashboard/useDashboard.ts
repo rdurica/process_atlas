@@ -1,5 +1,5 @@
 import { router, usePage } from '@inertiajs/react';
-import { FormEvent, useCallback, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PageProps } from '@/types';
 import { processAtlasApi } from '@/shared/api/processAtlasApi';
 import { resolveApiError } from '@/shared/lib/apiErrors';
@@ -19,6 +19,17 @@ export function useDashboard({ summary, projects, current_page, last_page }: Das
     const [projectIsPublic, setProjectIsPublic] = useState(false);
     const [pendingProject, setPendingProject] = useState(false);
     const [projectError, setProjectError] = useState<string | null>(null);
+
+    const queryRef = useRef(query);
+    const statusFilterRef = useRef(statusFilter);
+    const includeArchivedRef = useRef(includeArchived);
+    const currentPageRef = useRef(current_page);
+    const isFirstSearchEffect = useRef(true);
+
+    queryRef.current = query;
+    statusFilterRef.current = statusFilter;
+    includeArchivedRef.current = includeArchived;
+    currentPageRef.current = current_page;
 
     const metrics = useMemo(
         () => [
@@ -60,14 +71,14 @@ export function useDashboard({ summary, projects, current_page, last_page }: Das
             router.reload({
                 only: ['summary', 'projects', 'current_page', 'last_page', 'total', 'from', 'to'],
                 data: {
-                    page: newPage ?? current_page,
-                    search: newSearch ?? query,
-                    status: newStatus ?? statusFilter,
-                    include_archived: (newArchived ?? includeArchived) ? 1 : undefined,
+                    page: newPage ?? currentPageRef.current,
+                    search: newSearch ?? queryRef.current,
+                    status: newStatus ?? statusFilterRef.current,
+                    include_archived: (newArchived ?? includeArchivedRef.current) ? 1 : undefined,
                 },
             });
         },
-        [current_page, query, statusFilter, includeArchived]
+        []
     );
 
     const handlePageChange = (newPage: number) => {
@@ -76,8 +87,20 @@ export function useDashboard({ summary, projects, current_page, last_page }: Das
 
     const handleSearchChange = (value: string) => {
         setQuery(value);
-        reloadWithParams(1, value);
     };
+
+    useEffect(() => {
+        if (isFirstSearchEffect.current) {
+            isFirstSearchEffect.current = false;
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            reloadWithParams(1, query);
+        }, 400);
+
+        return () => clearTimeout(timer);
+    }, [query, reloadWithParams]);
 
     const handleStatusChange = (value: DashboardStatusFilter) => {
         setStatusFilter(value);

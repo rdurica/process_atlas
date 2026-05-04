@@ -1,7 +1,7 @@
 import Modal from '@/Components/Modal';
 import StatusBadge from '@/Components/StatusBadge';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { useDashboard } from './useDashboard';
 import type { DashboardProps, DashboardStatusFilter } from './types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
@@ -183,7 +183,19 @@ export default function DashboardPage(props: DashboardProps) {
                                 </TableHeader>
                                 <TableBody>
                                     {dashboard.projects.map(project => (
-                                        <TableRow key={project.id} className="group cursor-pointer">
+                                        <TableRow
+                                            key={project.id}
+                                            className="group cursor-pointer"
+                                            onClick={e => {
+                                                if (!e.defaultPrevented) {
+                                                    router.visit(
+                                                        route('projects.show', {
+                                                            project: project.id,
+                                                        })
+                                                    );
+                                                }
+                                            }}
+                                        >
                                             <TableCell>
                                                 <Link
                                                     href={route('projects.show', {
