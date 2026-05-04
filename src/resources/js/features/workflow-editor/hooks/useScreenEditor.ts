@@ -223,14 +223,8 @@ export function useScreenEditor({
                 const currentJson = canvasRef.current?.getShapesJson() ?? '';
                 const pngBlob = await canvasRef.current?.getPngBlob();
 
-                const form = new FormData();
-                form.append('workflow_revision_id', String(latestRevisionId));
-                form.append('node_id', selectedNodeId);
-                form.append('title', title);
-                form.append('subtitle', subtitle);
-                form.append('note', note);
-                if (imageFile) form.append('image', imageFile);
-                if (currentJson) form.append('drawing_json', currentJson);
+                const form = buildFormData();
+                if (currentJson) form.set('drawing_json', currentJson);
                 if (pngBlob) {
                     form.append('drawing_image', pngBlob, 'drawing.png');
                 }
@@ -267,10 +261,7 @@ export function useScreenEditor({
             latestRevisionId,
             selectedNodeId,
             canEdit,
-            title,
-            subtitle,
-            note,
-            imageFile,
+            buildFormData,
             setScreens,
             updateNodeData,
             setActionError,
@@ -288,14 +279,8 @@ export function useScreenEditor({
             setActionError(null);
 
             try {
-                const form = new FormData();
-                form.append('workflow_revision_id', String(latestRevisionId));
-                form.append('node_id', selectedNodeId);
-                form.append('title', title);
-                form.append('subtitle', subtitle);
-                form.append('note', note);
-                if (imageFile) form.append('image', imageFile);
-                if (json) form.append('drawing_json', json);
+                const form = buildFormData();
+                if (json) form.set('drawing_json', json);
                 if (blob) {
                     form.append('drawing_image', blob, 'drawing.png');
                 }
@@ -333,10 +318,7 @@ export function useScreenEditor({
             latestRevisionId,
             selectedNodeId,
             canEdit,
-            title,
-            subtitle,
-            note,
-            imageFile,
+            buildFormData,
             setScreens,
             updateNodeData,
             setActionError,

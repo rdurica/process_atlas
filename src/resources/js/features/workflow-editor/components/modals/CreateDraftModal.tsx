@@ -1,34 +1,33 @@
 import Modal from '@/Components/Modal';
+import { useEditorStore } from '../../stores/editorStore';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
 
 interface CreateDraftModalProps {
-    open: boolean;
-    onClose: () => void;
-    draftNameInput: string;
-    setDraftNameInput: (name: string) => void;
-    draftSourceRevisionId: number | undefined;
     createDraft: (name?: string, sourceId?: number) => Promise<void>;
-    isRunningAction: boolean;
 }
 
-export default function CreateDraftModal({
-    open,
-    onClose,
-    draftNameInput,
-    setDraftNameInput,
-    draftSourceRevisionId,
-    createDraft,
-    isRunningAction,
-}: CreateDraftModalProps) {
+export default function CreateDraftModal({ createDraft }: CreateDraftModalProps) {
+    const draftModalOpen = useEditorStore(state => state.draftModalOpen);
+    const setDraftModalOpen = useEditorStore(state => state.setDraftModalOpen);
+    const draftNameInput = useEditorStore(state => state.draftNameInput);
+    const setDraftNameInput = useEditorStore(state => state.setDraftNameInput);
+    const draftSourceRevisionId = useEditorStore(state => state.draftSourceRevisionId);
+    const isRunningAction = useEditorStore(state => state.isRunningAction);
+
+    const handleClose = () => {
+        setDraftModalOpen(false);
+        setDraftNameInput('');
+    };
+
     const handleSubmit = () => {
         void createDraft(draftNameInput || undefined, draftSourceRevisionId);
-        onClose();
+        handleClose();
     };
 
     return (
-        <Modal show={open} maxWidth="md" onClose={onClose}>
+        <Modal show={draftModalOpen} maxWidth="md" onClose={handleClose}>
             <div className="p-6">
                 <h3 className="text-lg font-semibold text-foreground">New Draft</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
@@ -49,7 +48,7 @@ export default function CreateDraftModal({
                     />
                 </div>
                 <div className="mt-6 flex justify-end gap-3">
-                    <Button type="button" variant="outline" size="sm" onClick={onClose}>
+                    <Button type="button" variant="outline" size="sm" onClick={handleClose}>
                         Cancel
                     </Button>
                     <Button

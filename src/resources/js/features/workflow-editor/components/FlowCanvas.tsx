@@ -1,10 +1,10 @@
 import type { DragEvent, MouseEvent as ReactMouseEvent, ReactElement } from 'react';
-import { useCallback } from 'react';
+import { memo, useCallback } from 'react';
 import { Background, Controls, MiniMap, ReactFlow, useReactFlow } from '@xyflow/react';
 import { useTheme } from '@/Components/ThemeProvider';
 import type { FlowCanvasProps, WorkflowNodeKind } from '../types';
 
-export default function FlowCanvas({
+function FlowCanvas({
     nodes,
     edges,
     nodeTypes,
@@ -82,3 +82,5 @@ export default function FlowCanvas({
         </div>
     );
 }
+
+export default memo(FlowCanvas);

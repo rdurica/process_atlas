@@ -52,121 +52,126 @@ export default function AuthenticatedLayout({
         return projects.filter(p => p.name.toLowerCase().includes(query));
     }, [projects, projectSearch]);
 
-    const navContent = (
-        <div className="flex h-full flex-col">
-            {/* Logo */}
-            <div className="shrink-0 px-5 py-5">
-                <Link href={route('dashboard')} className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80 text-sm font-bold tracking-wider text-primary-foreground shadow-elevated">
-                        PA
-                    </div>
-                    <div>
-                        <p className="text-sm font-semibold text-foreground">Process Atlas</p>
-                        <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-                            Enterprise
-                        </p>
-                    </div>
-                </Link>
-            </div>
-
-            <Separator />
-
-            {/* Navigation */}
-            <ScrollArea className="flex-1">
-                <div className="px-3 py-4">
-                    <p className="px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                        Navigation
-                    </p>
-                    <nav className="mt-3 space-y-0.5">
-                        <SidebarLink
-                            href={route('dashboard')}
-                            active={route().current('dashboard')}
-                            onClick={() => setMobileNavOpen(false)}
-                        >
-                            <LayoutDashboard className="h-4 w-4" />
-                            <span>Dashboard</span>
-                        </SidebarLink>
-                        {(user as { is_admin?: boolean } | null)?.is_admin && (
-                            <SidebarLink
-                                href={route('admin.users')}
-                                active={route().current('admin.users')}
-                                onClick={() => setMobileNavOpen(false)}
-                            >
-                                <Users className="h-4 w-4" />
-                                <span>Administration</span>
-                            </SidebarLink>
-                        )}
-                    </nav>
+    const navContent = useMemo(
+        () => (
+            <div className="flex h-full flex-col">
+                {/* Logo */}
+                <div className="shrink-0 px-5 py-5">
+                    <Link href={route('dashboard')} className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80 text-sm font-bold tracking-wider text-primary-foreground shadow-elevated">
+                            PA
+                        </div>
+                        <div>
+                            <p className="text-sm font-semibold text-foreground">Process Atlas</p>
+                            <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+                                Enterprise
+                            </p>
+                        </div>
+                    </Link>
                 </div>
 
-                {/* Projects */}
-                {projects && projects.length > 0 && (
+                <Separator />
+
+                {/* Navigation */}
+                <ScrollArea className="flex-1">
                     <div className="px-3 py-4">
                         <p className="px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                            Projects
+                            Navigation
                         </p>
-
-                        <div className="relative mb-2 mt-3">
-                            <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                            <input
-                                type="text"
-                                value={projectSearch}
-                                onChange={e => setProjectSearch(e.target.value)}
-                                placeholder="Search projects..."
-                                className="h-8 w-full rounded-md border border-input bg-background py-1.5 pl-8 pr-3 text-xs text-foreground shadow-sm transition-all placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
-                            />
-                        </div>
-
-                        <nav className="space-y-0.5">
-                            {filteredProjects.map(project => (
-                                <ProjectLink
-                                    key={project.id}
-                                    project={project}
-                                    isActive={isProjectActive(project.id)}
+                        <nav className="mt-3 space-y-0.5">
+                            <SidebarLink
+                                href={route('dashboard')}
+                                active={route().current('dashboard')}
+                                onClick={() => setMobileNavOpen(false)}
+                            >
+                                <LayoutDashboard className="h-4 w-4" />
+                                <span>Dashboard</span>
+                            </SidebarLink>
+                            {(user as { is_admin?: boolean } | null)?.is_admin && (
+                                <SidebarLink
+                                    href={route('admin.users')}
+                                    active={route().current('admin.users')}
                                     onClick={() => setMobileNavOpen(false)}
-                                />
-                            ))}
-                            {filteredProjects.length === 0 && projectSearch.trim() && (
-                                <p className="px-3 py-2 text-xs text-muted-foreground">
-                                    No projects found
-                                </p>
+                                >
+                                    <Users className="h-4 w-4" />
+                                    <span>Administration</span>
+                                </SidebarLink>
                             )}
                         </nav>
                     </div>
-                )}
-            </ScrollArea>
 
-            <Separator />
+                    {/* Projects */}
+                    {projects && projects.length > 0 && (
+                        <div className="px-3 py-4">
+                            <p className="px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                                Projects
+                            </p>
 
-            {/* User footer */}
-            <div className="mt-auto shrink-0 px-5 pb-4 pt-4">
-                <div className="flex items-center gap-3">
-                    <Avatar className="h-8 w-8">
-                        <AvatarFallback className="bg-secondary text-xs font-semibold">
-                            {user?.name?.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-foreground">{user?.name}</p>
-                        <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
+                            <div className="relative mb-2 mt-3">
+                                <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                                <input
+                                    type="text"
+                                    value={projectSearch}
+                                    onChange={e => setProjectSearch(e.target.value)}
+                                    placeholder="Search projects..."
+                                    className="h-8 w-full rounded-md border border-input bg-background py-1.5 pl-8 pr-3 text-xs text-foreground shadow-sm transition-all placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+                                />
+                            </div>
+
+                            <nav className="space-y-0.5">
+                                {filteredProjects.map(project => (
+                                    <ProjectLink
+                                        key={project.id}
+                                        project={project}
+                                        isActive={isProjectActive(project.id)}
+                                        onClick={() => setMobileNavOpen(false)}
+                                    />
+                                ))}
+                                {filteredProjects.length === 0 && projectSearch.trim() && (
+                                    <p className="px-3 py-2 text-xs text-muted-foreground">
+                                        No projects found
+                                    </p>
+                                )}
+                            </nav>
+                        </div>
+                    )}
+                </ScrollArea>
+
+                <Separator />
+
+                {/* User footer */}
+                <div className="mt-auto shrink-0 px-5 pb-4 pt-4">
+                    <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                            <AvatarFallback className="bg-secondary text-xs font-semibold">
+                                {user?.name?.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-foreground">
+                                {user?.name}
+                            </p>
+                            <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
+                        </div>
+                    </div>
+                    <div className="mt-3 flex items-center gap-2">
+                        <Button variant="outline" size="sm" className="h-8 text-xs" asChild>
+                            <Link href={route('profile.edit')}>
+                                <User className="mr-1.5 h-3.5 w-3.5" />
+                                Profile
+                            </Link>
+                        </Button>
+                        <Button variant="destructive" size="sm" className="h-8 text-xs" asChild>
+                            <Link href={route('logout')} method="post" as="button">
+                                <LogOut className="mr-1.5 h-3.5 w-3.5" />
+                                Log Out
+                            </Link>
+                        </Button>
                     </div>
                 </div>
-                <div className="mt-3 flex items-center gap-2">
-                    <Button variant="outline" size="sm" className="h-8 text-xs" asChild>
-                        <Link href={route('profile.edit')}>
-                            <User className="mr-1.5 h-3.5 w-3.5" />
-                            Profile
-                        </Link>
-                    </Button>
-                    <Button variant="destructive" size="sm" className="h-8 text-xs" asChild>
-                        <Link href={route('logout')} method="post" as="button">
-                            <LogOut className="mr-1.5 h-3.5 w-3.5" />
-                            Log Out
-                        </Link>
-                    </Button>
-                </div>
             </div>
-        </div>
+        ),
+        [filteredProjects, projectSearch, projects, user]
     );
 
     return (

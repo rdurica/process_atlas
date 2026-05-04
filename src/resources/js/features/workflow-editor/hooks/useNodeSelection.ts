@@ -1,51 +1,6 @@
 import { useCallback, useState } from 'react';
 import type { WorkflowNodeKind, InspectorTab } from '../types';
-
-function isWorkflowNodeKind(value: string | undefined): value is WorkflowNodeKind {
-    return (
-        value === 'screen' ||
-        value === 'notification' ||
-        value === 'condition' ||
-        value === 'if' ||
-        value === 'action' ||
-        value === 'timer' ||
-        value === 'subprocess' ||
-        value === 'note' ||
-        value === 'start' ||
-        value === 'end'
-    );
-}
-
-function defaultInspectorTab(nodeKind: WorkflowNodeKind): InspectorTab {
-    if (nodeKind === 'screen') return 'screen';
-    if (nodeKind === 'action' || nodeKind === 'start') return 'general';
-    return 'general';
-}
-
-function inspectorTabsForNodeKind(nodeKind: WorkflowNodeKind): [InspectorTab, string][] {
-    if (nodeKind === 'screen') {
-        return [
-            ['screen', 'Screen'],
-            ['fields', 'Fields'],
-            ['security', 'Security'],
-        ];
-    }
-
-    if (nodeKind === 'action' || nodeKind === 'start') {
-        return [
-            ['general', 'General'],
-            ['security', 'Security'],
-        ];
-    }
-
-    return [];
-}
-
-function workflowNodeKindLabel(value: WorkflowNodeKind): string {
-    if (value === 'if') return 'Condition';
-    if (value === 'subprocess') return 'Sub-process';
-    return value.charAt(0).toUpperCase() + value.slice(1);
-}
+import { isWorkflowNodeKind, defaultInspectorTab, inspectorTabsForNodeKind } from '../lib/utils';
 
 interface UseNodeSelectionOptions {
     initialNodeId: string | null;
@@ -128,5 +83,3 @@ export function useNodeSelection({
         clearSelection,
     };
 }
-
-export { isWorkflowNodeKind, defaultInspectorTab, inspectorTabsForNodeKind, workflowNodeKindLabel };

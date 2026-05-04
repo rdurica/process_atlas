@@ -9,7 +9,7 @@ import { useDirtyGraphUnload } from '@/features/workflow-editor/hooks/useDirtyGr
 import { useWorkflowKeyboardShortcuts } from '@/features/workflow-editor/hooks/useWorkflowKeyboardShortcuts';
 import { isWorkflowNodeKind } from '@/features/workflow-editor/lib/utils';
 import '@xyflow/react/dist/style.css';
-import ContextMenu from '../features/workflow-editor/components/ContextMenu';
+import ContextMenu from '@/features/workflow-editor/components/ContextMenu';
 import InspectorPanel from '@/features/workflow-editor/components/InspectorPanel';
 import RevisionPanel from '@/features/workflow-editor/components/RevisionPanel';
 import ToastContainer from '@/features/workflow-editor/components/ToastContainer';
@@ -17,6 +17,7 @@ import PreviewImageModal from '@/features/workflow-editor/components/modals/Prev
 import CreateDraftModal from '@/features/workflow-editor/components/modals/CreateDraftModal';
 import PublishConfirmModal from '@/features/workflow-editor/components/modals/PublishConfirmModal';
 import WorkflowTopBar from '@/features/workflow-editor/components/WorkflowTopBar';
+import { ErrorBoundary } from '@/Components/ErrorBoundary';
 
 type WorkflowEditorProps = {
     workflow: WorkflowData;
@@ -76,7 +77,11 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
 
     // Context menu click-outside
     useEffect(() => {
-        const handleClickOutside = () => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const menu = document.querySelector('[data-testid="workflow-context-menu"]');
+            if (menu?.contains(event.target as Node)) {
+                return;
+            }
             if (isContextMenuOpen) {
                 closeContextMenu();
             }
@@ -149,95 +154,49 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
             <WorkflowTopBar
                 workflow={workflow}
                 latestRevision={editor.latestRevision ?? null}
-                graphState={editor.graphState}
-                canEditWorkflows={editor.canEditWorkflows}
                 canUndo={editor.canUndo}
                 canRedo={editor.canRedo}
                 undo={editor.undo}
                 redo={editor.redo}
                 saveGraph={editor.saveGraph}
-                setRevisionsPanelOpen={editor.setRevisionsPanelOpen}
                 reloadWorkflow={editor.reloadWorkflow}
             />
 
-            {(editor.selectedEdge || editor.selectedNode) && (
-                <InspectorPanel
-                    selectedNode={editor.selectedNode}
-                    selectedEdge={editor.selectedEdge}
-                    selectedScreen={editor.selectedScreen}
-                    selectedNodeKind={editor.selectedNodeKind}
-                    selectedNodeInspectorTabs={editor.selectedNodeInspectorTabs}
-                    selectedEdgeSourceNode={editor.selectedEdgeSourceNode}
-                    canEditWorkflows={editor.canEditWorkflows}
-                    inspectorTab={editor.inspectorTab}
-                    setInspectorTab={editor.setInspectorTab}
-                    screenEditor={editor.screenEditor}
-                    updateNodeData={editor.updateNodeData}
-                    removeWorkflowNode={editor.removeWorkflowNode}
-                    edgeDraftLabel={editor.edgeDraftLabel}
-                    setEdgeDraftLabel={editor.setEdgeDraftLabel}
-                    saveSelectedEdgeLabel={editor.saveSelectedEdgeLabel}
-                    removeSelectedEdge={editor.removeSelectedEdge}
-                    setPreviewImageUrl={editor.setPreviewImageUrl}
-                    projectWorkflows={projectWorkflows}
-                    workflowId={workflow.id}
-                    setActionNotice={editor.setActionNotice}
-                />
-            )}
+            <InspectorPanel
+                isVisible={!!(editor.selectedEdge || editor.selectedNode)}
+                selectedNode={editor.selectedNode}
+                selectedEdge={editor.selectedEdge}
+                selectedScreen={editor.selectedScreen}
+                selectedNodeKind={editor.selectedNodeKind}
+                selectedNodeInspectorTabs={editor.selectedNodeInspectorTabs}
+                selectedEdgeSourceNode={editor.selectedEdgeSourceNode}
+                screenEditor={editor.screenEditor}
+                updateNodeData={editor.updateNodeData}
+                removeWorkflowNode={editor.removeWorkflowNode}
+                saveSelectedEdgeLabel={editor.saveSelectedEdgeLabel}
+                removeSelectedEdge={editor.removeSelectedEdge}
+                projectWorkflows={projectWorkflows}
+                workflowId={workflow.id}
+            />
 
             <RevisionPanel
                 revisions={workflow.revisions}
                 latestRevision={editor.latestRevision}
                 activeRevision={editor.activeRevision ?? null}
-                canEditInProject={editor.canEditInProject}
-                canPublishWorkflows={editor.canPublishWorkflows}
                 isArchived={editor.isArchived}
-                isRunningAction={editor.isRunningAction}
-                editingDraftName={editor.editingDraftName}
-                setEditingDraftName={editor.setEditingDraftName}
                 handleSaveDraftName={editor.handleSaveDraftName}
                 handlePublishClick={editor.handlePublishClick}
                 handleRevisionTimelineClick={editor.handleRevisionTimelineClick}
                 deleteRevision={editor.deleteRevision}
-                lastSavedAt={editor.lastSavedAt}
-                revisionsPanelOpen={editor.revisionsPanelOpen}
-                setRevisionsPanelOpen={editor.setRevisionsPanelOpen}
-                setDraftSourceRevisionId={editor.setDraftSourceRevisionId}
-                setDraftModalOpen={editor.setDraftModalOpen}
             />
 
-            <ToastContainer actionError={editor.actionError} actionNotice={editor.actionNotice} />
+            <ToastContainer />
 
-            <PreviewImageModal
-                previewImageUrl={editor.previewImageUrl}
-                onClose={() => editor.setPreviewImageUrl(null)}
-            />
+            <PreviewImageModal />
 
-            <CreateDraftModal
-                open={editor.draftModalOpen}
-                onClose={() => {
-                    editor.setDraftModalOpen(false);
-                    editor.setDraftNameInput('');
-                    editor.setDraftSourceRevisionId(undefined);
-                }}
-                draftNameInput={editor.draftNameInput}
-                setDraftNameInput={editor.setDraftNameInput}
-                draftSourceRevisionId={editor.draftSourceRevisionId}
-                createDraft={editor.createDraft}
-                isRunningAction={editor.isRunningAction}
-            />
+            <CreateDraftModal createDraft={editor.createDraft} />
 
-            <PublishConfirmModal
-                open={editor.publishConfirmOpen}
-                onClose={() => {
-                    editor.setPublishConfirmOpen(false);
-                    editor.setPublishConfirmInput('');
-                }}
-                publishConfirmInput={editor.publishConfirmInput}
-                setPublishConfirmInput={editor.setPublishConfirmInput}
-                publishCurrent={editor.publishCurrent}
-                isRunningAction={editor.isRunningAction}
-            />
+            <PublishConfirmModal publishCurrent={editor.publishCurrent} />
 
             {editor.isContextMenuOpen && (
                 <ContextMenu
@@ -253,7 +212,9 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
 export default function WorkflowEditor(props: WorkflowEditorProps) {
     return (
         <ReactFlowProvider>
-            <Editor {...props} />
+            <ErrorBoundary>
+                <Editor {...props} />
+            </ErrorBoundary>
         </ReactFlowProvider>
     );
 }

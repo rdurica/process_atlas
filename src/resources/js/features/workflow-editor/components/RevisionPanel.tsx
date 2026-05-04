@@ -1,5 +1,7 @@
+import { memo } from 'react';
 import type { WorkflowRevisionSummary } from '@/types/processAtlas';
 import { formatDateTime } from '@/shared/lib/dates';
+import { useEditorStore } from '../stores/editorStore';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Badge } from '@/Components/ui/badge';
@@ -12,43 +14,33 @@ interface RevisionPanelProps {
     revisions: WorkflowRevisionSummary[];
     latestRevision: WorkflowRevisionSummary | null;
     activeRevision: WorkflowRevisionSummary | null;
-    canEditInProject: boolean;
-    canPublishWorkflows: boolean;
     isArchived: boolean;
-    isRunningAction: boolean;
-    editingDraftName: string;
-    setEditingDraftName: (name: string) => void;
     handleSaveDraftName: (name: string) => Promise<void>;
     handlePublishClick: () => void;
     handleRevisionTimelineClick: (revision: WorkflowRevisionSummary) => Promise<void>;
     deleteRevision: (revision: WorkflowRevisionSummary) => Promise<void>;
-    lastSavedAt: string | null;
-    revisionsPanelOpen: boolean;
-    setRevisionsPanelOpen: (open: boolean) => void;
-    setDraftSourceRevisionId: (id: number | undefined) => void;
-    setDraftModalOpen: (open: boolean) => void;
 }
 
-export default function RevisionPanel({
+function RevisionPanel({
     revisions,
     latestRevision,
     activeRevision,
-    canEditInProject,
-    canPublishWorkflows,
     isArchived,
-    isRunningAction,
-    editingDraftName,
-    setEditingDraftName,
     handleSaveDraftName,
     handlePublishClick,
     handleRevisionTimelineClick,
     deleteRevision,
-    lastSavedAt,
-    revisionsPanelOpen,
-    setRevisionsPanelOpen,
-    setDraftSourceRevisionId,
-    setDraftModalOpen,
 }: RevisionPanelProps) {
+    const canEditInProject = useEditorStore(state => state.canEditInProject);
+    const canPublishWorkflows = useEditorStore(state => state.canPublishWorkflows);
+    const isRunningAction = useEditorStore(state => state.isRunningAction);
+    const editingDraftName = useEditorStore(state => state.editingDraftName);
+    const setEditingDraftName = useEditorStore(state => state.setEditingDraftName);
+    const lastSavedAt = useEditorStore(state => state.lastSavedAt);
+    const revisionsPanelOpen = useEditorStore(state => state.revisionsPanelOpen);
+    const setRevisionsPanelOpen = useEditorStore(state => state.setRevisionsPanelOpen);
+    const setDraftSourceRevisionId = useEditorStore(state => state.setDraftSourceRevisionId);
+    const setDraftModalOpen = useEditorStore(state => state.setDraftModalOpen);
     return (
         <>
             {revisionsPanelOpen && (
@@ -345,3 +337,5 @@ function RevisionItem({
         </div>
     );
 }
+
+export default memo(RevisionPanel);

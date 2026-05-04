@@ -1,12 +1,11 @@
 import { useEffect } from 'react';
 import { toast } from 'sonner';
+import { useEditorStore } from '../stores/editorStore';
 
-interface ToastContainerProps {
-    actionError: string | null;
-    actionNotice: string | null;
-}
+export default function ToastContainer() {
+    const actionError = useEditorStore(state => state.actionError);
+    const actionNotice = useEditorStore(state => state.actionNotice);
 
-export default function ToastContainer({ actionError, actionNotice }: ToastContainerProps) {
     useEffect(() => {
         if (actionError) {
             toast.error(actionError);

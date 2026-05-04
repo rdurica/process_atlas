@@ -1,6 +1,6 @@
 import type { Node } from '@xyflow/react';
 import type { Screen } from '@/types/processAtlas';
-import type { GraphState, InspectorTab, WorkflowNodeKind } from '../types';
+import type { GraphState, InspectorTab, WorkflowNodeData, WorkflowNodeKind } from '../types';
 
 export const conditionOutputHandles = ['out-1', 'out-2', 'out-3', 'out-4', 'out-5'];
 
@@ -166,6 +166,56 @@ export function defaultInspectorTab(nodeKind: WorkflowNodeKind): InspectorTab {
     }
 
     return 'general';
+}
+
+export function createNodeData(kind: Exclude<WorkflowNodeKind, 'screen' | 'if'>): WorkflowNodeData {
+    switch (kind) {
+        case 'notification':
+            return {
+                severity: 'info',
+                text: 'Notification',
+                description: '',
+            };
+        case 'condition':
+            return {
+                condition: 'Condition',
+                note: '',
+            };
+        case 'timer':
+            return {
+                text: 'Timer',
+                note: '',
+            };
+        case 'subprocess':
+            return {
+                linked_workflow_id: null,
+                linked_workflow_name: null,
+                note: '',
+            };
+        case 'note':
+            return {
+                text: 'Note',
+            };
+        case 'start':
+            return {
+                label: 'Start',
+                security_rule: null,
+            };
+        case 'end':
+            return {
+                title: 'End',
+                linked_workflow_id: null,
+                linked_workflow_name: null,
+                note: '',
+            };
+        case 'action':
+        default:
+            return {
+                title: 'Action',
+                note: '',
+                security_rule: null,
+            };
+    }
 }
 
 export function inspectorTabsForNodeKind(nodeKind: WorkflowNodeKind): [InspectorTab, string][] {

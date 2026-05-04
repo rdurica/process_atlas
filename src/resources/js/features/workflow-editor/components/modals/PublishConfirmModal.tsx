@@ -1,33 +1,33 @@
 import Modal from '@/Components/Modal';
+import { useEditorStore } from '../../stores/editorStore';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
 import { AlertTriangle } from 'lucide-react';
 
 interface PublishConfirmModalProps {
-    open: boolean;
-    onClose: () => void;
-    publishConfirmInput: string;
-    setPublishConfirmInput: (input: string) => void;
     publishCurrent: (force?: boolean) => Promise<void>;
-    isRunningAction: boolean;
 }
 
-export default function PublishConfirmModal({
-    open,
-    onClose,
-    publishConfirmInput,
-    setPublishConfirmInput,
-    publishCurrent,
-    isRunningAction,
-}: PublishConfirmModalProps) {
+export default function PublishConfirmModal({ publishCurrent }: PublishConfirmModalProps) {
+    const publishConfirmOpen = useEditorStore(state => state.publishConfirmOpen);
+    const setPublishConfirmOpen = useEditorStore(state => state.setPublishConfirmOpen);
+    const publishConfirmInput = useEditorStore(state => state.publishConfirmInput);
+    const setPublishConfirmInput = useEditorStore(state => state.setPublishConfirmInput);
+    const isRunningAction = useEditorStore(state => state.isRunningAction);
+
+    const handleClose = () => {
+        setPublishConfirmOpen(false);
+        setPublishConfirmInput('');
+    };
+
     const handlePublish = () => {
         void publishCurrent(true);
-        onClose();
+        handleClose();
     };
 
     return (
-        <Modal show={open} maxWidth="md" onClose={onClose}>
+        <Modal show={publishConfirmOpen} maxWidth="md" onClose={handleClose}>
             <div className="p-6">
                 <div className="flex justify-center">
                     <div className="flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
@@ -56,7 +56,7 @@ export default function PublishConfirmModal({
                     />
                 </div>
                 <div className="mt-6 flex justify-end gap-3">
-                    <Button type="button" variant="outline" size="sm" onClick={onClose}>
+                    <Button type="button" variant="outline" size="sm" onClick={handleClose}>
                         Cancel
                     </Button>
                     <Button

@@ -13,6 +13,7 @@ import { useNodeSelection } from './useNodeSelection';
 import { useScreenEditor } from './useScreenEditor';
 import { useVersionManagement } from './useVersionManagement';
 import { useWorkflowGraph } from './useWorkflowGraph';
+import { useEditorStore } from '../stores/editorStore';
 
 interface UseWorkflowEditorOptions {
     workflow: WorkflowData;
@@ -29,6 +30,16 @@ export function useWorkflowEditor({
     const isArchived = workflow.archived_at != null;
     const canEditInProject = currentUserRole === 'process_owner' || currentUserRole === 'editor';
     const canPublishWorkflows = currentUserRole === 'process_owner';
+
+    // Stable ref to store actions (actions never change identity in Zustand)
+    const storeRef = useRef(useEditorStore.getState());
+
+    // Initialize permissions on mount / when role changes
+    useEffect(() => {
+        storeRef.current.initPermissions(currentUserRole, latestRevision, isArchived);
+        // Only depend on ID to avoid re-initializing when the same revision's data is updated.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentUserRole, latestRevision?.id, isArchived]);
 
     const {
         nodes,
@@ -50,6 +61,7 @@ export function useWorkflowEditor({
         lockVersion,
         markGraphSaved,
         initializeGraph,
+        dirtyCounter,
     } = useWorkflowGraph({
         initialNodes: buildInitialNodes(
             latestRevision?.graph_json?.nodes,
@@ -68,7 +80,6 @@ export function useWorkflowEditor({
 
     const {
         previewRevision,
-        setPreviewRevision,
         switchToDraft,
         handleRevisionTimelineClick: baseHandleRevisionTimelineClick,
     } = useVersionManagement({
@@ -82,6 +93,10 @@ export function useWorkflowEditor({
         latestRevision?.is_published !== true &&
         previewRevision === null &&
         !isArchived;
+
+    useEffect(() => {
+        storeRef.current.setCanEditWorkflows(canEditWorkflows);
+    }, [canEditWorkflows]);
 
     const { undo, redo, canUndo, canRedo } = useCanvasHistory(nodes, edges, setNodes, setEdges);
 
@@ -136,29 +151,11 @@ export function useWorkflowEditor({
         closeContextMenu,
     } = useCopyPaste({ setNodes });
 
-    const [actionError, setActionError] = useState<string | null>(null);
-    const [actionNotice, setActionNotice] = useState<string | null>(null);
-    const [revisionsPanelOpen, setRevisionsPanelOpen] = useState(false);
-    const [draftModalOpen, setDraftModalOpen] = useState(false);
-    const [draftNameInput, setDraftNameInput] = useState('');
-    const [draftSourceRevisionId, setDraftSourceRevisionId] = useState<number | undefined>(
-        undefined
-    );
-    const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
-    const [publishConfirmInput, setPublishConfirmInput] = useState('');
-    const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
-    const [edgeDraftLabel, setEdgeDraftLabel] = useState('');
     const contextMenuFlowPosition = useRef({ x: 0, y: 0 });
 
-    const [activeRevisionId, setActiveRevisionId] = useState<number | null>(
-        latestRevision?.id ?? null
-    );
-
-    const [editingDraftName, setEditingDraftName] = useState(latestRevision?.draft_name ?? '');
-
     const activeRevision = useMemo(
-        () => workflow.revisions.find(r => r.id === activeRevisionId) ?? null,
-        [workflow.revisions, activeRevisionId]
+        () => workflow.revisions.find(r => r.id === storeRef.current.activeRevisionId) ?? null,
+        [workflow.revisions]
     );
 
     const screenEditor = useScreenEditor({
@@ -167,12 +164,10 @@ export function useWorkflowEditor({
         latestRevisionId: latestRevision?.id ?? null,
         canEdit: canEditWorkflows,
         setScreens,
-        setActionError,
-        setActionNotice,
+        setActionError: storeRef.current.setActionError,
+        setActionNotice: storeRef.current.setActionNotice,
         updateNodeData,
     });
-
-    const [isRunningAction, setIsRunningAction] = useState(false);
 
     const reloadWorkflow = useCallback(() => {
         router.reload({ only: ['workflow'] });
@@ -180,17 +175,19 @@ export function useWorkflowEditor({
 
     const runWorkflowAction = useCallback(
         async (task: () => Promise<void>, successMessage: string) => {
-            setIsRunningAction(true);
-            setActionError(null);
-            setActionNotice(null);
+            storeRef.current.setIsRunningAction(true);
+            storeRef.current.setActionError(null);
+            storeRef.current.setActionNotice(null);
             try {
                 await task();
-                setActionNotice(successMessage);
+                storeRef.current.setActionNotice(successMessage);
                 reloadWorkflow();
             } catch (error) {
-                setActionError(resolveApiError(error, 'The workflow action failed.'));
+                storeRef.current.setActionError(
+                    resolveApiError(error, 'The workflow action failed.')
+                );
             } finally {
-                setIsRunningAction(false);
+                storeRef.current.setIsRunningAction(false);
             }
         },
         [reloadWorkflow]
@@ -231,34 +228,42 @@ export function useWorkflowEditor({
         [runWorkflowAction]
     );
 
+    const latestRevisionRef = useRef(latestRevision);
+    latestRevisionRef.current = latestRevision;
+
+    const previewRevisionRef = useRef(previewRevision);
+    previewRevisionRef.current = previewRevision;
+
     // Sync canvas state when latestRevision changes (e.g. after switching drafts)
     useEffect(() => {
-        if (!latestRevision) return;
+        const rev = latestRevisionRef.current;
+        if (!rev) return;
         initializeGraph({
-            nodes: latestRevision.graph_json?.nodes,
-            edges: latestRevision.graph_json?.edges,
-            screens: latestRevision.screens ?? [],
-            lockVersion: latestRevision.lock_version ?? 0,
+            nodes: rev.graph_json?.nodes,
+            edges: rev.graph_json?.edges,
+            screens: rev.screens ?? [],
+            lockVersion: rev.lock_version ?? 0,
         });
-        setScreens(latestRevision.screens ?? []);
-        setActiveRevisionId(latestRevision.id);
-        setEditingDraftName(latestRevision.draft_name ?? '');
-        setPreviewRevision(null);
-    }, [latestRevision?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+        setScreens(rev.screens ?? []);
+        storeRef.current.setActiveRevisionId(rev.id);
+        storeRef.current.setEditingDraftName(rev.draft_name ?? '');
+        storeRef.current.setPreviewRevision(null);
+    }, [latestRevision?.id, initializeGraph, setScreens]);
 
     useEffect(() => {
-        if (!previewRevision) return;
+        const rev = previewRevisionRef.current;
+        if (!rev) return;
         initializeGraph({
-            nodes: previewRevision.graph_json?.nodes,
-            edges: previewRevision.graph_json?.edges,
-            screens: previewRevision.screens ?? [],
-            lockVersion: previewRevision.lock_version ?? 0,
+            nodes: rev.graph_json?.nodes,
+            edges: rev.graph_json?.edges,
+            screens: rev.screens ?? [],
+            lockVersion: rev.lock_version ?? 0,
         });
-        setScreens(previewRevision.screens ?? []);
-    }, [previewRevision?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+        setScreens(rev.screens ?? []);
+    }, [previewRevision?.id, initializeGraph, setScreens]);
 
     useEffect(() => {
-        setEdgeDraftLabel(String(selectedEdge?.label ?? ''));
+        storeRef.current.setEdgeDraftLabel(String(selectedEdge?.label ?? ''));
     }, [selectedEdge]);
 
     const handleNodesChange = useCallback(
@@ -329,14 +334,14 @@ export function useWorkflowEditor({
             if (node?.type === 'start') return;
             removeNode(nodeId);
             clearSelection();
-            setActionNotice('Node deleted.');
+            storeRef.current.setActionNotice('Node deleted.');
         },
         [nodes, removeNode, clearSelection]
     );
 
     const handleRevisionTimelineClick = useCallback(
         async (revision: WorkflowRevisionSummary) => {
-            setActiveRevisionId(revision.id);
+            storeRef.current.setActiveRevisionId(revision.id);
             if (latestRevision && revision.id === latestRevision.id) {
                 initializeGraph({
                     nodes: latestRevision.graph_json?.nodes,
@@ -345,7 +350,7 @@ export function useWorkflowEditor({
                     lockVersion: latestRevision.lock_version ?? 0,
                 });
                 setScreens(latestRevision.screens ?? []);
-                setPreviewRevision(null);
+                storeRef.current.setPreviewRevision(null);
                 return;
             }
 
@@ -362,7 +367,6 @@ export function useWorkflowEditor({
             latestRevision,
             baseHandleRevisionTimelineClick,
             initializeGraph,
-            setPreviewRevision,
             runWorkflowAction,
             switchToDraft,
         ]
@@ -377,7 +381,7 @@ export function useWorkflowEditor({
         if (isFromLatestPublished) {
             void publishCurrent();
         } else {
-            setPublishConfirmOpen(true);
+            storeRef.current.setPublishConfirmOpen(true);
         }
     }, [latestRevision, canPublishWorkflows, workflow.published_revision, publishCurrent]);
 
@@ -388,7 +392,7 @@ export function useWorkflowEditor({
                 await processAtlasApi.revisions.saveDraftName(latestRevision.id, name);
                 router.reload({ only: ['workflow'] });
             } catch {
-                setEditingDraftName(latestRevision.draft_name ?? '');
+                storeRef.current.setEditingDraftName(latestRevision.draft_name ?? '');
             }
         },
         [latestRevision]
@@ -398,25 +402,23 @@ export function useWorkflowEditor({
         (event: React.FormEvent) => {
             event.preventDefault();
             if (!canEditWorkflows || !selectedEdge) return;
-            updateEdgeLabel(selectedEdge.id, edgeDraftLabel || undefined);
-            setActionNotice('Connection label updated.');
+            updateEdgeLabel(selectedEdge.id, storeRef.current.edgeDraftLabel || undefined);
+            storeRef.current.setActionNotice('Connection label updated.');
         },
-        [canEditWorkflows, selectedEdge, edgeDraftLabel, updateEdgeLabel]
+        [canEditWorkflows, selectedEdge, updateEdgeLabel]
     );
 
     const removeSelectedEdge = useCallback(() => {
         if (!canEditWorkflows || !selectedEdge) return;
         removeEdge(selectedEdge.id);
         clearSelection();
-        setActionNotice('Connection deleted.');
+        storeRef.current.setActionNotice('Connection deleted.');
     }, [canEditWorkflows, selectedEdge, removeEdge, clearSelection]);
-
-    const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
 
     const saveGraph = useCallback(
         async (source: 'ui' | 'autosave' = 'ui') => {
             await baseSaveGraph(source);
-            setLastSavedAt(new Date().toISOString());
+            storeRef.current.setLastSavedAt(new Date().toISOString());
         },
         [baseSaveGraph]
     );
@@ -425,11 +427,28 @@ export function useWorkflowEditor({
         saveFn: async () => {
             await saveGraph('autosave');
         },
-        dependencies: [nodes, edges],
+        dependencies: [dirtyCounter],
         delay: 5000,
         minInterval: 15000,
         enabled: canEditWorkflows && graphState === 'dirty',
     });
+
+    // Read reactive store values for return object
+    const lastSavedAt = useEditorStore(state => state.lastSavedAt);
+    const edgeDraftLabel = useEditorStore(state => state.edgeDraftLabel);
+    const actionError = useEditorStore(state => state.actionError);
+    const actionNotice = useEditorStore(state => state.actionNotice);
+    const isRunningAction = useEditorStore(state => state.isRunningAction);
+    const revisionsPanelOpen = useEditorStore(state => state.revisionsPanelOpen);
+    const activeRevisionId = useEditorStore(state => state.activeRevisionId);
+    const previewRevisionState = useEditorStore(state => state.previewRevision);
+    const editingDraftName = useEditorStore(state => state.editingDraftName);
+    const draftModalOpen = useEditorStore(state => state.draftModalOpen);
+    const draftNameInput = useEditorStore(state => state.draftNameInput);
+    const draftSourceRevisionId = useEditorStore(state => state.draftSourceRevisionId);
+    const publishConfirmOpen = useEditorStore(state => state.publishConfirmOpen);
+    const publishConfirmInput = useEditorStore(state => state.publishConfirmInput);
+    const previewImageUrl = useEditorStore(state => state.previewImageUrl);
 
     return {
         // Workflow data
@@ -503,48 +522,48 @@ export function useWorkflowEditor({
 
         // Edge editing
         edgeDraftLabel,
-        setEdgeDraftLabel,
+        setEdgeDraftLabel: storeRef.current.setEdgeDraftLabel,
         saveSelectedEdgeLabel,
         removeSelectedEdge,
 
         // Actions
         actionError,
         actionNotice,
-        setActionError,
-        setActionNotice,
+        setActionError: storeRef.current.setActionError,
+        setActionNotice: storeRef.current.setActionNotice,
         isRunningAction,
         runWorkflowAction,
 
         // Revisions
         revisionsPanelOpen,
-        setRevisionsPanelOpen,
+        setRevisionsPanelOpen: storeRef.current.setRevisionsPanelOpen,
         activeRevisionId,
         activeRevision,
-        previewRevision,
+        previewRevision: previewRevisionState,
         handleRevisionTimelineClick,
         deleteRevision,
         createDraft,
         publishCurrent,
         handlePublishClick,
         editingDraftName,
-        setEditingDraftName,
+        setEditingDraftName: storeRef.current.setEditingDraftName,
         handleSaveDraftName,
 
         // Modals
         draftModalOpen,
-        setDraftModalOpen,
+        setDraftModalOpen: storeRef.current.setDraftModalOpen,
         draftNameInput,
-        setDraftNameInput,
+        setDraftNameInput: storeRef.current.setDraftNameInput,
         draftSourceRevisionId,
-        setDraftSourceRevisionId,
+        setDraftSourceRevisionId: storeRef.current.setDraftSourceRevisionId,
         publishConfirmOpen,
-        setPublishConfirmOpen,
+        setPublishConfirmOpen: storeRef.current.setPublishConfirmOpen,
         publishConfirmInput,
-        setPublishConfirmInput,
+        setPublishConfirmInput: storeRef.current.setPublishConfirmInput,
 
         // Image preview
         previewImageUrl,
-        setPreviewImageUrl,
+        setPreviewImageUrl: storeRef.current.setPreviewImageUrl,
 
         // Reload
         reloadWorkflow,

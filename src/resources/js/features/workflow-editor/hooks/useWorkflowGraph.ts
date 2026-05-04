@@ -15,6 +15,7 @@ import type { WorkflowNodeData, WorkflowNodeKind, GraphState } from '../types';
 import {
     buildInitialNodes,
     conditionOutputLabel,
+    createNodeData,
     generateNodeId,
     isConditionNodeKind,
 } from '../lib/utils';
@@ -51,6 +52,7 @@ interface UseWorkflowGraphReturn {
     lockVersion: number;
     setGraphState: (state: GraphState) => void;
     setGraphMessage: (message: string) => void;
+    dirtyCounter: number;
     markGraphSaved: (message: string) => void;
     initializeGraph: (options: {
         nodes?: Node[];
@@ -77,6 +79,7 @@ export function useWorkflowGraph({
     const [graphState, setGraphState] = useState<GraphState>('saved');
     const [graphMessage, setGraphMessage] = useState<string>('No pending canvas changes.');
     const [lockVersion, setLockVersion] = useState(initialLockVersion);
+    const [dirtyCounter, setDirtyCounter] = useState(0);
     const graphInitialized = useRef(false);
 
     const markGraphSaved = useCallback((message: string) => {
@@ -92,6 +95,7 @@ export function useWorkflowGraph({
 
         setGraphState('dirty');
         setGraphMessage('Canvas changes are waiting to be saved.');
+        setDirtyCounter(c => c + 1);
     }, [edges, nodes]);
 
     const onConnect: OnConnect = useCallback(
@@ -129,39 +133,6 @@ export function useWorkflowGraph({
         ) => {
             const nextId = generateNodeId(nodeKind);
 
-            const data =
-                nodeKind === 'notification'
-                    ? {
-                          severity: 'info' as const,
-                          text: 'Notification',
-                          description: '',
-                      }
-                    : nodeKind === 'condition'
-                      ? {
-                            condition: 'Condition',
-                            note: '',
-                        }
-                      : nodeKind === 'timer'
-                        ? { text: 'Timer', note: '' }
-                        : nodeKind === 'subprocess'
-                          ? { linked_workflow_id: null, linked_workflow_name: null, note: '' }
-                          : nodeKind === 'note'
-                            ? { text: 'Note' }
-                            : nodeKind === 'start'
-                              ? { label: 'Start', security_rule: null }
-                              : nodeKind === 'end'
-                                ? {
-                                      title: 'End',
-                                      linked_workflow_id: null,
-                                      linked_workflow_name: null,
-                                      note: '',
-                                  }
-                                : {
-                                      title: 'Action',
-                                      note: '',
-                                      security_rule: null,
-                                  };
-
             setNodes(currentNodes => [
                 ...currentNodes,
                 {
@@ -171,7 +142,7 @@ export function useWorkflowGraph({
                         x: Math.max(160, currentNodes.length * 110),
                         y: Math.max(160, currentNodes.length * 90),
                     },
-                    data,
+                    data: createNodeData(nodeKind),
                 },
             ]);
 
@@ -354,6 +325,7 @@ export function useWorkflowGraph({
         graphState,
         graphMessage,
         lockVersion,
+        dirtyCounter,
         setGraphState,
         setGraphMessage,
         markGraphSaved,

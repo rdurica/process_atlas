@@ -1,8 +1,9 @@
+import { memo } from 'react';
 import StatusBadge from '@/Components/StatusBadge';
 import { Link } from '@inertiajs/react';
 import type { WorkflowData, WorkflowRevisionSummary } from '@/types/processAtlas';
-import type { GraphState } from '../types';
 import { graphTone, graphLabel } from '../lib/utils';
+import { useEditorStore } from '../stores/editorStore';
 import { Button } from '@/Components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/Components/ui/tooltip';
 import { Undo2, Redo2, Save, RotateCcw, ChevronLeft, FileText } from 'lucide-react';
@@ -10,30 +11,27 @@ import { Undo2, Redo2, Save, RotateCcw, ChevronLeft, FileText } from 'lucide-rea
 interface WorkflowTopBarProps {
     workflow: WorkflowData;
     latestRevision: WorkflowRevisionSummary | null;
-    graphState: GraphState;
-    canEditWorkflows: boolean;
     canUndo: boolean;
     canRedo: boolean;
     undo: () => void;
     redo: () => void;
     saveGraph: (source: 'ui' | 'autosave') => Promise<void>;
-    setRevisionsPanelOpen: (open: boolean) => void;
     reloadWorkflow: () => void;
 }
 
-export default function WorkflowTopBar({
+function WorkflowTopBar({
     workflow,
     latestRevision,
-    graphState,
-    canEditWorkflows,
     canUndo,
     canRedo,
     undo,
     redo,
     saveGraph,
-    setRevisionsPanelOpen,
     reloadWorkflow,
 }: WorkflowTopBarProps) {
+    const graphState = useEditorStore(state => state.graphState);
+    const canEditWorkflows = useEditorStore(state => state.canEditWorkflows);
+    const setRevisionsPanelOpen = useEditorStore(state => state.setRevisionsPanelOpen);
     return (
         <TooltipProvider delayDuration={300}>
             <header className="workflow-topbar">
@@ -137,3 +135,5 @@ export default function WorkflowTopBar({
         </TooltipProvider>
     );
 }
+
+export default memo(WorkflowTopBar);

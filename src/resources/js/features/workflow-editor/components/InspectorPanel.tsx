@@ -1,6 +1,8 @@
+import { memo, useCallback } from 'react';
 import { workflowNodeKindLabel } from '../lib/utils';
 import type { InspectorTab, WorkflowNodeData, WorkflowNodeKind } from '../types';
 import type { Edge, Node } from '@xyflow/react';
+import { useEditorStore } from '../stores/editorStore';
 import EdgeInspector from './inspector/EdgeInspector';
 import NodeInspector from './inspector/NodeInspector';
 import ScreenInspector from './inspector/ScreenInspector';
@@ -12,57 +14,63 @@ import { Copy } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface InspectorPanelProps {
+    isVisible: boolean;
     selectedNode: Node | null;
     selectedEdge: Edge | null;
     selectedScreen: import('@/types/processAtlas').Screen | null;
     selectedNodeKind: WorkflowNodeKind;
     selectedNodeInspectorTabs: [InspectorTab, string][];
     selectedEdgeSourceNode: Node | null;
-    canEditWorkflows: boolean;
-    inspectorTab: InspectorTab;
-    setInspectorTab: (tab: InspectorTab) => void;
     screenEditor: ScreenEditorState;
     updateNodeData: (nodeId: string, patch: Partial<WorkflowNodeData>) => void;
     removeWorkflowNode: (nodeId: string) => void;
-    edgeDraftLabel: string;
-    setEdgeDraftLabel: (label: string) => void;
     saveSelectedEdgeLabel: (event: React.FormEvent) => void;
     removeSelectedEdge: () => void;
-    setPreviewImageUrl: (url: string | null) => void;
     projectWorkflows: { id: number; name: string; status: 'draft' | 'published' }[];
     workflowId: number;
-    setActionNotice: (notice: string | null) => void;
 }
 
-export default function InspectorPanel({
+function InspectorPanel({
+    isVisible,
     selectedNode,
     selectedEdge,
     selectedScreen,
     selectedNodeKind,
     selectedNodeInspectorTabs,
     selectedEdgeSourceNode,
-    canEditWorkflows,
-    inspectorTab,
-    setInspectorTab,
     screenEditor,
     updateNodeData,
     removeWorkflowNode,
-    edgeDraftLabel,
-    setEdgeDraftLabel,
     saveSelectedEdgeLabel,
     removeSelectedEdge,
-    setPreviewImageUrl,
     projectWorkflows,
     workflowId,
-    setActionNotice,
 }: InspectorPanelProps) {
-    const handleNodeDataUpdate = (patch: Partial<WorkflowNodeData>) => {
-        if (!selectedNode) {
-            return;
-        }
+    const canEditWorkflows = useEditorStore(state => state.canEditWorkflows);
+    const inspectorTab = useEditorStore(state => state.inspectorTab);
+    const setInspectorTab = useEditorStore(state => state.setInspectorTab);
+    const edgeDraftLabel = useEditorStore(state => state.edgeDraftLabel);
+    const setEdgeDraftLabel = useEditorStore(state => state.setEdgeDraftLabel);
+    const setPreviewImageUrl = useEditorStore(state => state.setPreviewImageUrl);
+    const setActionNotice = useEditorStore(state => state.setActionNotice);
+    const handleNodeDataUpdate = useCallback(
+        (patch: Partial<WorkflowNodeData>) => {
+            if (!selectedNode) {
+                return;
+            }
 
-        updateNodeData(selectedNode.id, patch);
-    };
+            updateNodeData(selectedNode.id, patch);
+        },
+        [selectedNode, updateNodeData]
+    );
+
+    if (!isVisible) {
+        return (
+            <aside className="workflow-inspector-panel hidden">
+                <div className="glass-strong flex h-full flex-col" />
+            </aside>
+        );
+    }
 
     return (
         <aside className="workflow-inspector-panel">
@@ -173,3 +181,5 @@ export default function InspectorPanel({
         </aside>
     );
 }
+
+export default memo(InspectorPanel);
