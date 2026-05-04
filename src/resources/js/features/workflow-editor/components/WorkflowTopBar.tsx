@@ -6,7 +6,7 @@ import { graphTone, graphLabel } from '../lib/utils';
 import { useEditorStore } from '../stores/editorStore';
 import { Button } from '@/Components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/Components/ui/tooltip';
-import { Undo2, Redo2, Save, RotateCcw, ChevronLeft, FileText } from 'lucide-react';
+import { Undo2, Redo2, Save, RotateCcw, ChevronLeft, FileText, Lock } from 'lucide-react';
 
 interface WorkflowTopBarProps {
     workflow: WorkflowData;
@@ -17,6 +17,7 @@ interface WorkflowTopBarProps {
     redo: () => void;
     saveGraph: (source: 'ui' | 'autosave') => Promise<void>;
     reloadWorkflow: () => void;
+    handleRevisionTimelineClick: (revision: WorkflowRevisionSummary) => Promise<void>;
 }
 
 function WorkflowTopBar({
@@ -28,6 +29,7 @@ function WorkflowTopBar({
     redo,
     saveGraph,
     reloadWorkflow,
+    handleRevisionTimelineClick,
 }: WorkflowTopBarProps) {
     const graphState = useEditorStore(state => state.graphState);
     const canEditWorkflows = useEditorStore(state => state.canEditWorkflows);
@@ -122,6 +124,24 @@ function WorkflowTopBar({
                 <div className="flex w-full items-center justify-center border-t border-border/50 bg-muted/30 px-5 py-1.5">
                     <h1 className="text-sm font-medium text-foreground">{workflow.name}</h1>
                 </div>
+
+                {previewRevision?.is_published && (
+                    <div className="flex w-full items-center justify-center gap-3 border-t border-amber-200 bg-amber-50 px-5 py-2 dark:border-amber-900 dark:bg-amber-950/30">
+                        <p className="flex items-center gap-1.5 text-sm font-medium text-amber-900 dark:text-amber-400">
+                            Viewing rev. {previewRevision.revision_number}
+                            <Lock className="h-3.5 w-3.5" />
+                        </p>
+                        {latestRevision && (
+                            <button
+                                type="button"
+                                onClick={() => handleRevisionTimelineClick(latestRevision)}
+                                className="text-sm font-semibold text-amber-700 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-300"
+                            >
+                                Return to current draft
+                            </button>
+                        )}
+                    </div>
+                )}
 
                 {latestRevision &&
                     !latestRevision.is_published &&
