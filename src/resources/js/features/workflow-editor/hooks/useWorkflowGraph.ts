@@ -128,30 +128,25 @@ export function useWorkflowGraph({
             position?: { x: number; y: number }
         ) => {
             const nextId = generateNodeId(nodeKind);
-            const labelIndex =
-                nodes.filter(
-                    node =>
-                        node.type === nodeKind || (nodeKind === 'condition' && node.type === 'if')
-                ).length + 1;
 
             const data =
                 nodeKind === 'notification'
                     ? {
                           severity: 'info' as const,
-                          text: `Notification ${labelIndex}`,
+                          text: 'Notification',
                           description: '',
                       }
                     : nodeKind === 'condition'
                       ? {
-                            condition: `Condition ${labelIndex}`,
+                            condition: 'Condition',
                             note: '',
                         }
                       : nodeKind === 'timer'
-                        ? { text: `Timer ${labelIndex}`, note: '' }
+                        ? { text: 'Timer', note: '' }
                         : nodeKind === 'subprocess'
                           ? { linked_workflow_id: null, linked_workflow_name: null, note: '' }
                           : nodeKind === 'note'
-                            ? { text: `Note ${labelIndex}` }
+                            ? { text: 'Note' }
                             : nodeKind === 'start'
                               ? { label: 'Start', security_rule: null }
                               : nodeKind === 'end'
@@ -162,7 +157,7 @@ export function useWorkflowGraph({
                                       note: '',
                                   }
                                 : {
-                                      title: `Action ${labelIndex}`,
+                                      title: 'Action',
                                       note: '',
                                       security_rule: null,
                                   };
@@ -182,7 +177,7 @@ export function useWorkflowGraph({
 
             return nextId;
         },
-        [nodes, setNodes]
+        [setNodes]
     );
 
     const addScreenNode = useCallback(
@@ -198,7 +193,7 @@ export function useWorkflowGraph({
                     },
                     type: 'screen',
                     data: {
-                        label: `Screen ${currentNodes.length + 1}`,
+                        label: 'Screen',
                         subtitle: '',
                         security_rule: null,
                     },
