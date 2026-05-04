@@ -946,7 +946,6 @@
         line-height: 1.4;
         box-shadow: var(--shadow-soft);
         color: hsl(var(--foreground));
-        pointer-events: none;
     }
 
     [data-theme="dark"] .rf-start-node {

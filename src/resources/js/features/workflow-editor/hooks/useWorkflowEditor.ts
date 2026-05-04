@@ -269,6 +269,21 @@ export function useWorkflowEditor({
 
     const handleNodesChange = useCallback(
         (changes: Parameters<typeof graph.onNodesChange>[0]) => {
+            // Sync React Flow selection changes → Zustand store
+            const selectChanges = changes.filter(c => c.type === 'select');
+            if (selectChanges.length > 0) {
+                const selectChange = selectChanges.find(c => c.selected);
+                if (selectChange) {
+                    const node = graph.nodes.find(n => n.id === selectChange.id);
+                    selection.selectNode(
+                        selectChange.id,
+                        isWorkflowNodeKind(node?.type) ? node.type : undefined
+                    );
+                } else {
+                    selection.clearSelection();
+                }
+            }
+
             if (!canEditWorkflows) return;
             const allowedChanges = changes.filter(change => {
                 if (change.type === 'remove') {
@@ -279,7 +294,25 @@ export function useWorkflowEditor({
             });
             graph.onNodesChange(allowedChanges);
         },
-        [canEditWorkflows, graph]
+        [canEditWorkflows, graph, selection]
+    );
+
+    const handleEdgesChange = useCallback(
+        (changes: Parameters<typeof graph.onEdgesChange>[0]) => {
+            // Sync React Flow edge selection changes → Zustand store
+            const selectChanges = changes.filter(c => c.type === 'select');
+            if (selectChanges.length > 0) {
+                const selectChange = selectChanges.find(c => c.selected);
+                if (selectChange) {
+                    selection.selectEdge(selectChange.id);
+                } else {
+                    selection.clearSelection();
+                }
+            }
+
+            graph.onEdgesChange(changes);
+        },
+        [graph, selection]
     );
 
     const reloadWorkflow = useCallback(() => {
@@ -389,7 +422,7 @@ export function useWorkflowEditor({
         setNodes: graph.setNodes,
         setEdges: graph.setEdges,
         handleNodesChange,
-        onEdgesChange: graph.onEdgesChange,
+        onEdgesChange: handleEdgesChange,
         onConnect: graph.onConnect,
         graphState,
         graphMessage,
