@@ -1,7 +1,8 @@
+import { memo } from 'react';
 import { Handle, Node, NodeProps, Position } from '@xyflow/react';
 import type { StartNodeData } from '../../types';
 
-export default function StartNode({ data }: NodeProps<Node<StartNodeData>>) {
+function StartNode({ data }: NodeProps<Node<StartNodeData>>) {
     return (
         <div className="rf-terminal-node rf-start-node">
             <span className="rf-terminal-node-icon" aria-hidden="true">
@@ -20,3 +21,5 @@ export default function StartNode({ data }: NodeProps<Node<StartNodeData>>) {
         </div>
     );
 }
+
+export default memo(StartNode);

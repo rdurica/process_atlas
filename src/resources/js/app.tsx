@@ -9,7 +9,7 @@ import './bootstrap';
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot, hydrateRoot } from 'react-dom/client';
-import { ThemeProvider } from './Components/ThemeProvider';
+import { AppProviders } from './AppProviders';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -19,12 +19,12 @@ createInertiaApp({
         resolvePageComponent(`./Pages/${name}.tsx`, import.meta.glob('./Pages/**/*.tsx')),
     setup({ el, App, props }) {
         const app = (
-            <ThemeProvider>
+            <AppProviders>
                 <App {...props} />
-            </ThemeProvider>
+            </AppProviders>
         );
 
-        if (import.meta.env.SSR) {
+        if (el.hasChildNodes()) {
             hydrateRoot(el, app);
             return;
         }

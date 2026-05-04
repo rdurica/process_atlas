@@ -1,21 +1,21 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { Node } from '@xyflow/react';
 import { generateNodeId } from '../lib/utils';
 import type { WorkflowNodeKind } from '../types';
 
 const PASTE_OFFSET = 20;
 
-interface UseCopyPasteOptions {
+interface UseEditorClipboardOptions {
     setNodes: React.Dispatch<React.SetStateAction<Node[]>>;
 }
 
-export function useCopyPaste({ setNodes }: UseCopyPasteOptions) {
+export function useEditorClipboard({ setNodes }: UseEditorClipboardOptions) {
     const [copiedNodes, setCopiedNodes] = useState<Node[]>([]);
     const [isContextMenuOpen, setIsContextMenuOpen] = useState(false);
-    const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
+    const contextMenuPositionRef = useRef({ x: 0, y: 0 });
 
     const openContextMenu = useCallback((x: number, y: number) => {
-        setContextMenuPosition({ x, y });
+        contextMenuPositionRef.current = { x, y };
         setIsContextMenuOpen(true);
     }, []);
 
@@ -31,7 +31,7 @@ export function useCopyPaste({ setNodes }: UseCopyPasteOptions) {
         const nodesToPaste = copiedNodes.filter(node => node.type !== 'start');
         if (nodesToPaste.length === 0) return [];
 
-        const newNodes: Node[] = nodesToPaste.map((node, _index) => {
+        const newNodes: Node[] = nodesToPaste.map(node => {
             const newId = generateNodeId((node.type ?? 'action') as WorkflowNodeKind);
             return {
                 ...node,
@@ -65,7 +65,7 @@ export function useCopyPaste({ setNodes }: UseCopyPasteOptions) {
         pasteNodes,
         deleteNodes,
         isContextMenuOpen,
-        contextMenuPosition,
+        contextMenuPosition: contextMenuPositionRef.current,
         openContextMenu,
         closeContextMenu,
     };

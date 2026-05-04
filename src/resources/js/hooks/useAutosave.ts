@@ -18,6 +18,7 @@ export function useAutosave({
     const saveFnRef = useRef(saveFn);
     const onErrorRef = useRef(onError);
     const minIntervalRef = useRef(minInterval);
+    const depsRef = useRef(dependencies);
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const isInitial = useRef(true);
     const lastSaveTimeRef = useRef(0);
@@ -26,6 +27,7 @@ export function useAutosave({
         saveFnRef.current = saveFn;
         onErrorRef.current = onError;
         minIntervalRef.current = minInterval;
+        depsRef.current = dependencies;
     });
 
     const clearTimer = useCallback(() => {
@@ -71,7 +73,7 @@ export function useAutosave({
 
         return clearTimer;
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [delay, enabled, ...dependencies]);
+    }, [delay, enabled, clearTimer, ...dependencies]);
 
     return { clearTimer };
 }

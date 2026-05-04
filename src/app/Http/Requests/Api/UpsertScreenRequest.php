@@ -24,9 +24,9 @@ class UpsertScreenRequest extends FormRequest
             'title'                => ['nullable', 'string', 'max:255'],
             'subtitle'             => ['nullable', 'string', 'max:255'],
             'note'                 => ['nullable', 'string'],
-            'image'                => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'image'                => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:4096', 'dimensions:max_width=4096,max_height=4096'],
             'drawing_json'         => ['nullable', 'string'],
-            'drawing_image'        => ['nullable', 'file', 'mimes:png', 'max:4096'],
+            'drawing_image'        => ['nullable', 'file', 'mimes:png', 'max:4096', 'dimensions:max_width=4096,max_height=4096'],
         ];
     }
 

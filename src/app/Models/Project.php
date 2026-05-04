@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['name', 'description', 'created_by', 'is_public'])]
+#[Fillable(['name', 'description', 'created_by', 'is_public', 'archived_at'])]
 class Project extends Model
 {
     /** @use HasFactory<ProjectFactory> */

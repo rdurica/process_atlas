@@ -8,21 +8,79 @@ use App\Models\ScreenCustomField;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowRevision;
+use App\UseCase\Query\ProjectQueryService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Spatie\Activitylog\Models\Activity;
 
 final class ActivityFeed
 {
+    public function __construct(private readonly ProjectQueryService $projects) {}
+
     /**
      * @return list<array<string, mixed>>
      */
-    public function latestForDashboard(int $limit = 12): array
+    public function latestForDashboard(User $user, int $limit = 12): array
     {
-        $activities = Activity::query()
+        $query = Activity::query()
             ->where('log_name', 'process_atlas')
-            ->with(['causer', 'subject'])
-            ->latest()
+            ->with(['causer', 'subject']);
+
+        if (! $user->can(PermissionList::PROJECTS_ADMIN))
+        {
+            $projectIds = $this->projects->accessibleQuery($user)->pluck('id');
+            $workflowIds = Workflow::query()->whereIn('project_id', $projectIds)->pluck('id');
+            $revisionIds = WorkflowRevision::query()->whereIn('workflow_id', $workflowIds)->pluck('id');
+            $screenIds = Screen::query()->whereIn('workflow_revision_id', $revisionIds)->pluck('id');
+            $customFieldIds = ScreenCustomField::query()->whereIn('screen_id', $screenIds)->pluck('id');
+
+            $query->where(function ($activity) use ($projectIds, $workflowIds, $revisionIds, $screenIds, $customFieldIds): void
+            {
+                $activity->where(function ($subject) use ($projectIds): void
+                {
+                    $subject->where('subject_type', Project::class)
+                        ->whereIn('subject_id', $projectIds);
+                });
+
+                if ($workflowIds->isNotEmpty())
+                {
+                    $activity->orWhere(function ($subject) use ($workflowIds): void
+                    {
+                        $subject->where('subject_type', Workflow::class)
+                            ->whereIn('subject_id', $workflowIds);
+                    });
+                }
+
+                if ($revisionIds->isNotEmpty())
+                {
+                    $activity->orWhere(function ($subject) use ($revisionIds): void
+                    {
+                        $subject->where('subject_type', WorkflowRevision::class)
+                            ->whereIn('subject_id', $revisionIds);
+                    });
+                }
+
+                if ($screenIds->isNotEmpty())
+                {
+                    $activity->orWhere(function ($subject) use ($screenIds): void
+                    {
+                        $subject->where('subject_type', Screen::class)
+                            ->whereIn('subject_id', $screenIds);
+                    });
+                }
+
+                if ($customFieldIds->isNotEmpty())
+                {
+                    $activity->orWhere(function ($subject) use ($customFieldIds): void
+                    {
+                        $subject->where('subject_type', ScreenCustomField::class)
+                            ->whereIn('subject_id', $customFieldIds);
+                    });
+                }
+            });
+        }
+
+        $activities = $query->latest()
             ->limit($limit)
             ->get();
 

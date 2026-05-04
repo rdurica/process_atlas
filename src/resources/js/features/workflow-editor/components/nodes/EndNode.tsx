@@ -1,7 +1,8 @@
+import { memo } from 'react';
 import { Handle, Node, NodeProps, Position } from '@xyflow/react';
 import type { EndNodeData } from '../../types';
 
-export default function EndNode({ data }: NodeProps<Node<EndNodeData>>) {
+function EndNode({ data }: NodeProps<Node<EndNodeData>>) {
     return (
         <div className="rf-terminal-node rf-end-node">
             <Handle type="target" position={Position.Left} />
@@ -25,3 +26,5 @@ export default function EndNode({ data }: NodeProps<Node<EndNodeData>>) {
         </div>
     );
 }
+
+export default memo(EndNode);

@@ -17,9 +17,16 @@ class DashboardController extends Controller
 
     public function __invoke(Request $request): Response
     {
-        $page = (int) $request->input('page', 1);
-        $search = $request->input('search');
-        $status = $request->input('status');
+        $validated = $request->validate([
+            'page'             => ['nullable', 'integer', 'min:1'],
+            'search'           => ['nullable', 'string', 'max:120'],
+            'status'           => ['nullable', 'string', 'max:50'],
+            'include_archived' => ['nullable', 'boolean'],
+        ]);
+
+        $page = (int) ($validated['page'] ?? 1);
+        $search = $validated['search'] ?? null;
+        $status = $validated['status'] ?? null;
         $includeArchived = $request->boolean('include_archived');
 
         $data = $this->dashboard->getDashboardData(
@@ -30,7 +37,7 @@ class DashboardController extends Controller
             $status,
             $includeArchived,
         );
-        $data['recentActivity'] = $this->activity->latestForDashboard();
+        $data['recentActivity'] = $this->activity->latestForDashboard($this->user());
 
         return Inertia::render('Dashboard', $data);
     }

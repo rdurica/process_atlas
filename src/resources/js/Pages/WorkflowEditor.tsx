@@ -6,8 +6,9 @@ import FlowCanvas from '@/features/workflow-editor/components/FlowCanvas';
 import { nodeTypes } from '@/features/workflow-editor/components/nodes';
 import { useWorkflowEditor } from '@/features/workflow-editor/hooks/useWorkflowEditor';
 import { useDirtyGraphUnload } from '@/features/workflow-editor/hooks/useDirtyGraphUnload';
-import { useWorkflowKeyboardShortcuts } from '@/features/workflow-editor/hooks/useWorkflowKeyboardShortcuts';
+import { useWorkflowKeyboard } from '@/features/workflow-editor/hooks/useWorkflowKeyboard';
 import { isWorkflowNodeKind } from '@/features/workflow-editor/lib/utils';
+import { useEditorStore } from '@/features/workflow-editor/stores/editorStore';
 import '@xyflow/react/dist/style.css';
 import ContextMenu from '@/features/workflow-editor/components/ContextMenu';
 import InspectorPanel from '@/features/workflow-editor/components/InspectorPanel';
@@ -28,58 +29,37 @@ type WorkflowEditorProps = {
 function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorProps) {
     const editor = useWorkflowEditor({ workflow, projectWorkflows, currentUserRole });
 
-    const {
-        canEditWorkflows,
-        selectedNodes,
-        copiedNodes,
-        copyNodes,
-        pasteNodes,
-        deleteNodes,
-        graphState,
-        saveGraph,
-        undo,
-        redo,
-        clearSelection,
-        isContextMenuOpen,
-        closeContextMenu,
-    } = editor;
-
-    const selectNodeRef = useRef(editor.selectNode);
-    selectNodeRef.current = editor.selectNode;
-
-    const selectEdgeRef = useRef(editor.selectEdge);
-    selectEdgeRef.current = editor.selectEdge;
+    const { canEditWorkflows, saveGraph, isContextMenuOpen, closeContextMenu } = editor;
 
     const handleNodeClick = useCallback(
         (_: React.MouseEvent, node: { id: string; type?: string | undefined }) => {
-            selectNodeRef.current(node.id, isWorkflowNodeKind(node.type) ? node.type : undefined);
+            const store = useEditorStore.getState();
+            store.selectNode(node.id, isWorkflowNodeKind(node.type) ? node.type : undefined);
         },
         []
     );
 
     const handleEdgeClick = useCallback((_: React.MouseEvent, edge: { id: string }) => {
-        selectEdgeRef.current(edge.id);
+        const store = useEditorStore.getState();
+        store.selectEdge(edge.id);
     }, []);
 
-    useWorkflowKeyboardShortcuts({
-        enabled: canEditWorkflows,
-        graphState,
-        selectedNodes,
-        copiedNodes,
-        copyNodes,
-        pasteNodes,
-        deleteNodes,
-        undo,
-        redo,
+    useWorkflowKeyboard({
+        nodes: editor.nodes,
+        edges: editor.edges,
+        setNodes: editor.setNodes,
+        setEdges: editor.setEdges,
+        canEditWorkflows,
         saveGraph,
-        clearSelection,
+        copyNodes: editor.copyNodes,
+        pasteNodes: editor.pasteNodes,
     });
 
     // Context menu click-outside
+    const contextMenuRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            const menu = document.querySelector('[data-testid="workflow-context-menu"]');
-            if (menu?.contains(event.target as Node)) {
+            if (contextMenuRef.current?.contains(event.target as Node)) {
                 return;
             }
             if (isContextMenuOpen) {
@@ -199,11 +179,13 @@ function Editor({ workflow, projectWorkflows, currentUserRole }: WorkflowEditorP
             <PublishConfirmModal publishCurrent={editor.publishCurrent} />
 
             {editor.isContextMenuOpen && (
-                <ContextMenu
-                    position={editor.contextMenuPosition}
-                    onAddElement={editor.handleAddElementFromContextMenu}
-                    onClose={editor.closeContextMenu}
-                />
+                <div ref={contextMenuRef}>
+                    <ContextMenu
+                        position={editor.contextMenuPosition}
+                        onAddElement={editor.handleAddElementFromContextMenu}
+                        onClose={editor.closeContextMenu}
+                    />
+                </div>
             )}
         </div>
     );

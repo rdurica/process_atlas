@@ -3,6 +3,7 @@ import createServer from '@inertiajs/react/server';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import ReactDOMServer from 'react-dom/server';
 import { route } from '../../vendor/tightenco/ziggy';
+import { AppProviders } from './AppProviders';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -27,7 +28,11 @@ createServer(page =>
 
             (globalThis as typeof globalThis & { route: typeof route }).route = ssrRoute;
 
-            return <App {...props} />;
+            return (
+                <AppProviders>
+                    <App {...props} />
+                </AppProviders>
+            );
         },
     })
 );

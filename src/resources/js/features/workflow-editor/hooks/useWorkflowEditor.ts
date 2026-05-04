@@ -1,19 +1,19 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { router } from '@inertiajs/react';
 import { MarkerType, useReactFlow } from '@xyflow/react';
-import { useAutosave } from '@/hooks/useAutosave';
 import { useCanvasHistory } from '@/hooks/useCanvasHistory';
-import type { WorkflowData, WorkflowRevisionSummary, Screen } from '@/types/processAtlas';
-import { buildInitialNodes } from '../lib/utils';
 import { processAtlasApi } from '@/shared/api/processAtlasApi';
-import { resolveApiError } from '@/shared/lib/apiErrors';
-import type { WorkflowNodeKind } from '../types';
-import { useCopyPaste } from './useCopyPaste';
-import { useNodeSelection } from './useNodeSelection';
-import { useScreenEditor } from './useScreenEditor';
-import { useVersionManagement } from './useVersionManagement';
-import { useWorkflowGraph } from './useWorkflowGraph';
+import type { WorkflowData, WorkflowRevisionSummary } from '@/types/processAtlas';
+import { buildInitialNodes, inspectorTabsForNodeKind, isWorkflowNodeKind } from '../lib/utils';
 import { useEditorStore } from '../stores/editorStore';
+import { useEditorPermissions } from './useEditorPermissions';
+import { useEditorSelection } from './useEditorSelection';
+import { useEditorClipboard } from './useEditorClipboard';
+import { useEditorPersistence } from './useEditorPersistence';
+import { useRevisionActions } from './useRevisionActions';
+import { useScreenEditor } from './useScreenEditor';
+import { useWorkflowGraph } from './useWorkflowGraph';
+import type { WorkflowNodeKind } from '../types';
 
 interface UseWorkflowEditorOptions {
     workflow: WorkflowData;
@@ -28,257 +28,185 @@ export function useWorkflowEditor({
 }: UseWorkflowEditorOptions) {
     const latestRevision = workflow.latest_revision ?? null;
     const isArchived = workflow.archived_at != null;
-    const canEditInProject = currentUserRole === 'process_owner' || currentUserRole === 'editor';
-    const canPublishWorkflows = currentUserRole === 'process_owner';
+    const previewRevision = useEditorStore(state => state.previewRevision);
+    const visibleRevision = previewRevision ?? latestRevision;
 
-    // Stable ref to store actions (actions never change identity in Zustand)
-    const storeRef = useRef(useEditorStore.getState());
+    const { canEditInProject, canPublishWorkflows, canEditWorkflows } = useEditorPermissions({
+        currentUserRole,
+        latestRevisionIsPublished: latestRevision?.is_published,
+        latestRevisionIsLocked: latestRevision?.is_locked,
+        isArchived,
+        previewRevision,
+    });
 
-    // Initialize permissions on mount / when role changes
+    // Sync permissions to editor store
     useEffect(() => {
-        storeRef.current.initPermissions(currentUserRole, latestRevision, isArchived);
-        // Only depend on ID to avoid re-initializing when the same revision's data is updated.
+        useEditorStore.getState().initPermissions(currentUserRole, latestRevision, isArchived);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentUserRole, latestRevision?.id, isArchived]);
+    }, [
+        currentUserRole,
+        isArchived,
+        latestRevision?.id,
+        latestRevision?.is_published,
+        latestRevision?.is_locked,
+        previewRevision?.id,
+    ]);
 
-    const {
-        nodes,
-        edges,
-        setNodes,
-        setEdges,
-        onNodesChange,
-        onEdgesChange,
-        onConnect,
-        addNode,
-        addScreenNode,
-        removeNode,
-        updateNodeData,
-        updateEdgeLabel,
-        removeEdge,
-        saveGraph: baseSaveGraph,
-        graphState,
-        graphMessage,
-        lockVersion,
-        markGraphSaved,
-        initializeGraph,
-        dirtyCounter,
-    } = useWorkflowGraph({
+    // Graph operations
+    const graph = useWorkflowGraph({
         initialNodes: buildInitialNodes(
-            latestRevision?.graph_json?.nodes,
-            latestRevision?.screens ?? []
+            visibleRevision?.graph_json?.nodes,
+            visibleRevision?.screens ?? []
         ),
-        initialEdges: (latestRevision?.graph_json?.edges ?? []).map(edge => ({
+        initialEdges: (visibleRevision?.graph_json?.edges ?? []).map(edge => ({
             ...edge,
             markerEnd: { type: MarkerType.ArrowClosed, color: '#0f5ef7', width: 10, height: 10 },
         })),
-        lockVersion: latestRevision?.lock_version ?? 0,
+        lockVersion: visibleRevision?.lock_version ?? 0,
         latestRevisionId: latestRevision?.id ?? null,
-        canEdit: canEditInProject && latestRevision?.is_published !== true && !isArchived,
+        canEdit: canEditWorkflows,
     });
 
     const { screenToFlowPosition } = useReactFlow();
 
-    const {
-        previewRevision,
-        switchToDraft,
-        handleRevisionTimelineClick: baseHandleRevisionTimelineClick,
-    } = useVersionManagement({
-        latestRevision: latestRevision as WorkflowRevisionSummary | null,
-        canEditInProject,
-        canPublish: canPublishWorkflows,
-    });
+    // Selection
+    const selection = useEditorSelection();
 
-    const canEditWorkflows =
-        canEditInProject &&
-        latestRevision?.is_published !== true &&
-        previewRevision === null &&
-        !isArchived;
-
+    // Clear selection when entering preview mode
     useEffect(() => {
-        storeRef.current.setCanEditWorkflows(canEditWorkflows);
-    }, [canEditWorkflows]);
+        if (previewRevision !== null) {
+            selection.clearSelection();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [previewRevision]);
 
-    const { undo, redo, canUndo, canRedo } = useCanvasHistory(nodes, edges, setNodes, setEdges);
+    // Screens from store
+    const screens = useEditorStore(state => state.screens);
+    const setScreens = useEditorStore(state => state.setScreens);
 
-    const [screens, setScreens] = useState<Screen[]>(latestRevision?.screens ?? []);
-
-    const {
-        selectedNodeId,
-        selectedEdgeId,
-        selectedNodeKind,
-        selectedNodeInspectorTabs,
-        inspectorTab,
-        selectNode,
-        selectEdge,
-        clearSelection,
-        setInspectorTab,
-    } = useNodeSelection({
-        initialNodeId: nodes[0]?.id ?? null,
-        initialEdgeId: null,
-        nodes: nodes.map(n => ({ id: n.id, type: n.type })),
-    });
-
-    const selectedScreen = useMemo(
-        () => screens.find(screen => screen.node_id === selectedNodeId) ?? null,
-        [screens, selectedNodeId]
+    const visibleRevisionGraphKey = useMemo(
+        () =>
+            JSON.stringify({
+                id: visibleRevision?.id ?? null,
+                lockVersion: visibleRevision?.lock_version ?? 0,
+                nodes: visibleRevision?.graph_json?.nodes ?? [],
+                edges: visibleRevision?.graph_json?.edges ?? [],
+                screens: (visibleRevision?.screens ?? []).map(screen => ({
+                    id: screen.id,
+                    node_id: screen.node_id,
+                    title: screen.title,
+                    subtitle: screen.subtitle,
+                    note: screen.note,
+                    image_url: screen.image_url,
+                    drawing_json: screen.drawing_json,
+                    drawing_image_url: screen.drawing_image_url,
+                    custom_fields: screen.custom_fields,
+                })),
+            }),
+        [visibleRevision]
     );
 
     const selectedNode = useMemo(
-        () => nodes.find(node => node.id === selectedNodeId) ?? null,
-        [nodes, selectedNodeId]
+        () => graph.nodes.find(node => node.id === selection.selectedNodeId) ?? null,
+        [graph.nodes, selection.selectedNodeId]
     );
 
     const selectedEdge = useMemo(
-        () => edges.find(edge => edge.id === selectedEdgeId) ?? null,
-        [edges, selectedEdgeId]
+        () => graph.edges.find(edge => edge.id === selection.selectedEdgeId) ?? null,
+        [graph.edges, selection.selectedEdgeId]
     );
 
     const selectedEdgeSourceNode = useMemo(
-        () => nodes.find(node => node.id === selectedEdge?.source) ?? null,
-        [nodes, selectedEdge?.source]
+        () => graph.nodes.find(node => node.id === selectedEdge?.source) ?? null,
+        [graph.nodes, selectedEdge?.source]
     );
 
-    const selectedNodes = useMemo(() => nodes.filter(node => node.selected), [nodes]);
+    const selectedNodes = useMemo(() => graph.nodes.filter(node => node.selected), [graph.nodes]);
 
-    const {
-        copiedNodes,
-        copyNodes,
-        pasteNodes,
-        deleteNodes,
-        isContextMenuOpen,
-        contextMenuPosition,
-        openContextMenu,
-        closeContextMenu,
-    } = useCopyPaste({ setNodes });
+    const selectedNodeKind = useMemo(() => {
+        if (!selectedNode) return 'screen' as const;
+        return isWorkflowNodeKind(selectedNode.type) ? selectedNode.type : 'screen';
+    }, [selectedNode]);
 
-    const contextMenuFlowPosition = useRef({ x: 0, y: 0 });
-
-    const activeRevision = useMemo(
-        () => workflow.revisions.find(r => r.id === storeRef.current.activeRevisionId) ?? null,
-        [workflow.revisions]
+    const selectedNodeInspectorTabs = useMemo(
+        () => (selectedNodeKind ? inspectorTabsForNodeKind(selectedNodeKind) : []),
+        [selectedNodeKind]
     );
 
-    const screenEditor = useScreenEditor({
-        screens,
-        selectedNodeId,
+    // Clipboard
+    const clipboard = useEditorClipboard({ setNodes: graph.setNodes });
+
+    // History
+    const history = useCanvasHistory(graph.nodes, graph.edges, graph.setNodes, graph.setEdges);
+
+    // Sync graph and screens when Inertia replaces the active or preview revision.
+    useEffect(() => {
+        const nextNodes = buildInitialNodes(
+            visibleRevision?.graph_json?.nodes,
+            visibleRevision?.screens ?? []
+        );
+        const nextEdges = (visibleRevision?.graph_json?.edges ?? []).map(edge => ({
+            ...edge,
+            markerEnd: { type: MarkerType.ArrowClosed, color: '#0f5ef7', width: 10, height: 10 },
+        }));
+
+        graph.initializeGraph({
+            nodes: visibleRevision?.graph_json?.nodes ?? [],
+            edges: visibleRevision?.graph_json?.edges ?? [],
+            screens: visibleRevision?.screens ?? [],
+            lockVersion: visibleRevision?.lock_version ?? 0,
+        });
+        history.reset(nextNodes, nextEdges);
+        setScreens(visibleRevision?.screens ?? []);
+        selection.clearSelection();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [visibleRevisionGraphKey, graph.initializeGraph, history.reset, setScreens]);
+
+    // Sync screen image/drawing state from Zustand store into React Flow node data
+    // so that ScreenNode renders the latest visual without a hard refresh.
+    useEffect(() => {
+        for (const screen of screens) {
+            const node = graph.nodes.find(n => n.id === screen.node_id);
+            if (!node) continue;
+
+            const patch: Record<string, unknown> = {};
+            if (node.data.image_url !== screen.image_url) patch.image_url = screen.image_url;
+            if (node.data.drawing_image_url !== screen.drawing_image_url) {
+                patch.drawing_image_url = screen.drawing_image_url;
+            }
+            if (node.data.drawing_json !== screen.drawing_json) {
+                patch.drawing_json = screen.drawing_json;
+            }
+
+            if (Object.keys(patch).length > 0) {
+                graph.updateNodeData(screen.node_id, patch);
+            }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [screens]);
+
+    // Persistence (save graph)
+    const persistence = useEditorPersistence({
         latestRevisionId: latestRevision?.id ?? null,
         canEdit: canEditWorkflows,
-        setScreens,
-        setActionError: storeRef.current.setActionError,
-        setActionNotice: storeRef.current.setActionNotice,
-        updateNodeData,
+        nodes: graph.nodes,
+        edges: graph.edges,
+        lockVersion: graph.lockVersion,
+        dirtyCounter: graph.dirtyCounter,
+        onLockVersionChange: graph.setLockVersion,
     });
 
-    const reloadWorkflow = useCallback(() => {
-        router.reload({ only: ['workflow'] });
-    }, []);
+    // Revisions
+    const revisions = useRevisionActions();
 
-    const runWorkflowAction = useCallback(
-        async (task: () => Promise<void>, successMessage: string) => {
-            storeRef.current.setIsRunningAction(true);
-            storeRef.current.setActionError(null);
-            storeRef.current.setActionNotice(null);
-            try {
-                await task();
-                storeRef.current.setActionNotice(successMessage);
-                reloadWorkflow();
-            } catch (error) {
-                storeRef.current.setActionError(
-                    resolveApiError(error, 'The workflow action failed.')
-                );
-            } finally {
-                storeRef.current.setIsRunningAction(false);
-            }
-        },
-        [reloadWorkflow]
-    );
+    // Screen editor
+    const screenEditor = useScreenEditor();
 
-    const createDraft = useCallback(
-        async (draftName?: string, sourceRevisionId?: number) => {
-            if (!canEditInProject) return;
-            await runWorkflowAction(async () => {
-                await processAtlasApi.workflows.createRevision(workflow.id, {
-                    draft_name: draftName || undefined,
-                    source_revision_id: sourceRevisionId,
-                });
-            }, 'A new draft was created.');
-        },
-        [canEditInProject, workflow.id, runWorkflowAction]
-    );
+    // Keyboard shortcuts
+    const { undo, redo, canUndo, canRedo } = history;
 
-    const publishCurrent = useCallback(
-        async (force = false) => {
-            if (!latestRevision || !canPublishWorkflows) return;
-            await runWorkflowAction(async () => {
-                await processAtlasApi.revisions.publish(latestRevision.id, force);
-            }, 'The current revision was published.');
-        },
-        [latestRevision, canPublishWorkflows, runWorkflowAction]
-    );
-
-    const deleteRevision = useCallback(
-        async (revision: WorkflowRevisionSummary) => {
-            await runWorkflowAction(
-                async () => {
-                    await processAtlasApi.revisions.delete(revision.id);
-                },
-                revision.draft_name ?? `rev. ${revision.revision_number} was deleted.`
-            );
-        },
-        [runWorkflowAction]
-    );
-
-    const latestRevisionRef = useRef(latestRevision);
-    latestRevisionRef.current = latestRevision;
-
-    const previewRevisionRef = useRef(previewRevision);
-    previewRevisionRef.current = previewRevision;
-
-    // Sync canvas state when latestRevision changes (e.g. after switching drafts)
-    useEffect(() => {
-        const rev = latestRevisionRef.current;
-        if (!rev) return;
-        initializeGraph({
-            nodes: rev.graph_json?.nodes,
-            edges: rev.graph_json?.edges,
-            screens: rev.screens ?? [],
-            lockVersion: rev.lock_version ?? 0,
-        });
-        setScreens(rev.screens ?? []);
-        storeRef.current.setActiveRevisionId(rev.id);
-        storeRef.current.setEditingDraftName(rev.draft_name ?? '');
-        storeRef.current.setPreviewRevision(null);
-    }, [latestRevision?.id, initializeGraph, setScreens]);
-
-    useEffect(() => {
-        const rev = previewRevisionRef.current;
-        if (!rev) return;
-        initializeGraph({
-            nodes: rev.graph_json?.nodes,
-            edges: rev.graph_json?.edges,
-            screens: rev.screens ?? [],
-            lockVersion: rev.lock_version ?? 0,
-        });
-        setScreens(rev.screens ?? []);
-    }, [previewRevision?.id, initializeGraph, setScreens]);
-
-    useEffect(() => {
-        storeRef.current.setEdgeDraftLabel(String(selectedEdge?.label ?? ''));
-    }, [selectedEdge]);
-
-    const handleNodesChange = useCallback(
-        (changes: Parameters<typeof onNodesChange>[0]) => {
-            const allowedChanges = changes.filter(change => {
-                if (change.type === 'remove') {
-                    const node = nodes.find(n => n.id === change.id);
-                    return node?.type !== 'start';
-                }
-                return true;
-            });
-            onNodesChange(allowedChanges);
-        },
-        [nodes, onNodesChange]
-    );
+    // Context menu
+    const contextMenuFlowPosition = useRef({ x: 0, y: 0 });
 
     const handlePaneContextMenu = useCallback(
         (event: React.MouseEvent) => {
@@ -289,87 +217,98 @@ export function useWorkflowEditor({
                 y: event.clientY,
             });
             contextMenuFlowPosition.current = flowPosition;
-            openContextMenu(event.clientX, event.clientY);
+            clipboard.openContextMenu(event.clientX, event.clientY);
         },
-        [canEditWorkflows, openContextMenu, screenToFlowPosition]
+        [canEditWorkflows, clipboard, screenToFlowPosition]
     );
 
     const handleAddElementFromContextMenu = useCallback(
         (kind: WorkflowNodeKind) => {
             if (kind === 'screen') {
-                const nextId = addScreenNode(contextMenuFlowPosition.current);
-                if (nextId) selectNode(nextId, 'screen');
+                const nextId = graph.addScreenNode(contextMenuFlowPosition.current);
+                if (nextId) selection.selectNode(nextId, 'screen');
             } else if (kind !== 'if') {
-                const nextId = addNode(
+                const nextId = graph.addNode(
                     kind as Exclude<WorkflowNodeKind, 'screen' | 'if'>,
                     contextMenuFlowPosition.current
                 );
-                selectNode(nextId, kind);
+                selection.selectNode(nextId, kind);
             }
-            closeContextMenu();
+            clipboard.closeContextMenu();
         },
-        [addScreenNode, addNode, closeContextMenu, selectNode]
+        [graph, selection, clipboard]
     );
 
     const handleDropNode = useCallback(
         (kind: WorkflowNodeKind, position: { x: number; y: number }) => {
             if (kind === 'start') return;
             if (kind === 'screen') {
-                const nextId = addScreenNode(position);
-                if (nextId) selectNode(nextId, 'screen');
+                const nextId = graph.addScreenNode(position);
+                if (nextId) selection.selectNode(nextId, 'screen');
             } else if (kind !== 'if') {
-                const nextId = addNode(
+                const nextId = graph.addNode(
                     kind as Exclude<WorkflowNodeKind, 'screen' | 'if'>,
                     position
                 );
-                selectNode(nextId, kind);
+                selection.selectNode(nextId, kind);
             }
         },
-        [addScreenNode, addNode, selectNode]
+        [graph, selection]
     );
 
     const removeWorkflowNode = useCallback(
         (nodeId: string) => {
-            const node = nodes.find(n => n.id === nodeId);
+            if (!canEditWorkflows) return;
+            const node = graph.nodes.find(n => n.id === nodeId);
             if (node?.type === 'start') return;
-            removeNode(nodeId);
-            clearSelection();
-            storeRef.current.setActionNotice('Node deleted.');
+            graph.removeNode(nodeId);
+            selection.clearSelection();
         },
-        [nodes, removeNode, clearSelection]
+        [canEditWorkflows, graph, selection]
     );
+
+    const handleNodesChange = useCallback(
+        (changes: Parameters<typeof graph.onNodesChange>[0]) => {
+            if (!canEditWorkflows) return;
+            const allowedChanges = changes.filter(change => {
+                if (change.type === 'remove') {
+                    const node = graph.nodes.find(n => n.id === change.id);
+                    return node?.type !== 'start';
+                }
+                return true;
+            });
+            graph.onNodesChange(allowedChanges);
+        },
+        [canEditWorkflows, graph]
+    );
+
+    const reloadWorkflow = useCallback(() => {
+        router.reload({ only: ['workflow'] });
+    }, []);
 
     const handleRevisionTimelineClick = useCallback(
         async (revision: WorkflowRevisionSummary) => {
-            storeRef.current.setActiveRevisionId(revision.id);
             if (latestRevision && revision.id === latestRevision.id) {
-                initializeGraph({
-                    nodes: latestRevision.graph_json?.nodes,
-                    edges: latestRevision.graph_json?.edges,
-                    screens: latestRevision.screens ?? [],
-                    lockVersion: latestRevision.lock_version ?? 0,
-                });
-                setScreens(latestRevision.screens ?? []);
-                storeRef.current.setPreviewRevision(null);
+                useEditorStore.getState().setPreviewRevision(null);
+                router.reload({ only: ['workflow'] });
                 return;
             }
 
             if (!revision.is_published) {
-                await runWorkflowAction(async () => {
-                    await switchToDraft(revision);
-                }, 'Switched to draft.');
+                useEditorStore.getState().setPreviewRevision(null);
+                await revisions.switchToDraft(revision.id);
                 return;
             }
 
-            await baseHandleRevisionTimelineClick(revision);
+            // Preview published revision - fetch and set
+            try {
+                const response = await processAtlasApi.revisions.get(revision.id);
+                useEditorStore.getState().setPreviewRevision(response.data.data);
+            } catch {
+                // silently ignore
+            }
         },
-        [
-            latestRevision,
-            baseHandleRevisionTimelineClick,
-            initializeGraph,
-            runWorkflowAction,
-            switchToDraft,
-        ]
+        [latestRevision, revisions]
     );
 
     const handlePublishClick = useCallback(() => {
@@ -379,76 +318,60 @@ export function useWorkflowEditor({
             publishedRevisionId === null ||
             latestRevision.source_revision_id === publishedRevisionId;
         if (isFromLatestPublished) {
-            void publishCurrent();
+            void revisions.publishCurrent(latestRevision.id);
         } else {
-            storeRef.current.setPublishConfirmOpen(true);
+            useEditorStore.getState().setPublishConfirmOpen(true);
         }
-    }, [latestRevision, canPublishWorkflows, workflow.published_revision, publishCurrent]);
+    }, [latestRevision, canPublishWorkflows, workflow.published_revision, revisions]);
 
-    const handleSaveDraftName = useCallback(
-        async (name: string) => {
-            if (!latestRevision || name === (latestRevision.draft_name ?? '')) return;
-            try {
-                await processAtlasApi.revisions.saveDraftName(latestRevision.id, name);
-                router.reload({ only: ['workflow'] });
-            } catch {
-                storeRef.current.setEditingDraftName(latestRevision.draft_name ?? '');
-            }
-        },
-        [latestRevision]
-    );
-
+    // Edge editing
     const saveSelectedEdgeLabel = useCallback(
         (event: React.FormEvent) => {
             event.preventDefault();
             if (!canEditWorkflows || !selectedEdge) return;
-            updateEdgeLabel(selectedEdge.id, storeRef.current.edgeDraftLabel || undefined);
-            storeRef.current.setActionNotice('Connection label updated.');
+            const store = useEditorStore.getState();
+            graph.updateEdgeLabel(selectedEdge.id, store.edgeDraftLabel || undefined);
         },
-        [canEditWorkflows, selectedEdge, updateEdgeLabel]
+        [canEditWorkflows, selectedEdge, graph]
     );
 
     const removeSelectedEdge = useCallback(() => {
         if (!canEditWorkflows || !selectedEdge) return;
-        removeEdge(selectedEdge.id);
-        clearSelection();
-        storeRef.current.setActionNotice('Connection deleted.');
-    }, [canEditWorkflows, selectedEdge, removeEdge, clearSelection]);
+        graph.removeEdge(selectedEdge.id);
+        selection.clearSelection();
+    }, [canEditWorkflows, selectedEdge, graph, selection]);
 
-    const saveGraph = useCallback(
-        async (source: 'ui' | 'autosave' = 'ui') => {
-            await baseSaveGraph(source);
-            storeRef.current.setLastSavedAt(new Date().toISOString());
-        },
-        [baseSaveGraph]
-    );
-
-    useAutosave({
-        saveFn: async () => {
-            await saveGraph('autosave');
-        },
-        dependencies: [dirtyCounter],
-        delay: 5000,
-        minInterval: 15000,
-        enabled: canEditWorkflows && graphState === 'dirty',
-    });
-
-    // Read reactive store values for return object
+    const graphState = useEditorStore(state => state.graphState);
+    const graphMessage = useEditorStore(state => state.graphMessage);
     const lastSavedAt = useEditorStore(state => state.lastSavedAt);
     const edgeDraftLabel = useEditorStore(state => state.edgeDraftLabel);
+    const setEdgeDraftLabel = useEditorStore(state => state.setEdgeDraftLabel);
     const actionError = useEditorStore(state => state.actionError);
     const actionNotice = useEditorStore(state => state.actionNotice);
+    const setActionError = useEditorStore(state => state.setActionError);
+    const setActionNotice = useEditorStore(state => state.setActionNotice);
     const isRunningAction = useEditorStore(state => state.isRunningAction);
-    const revisionsPanelOpen = useEditorStore(state => state.revisionsPanelOpen);
     const activeRevisionId = useEditorStore(state => state.activeRevisionId);
-    const previewRevisionState = useEditorStore(state => state.previewRevision);
     const editingDraftName = useEditorStore(state => state.editingDraftName);
+    const setEditingDraftName = useEditorStore(state => state.setEditingDraftName);
     const draftModalOpen = useEditorStore(state => state.draftModalOpen);
+    const setDraftModalOpen = useEditorStore(state => state.setDraftModalOpen);
     const draftNameInput = useEditorStore(state => state.draftNameInput);
+    const setDraftNameInput = useEditorStore(state => state.setDraftNameInput);
     const draftSourceRevisionId = useEditorStore(state => state.draftSourceRevisionId);
+    const setDraftSourceRevisionId = useEditorStore(state => state.setDraftSourceRevisionId);
     const publishConfirmOpen = useEditorStore(state => state.publishConfirmOpen);
+    const setPublishConfirmOpen = useEditorStore(state => state.setPublishConfirmOpen);
     const publishConfirmInput = useEditorStore(state => state.publishConfirmInput);
+    const setPublishConfirmInput = useEditorStore(state => state.setPublishConfirmInput);
     const previewImageUrl = useEditorStore(state => state.previewImageUrl);
+    const setPreviewImageUrl = useEditorStore(state => state.setPreviewImageUrl);
+    const activeRevision = useMemo(
+        () =>
+            workflow.revisions.find(r => r.id === (previewRevision?.id ?? activeRevisionId)) ??
+            null,
+        [workflow.revisions, previewRevision?.id, activeRevisionId]
+    );
 
     return {
         // Workflow data
@@ -461,16 +384,18 @@ export function useWorkflowEditor({
         canEditWorkflows,
 
         // Graph
-        nodes,
-        edges,
+        nodes: graph.nodes,
+        edges: graph.edges,
+        setNodes: graph.setNodes,
+        setEdges: graph.setEdges,
         handleNodesChange,
-        onEdgesChange,
-        onConnect,
+        onEdgesChange: graph.onEdgesChange,
+        onConnect: graph.onConnect,
         graphState,
         graphMessage,
-        lockVersion,
-        saveGraph,
-        markGraphSaved,
+        lockVersion: graph.lockVersion,
+        saveGraph: persistence.saveGraph,
+        markGraphSaved: persistence.markGraphSaved,
         lastSavedAt,
 
         // History
@@ -480,19 +405,19 @@ export function useWorkflowEditor({
         canRedo,
 
         // Selection
-        selectedNodeId,
-        selectedEdgeId,
+        selectedNodeId: selection.selectedNodeId,
+        selectedEdgeId: selection.selectedEdgeId,
         selectedNode,
         selectedEdge,
-        selectedScreen,
+        selectedScreen: selection.selectedScreen,
         selectedNodeKind,
         selectedNodeInspectorTabs,
         selectedEdgeSourceNode,
-        inspectorTab,
-        selectNode,
-        selectEdge,
-        clearSelection,
-        setInspectorTab,
+        inspectorTab: selection.inspectorTab,
+        selectNode: selection.selectNode,
+        selectEdge: selection.selectEdge,
+        clearSelection: selection.clearSelection,
+        setInspectorTab: selection.setInspectorTab,
 
         // Screens
         screens,
@@ -500,15 +425,15 @@ export function useWorkflowEditor({
         screenEditor,
 
         // Copy/paste
-        copiedNodes,
-        copyNodes,
-        pasteNodes,
-        deleteNodes,
+        copiedNodes: clipboard.copiedNodes,
+        copyNodes: clipboard.copyNodes,
+        pasteNodes: clipboard.pasteNodes,
+        deleteNodes: clipboard.deleteNodes,
         selectedNodes,
-        isContextMenuOpen,
-        contextMenuPosition,
-        openContextMenu,
-        closeContextMenu,
+        isContextMenuOpen: clipboard.isContextMenuOpen,
+        contextMenuPosition: clipboard.contextMenuPosition,
+        openContextMenu: clipboard.openContextMenu,
+        closeContextMenu: clipboard.closeContextMenu,
         contextMenuFlowPosition,
         handlePaneContextMenu,
         handleAddElementFromContextMenu,
@@ -516,54 +441,66 @@ export function useWorkflowEditor({
         removeWorkflowNode,
 
         // Node data updates
-        updateNodeData,
-        updateEdgeLabel,
-        removeEdge,
+        updateNodeData: graph.updateNodeData,
+        updateEdgeLabel: graph.updateEdgeLabel,
+        removeEdge: graph.removeEdge,
 
         // Edge editing
         edgeDraftLabel,
-        setEdgeDraftLabel: storeRef.current.setEdgeDraftLabel,
+        setEdgeDraftLabel,
         saveSelectedEdgeLabel,
         removeSelectedEdge,
 
         // Actions
         actionError,
         actionNotice,
-        setActionError: storeRef.current.setActionError,
-        setActionNotice: storeRef.current.setActionNotice,
+        setActionError,
+        setActionNotice,
         isRunningAction,
-        runWorkflowAction,
 
         // Revisions
-        revisionsPanelOpen,
-        setRevisionsPanelOpen: storeRef.current.setRevisionsPanelOpen,
-        activeRevisionId,
         activeRevision,
-        previewRevision: previewRevisionState,
+        previewRevision,
         handleRevisionTimelineClick,
-        deleteRevision,
-        createDraft,
-        publishCurrent,
+        deleteRevision: revisions.deleteRevision,
+        createDraft: useCallback(
+            (draftName?: string, sourceRevisionId?: number) =>
+                revisions.createDraft(workflow.id, draftName, sourceRevisionId),
+            [revisions, workflow.id]
+        ),
+        publishCurrent: useCallback(
+            (force = false) => {
+                if (!latestRevision) return Promise.resolve();
+                return revisions.publishCurrent(latestRevision.id, force);
+            },
+            [revisions, latestRevision]
+        ),
         handlePublishClick,
         editingDraftName,
-        setEditingDraftName: storeRef.current.setEditingDraftName,
-        handleSaveDraftName,
+        setEditingDraftName,
+        handleSaveDraftName: useCallback(
+            (name: string) => {
+                if (!latestRevision) return Promise.resolve();
+                return revisions.saveDraftName(latestRevision.id, name);
+            },
+            [revisions, latestRevision]
+        ),
 
         // Modals
         draftModalOpen,
-        setDraftModalOpen: storeRef.current.setDraftModalOpen,
+        setDraftModalOpen,
         draftNameInput,
-        setDraftNameInput: storeRef.current.setDraftNameInput,
+        setDraftNameInput,
         draftSourceRevisionId,
-        setDraftSourceRevisionId: storeRef.current.setDraftSourceRevisionId,
+        setDraftSourceRevisionId,
         publishConfirmOpen,
-        setPublishConfirmOpen: storeRef.current.setPublishConfirmOpen,
+        setPublishConfirmOpen,
         publishConfirmInput,
-        setPublishConfirmInput: storeRef.current.setPublishConfirmInput,
+        setPublishConfirmInput,
 
         // Image preview
         previewImageUrl,
-        setPreviewImageUrl: storeRef.current.setPreviewImageUrl,
+        setPreviewImageUrl,
 
         // Reload
         reloadWorkflow,

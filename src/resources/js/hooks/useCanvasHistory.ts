@@ -196,8 +196,27 @@ export function useCanvasHistory(
         }, 50);
     }, [historyIndex, setNodes, setEdges]);
 
+    const reset = useCallback((nextNodes: Node[], nextEdges: Edge[]) => {
+        if (debounceRef.current) {
+            clearTimeout(debounceRef.current);
+            debounceRef.current = null;
+        }
+
+        const snapshot: CanvasSnapshot = {
+            nodes: clone(nextNodes),
+            edges: clone(nextEdges),
+        };
+
+        historyRef.current = [snapshot];
+        setHistoryIndex(0);
+        isInitializedRef.current = true;
+        isUndoingRef.current = false;
+        lastNodesRef.current = clone(nextNodes);
+        lastEdgesRef.current = clone(nextEdges);
+    }, []);
+
     const canUndo = historyIndex > 0;
     const canRedo = historyIndex < historyRef.current.length - 1;
 
-    return { undo, redo, canUndo, canRedo };
+    return { undo, redo, reset, canUndo, canRedo };
 }

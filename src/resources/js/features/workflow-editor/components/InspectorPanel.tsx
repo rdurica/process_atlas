@@ -2,6 +2,7 @@ import { memo, useCallback } from 'react';
 import { workflowNodeKindLabel } from '../lib/utils';
 import type { InspectorTab, WorkflowNodeData, WorkflowNodeKind } from '../types';
 import type { Edge, Node } from '@xyflow/react';
+import type { Screen } from '@/types/processAtlas';
 import { useEditorStore } from '../stores/editorStore';
 import EdgeInspector from './inspector/EdgeInspector';
 import NodeInspector from './inspector/NodeInspector';
@@ -17,7 +18,7 @@ interface InspectorPanelProps {
     isVisible: boolean;
     selectedNode: Node | null;
     selectedEdge: Edge | null;
-    selectedScreen: import('@/types/processAtlas').Screen | null;
+    selectedScreen: Screen | null;
     selectedNodeKind: WorkflowNodeKind;
     selectedNodeInspectorTabs: [InspectorTab, string][];
     selectedEdgeSourceNode: Node | null;

@@ -1,7 +1,8 @@
+import { memo } from 'react';
 import { Handle, Node, NodeProps, Position } from '@xyflow/react';
 import type { TimerNodeData } from '../../types';
 
-export default function TimerNode({ data }: NodeProps<Node<TimerNodeData>>) {
+function TimerNode({ data }: NodeProps<Node<TimerNodeData>>) {
     return (
         <div className="rf-flow-node rf-timer-node">
             <Handle type="target" position={Position.Left} />
@@ -25,3 +26,5 @@ export default function TimerNode({ data }: NodeProps<Node<TimerNodeData>>) {
         </div>
     );
 }
+
+export default memo(TimerNode);

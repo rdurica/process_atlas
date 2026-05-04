@@ -1,6 +1,11 @@
-import axios from 'axios';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { processAtlasApi } from '@/shared/api/processAtlasApi';
+import { useState, useEffect, useRef } from 'react';
+import {
+    useAdminUsersQuery,
+    useCreateAdminUser,
+    useUpdateAdminUserRoles,
+    useToggleAdminUserActive,
+    useDeleteAdminUser,
+} from '@/shared/api/useAdminQueries';
 import { resolveApiError, validationErrorMap } from '@/shared/lib/apiErrors';
 import type { UserFormState, UserItem } from './types';
 
@@ -25,58 +30,27 @@ export function roleTone(role: string): 'neutral' | 'brand' | 'success' | 'warni
 }
 
 export function useAdminUsers() {
-    const [users, setUsers] = useState<UserItem[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [page, setPage] = useState(1);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showRolesModal, setShowRolesModal] = useState(false);
     const [editingUser, setEditingUser] = useState<UserItem | null>(null);
     const [form, setForm] = useState<UserFormState>(emptyUserForm);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [formError, setFormError] = useState<string | null>(null);
-    const [pendingCreate, setPendingCreate] = useState(false);
-    const [pendingRoles, setPendingRoles] = useState(false);
-    const [pendingToggle, setPendingToggle] = useState<number | null>(null);
-    const [pendingDelete, setPendingDelete] = useState<number | null>(null);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [page, setPage] = useState(1);
-    const [lastPage, setLastPage] = useState(1);
-    const [total, setTotal] = useState(0);
-    const [from, setFrom] = useState(0);
-    const [to, setTo] = useState(0);
-    const abortControllerRef = useRef<AbortController | null>(null);
     const isFirstSearchEffect = useRef(true);
 
-    const fetchUsers = useCallback(async (targetPage: number, targetSearch: string) => {
-        abortControllerRef.current?.abort();
-        const controller = new AbortController();
-        abortControllerRef.current = controller;
+    const { data, isLoading } = useAdminUsersQuery(page, searchQuery);
+    const createMutation = useCreateAdminUser();
+    const updateRolesMutation = useUpdateAdminUserRoles();
+    const toggleActiveMutation = useToggleAdminUserActive();
+    const deleteMutation = useDeleteAdminUser();
 
-        setLoading(true);
-        try {
-            const response = await processAtlasApi.adminUsers.list(
-                { page: targetPage, per_page: 20, search: targetSearch },
-                controller.signal
-            );
-            setUsers(response.data.data);
-            setPage(response.data.current_page);
-            setLastPage(response.data.last_page);
-            setTotal(response.data.total);
-            setFrom(response.data.from);
-            setTo(response.data.to);
-        } catch (error) {
-            if (axios.isCancel(error)) {
-                return;
-            }
-        } finally {
-            if (!controller.signal.aborted) {
-                setLoading(false);
-            }
-        }
-    }, []);
-
-    useEffect(() => {
-        fetchUsers(1, '');
-    }, [fetchUsers]);
+    const users = data?.data ?? [];
+    const lastPage = data?.last_page ?? 1;
+    const total = data?.total ?? 0;
+    const from = data?.from ?? 0;
+    const to = data?.to ?? 0;
 
     useEffect(() => {
         if (isFirstSearchEffect.current) {
@@ -85,17 +59,11 @@ export function useAdminUsers() {
         }
 
         const timer = setTimeout(() => {
-            fetchUsers(1, searchQuery);
+            setPage(1);
         }, 400);
 
         return () => clearTimeout(timer);
-    }, [fetchUsers, searchQuery]);
-
-    useEffect(() => {
-        return () => {
-            abortControllerRef.current?.abort();
-        };
-    }, []);
+    }, [searchQuery]);
 
     const openRolesModal = (user: UserItem) => {
         setEditingUser(user);
@@ -120,12 +88,10 @@ export function useAdminUsers() {
         event.preventDefault();
         setErrors({});
         setFormError(null);
-        setPendingCreate(true);
 
         try {
-            await processAtlasApi.adminUsers.create(form);
+            await createMutation.mutateAsync(form);
             closeCreateModal();
-            fetchUsers(page, searchQuery);
         } catch (error) {
             const serverErrors = validationErrorMap(error);
             if (Object.keys(serverErrors).length > 0) {
@@ -133,38 +99,29 @@ export function useAdminUsers() {
             } else {
                 setFormError(resolveApiError(error, 'The user could not be created.'));
             }
-        } finally {
-            setPendingCreate(false);
         }
     };
 
     const handleUpdateRoles = async (event: React.FormEvent) => {
         event.preventDefault();
-        if (!editingUser) {
-            return;
-        }
-
-        setPendingRoles(true);
+        if (!editingUser) return;
 
         try {
-            await processAtlasApi.adminUsers.updateRoles(editingUser.id, editingUser.roles);
+            await updateRolesMutation.mutateAsync({
+                userId: editingUser.id,
+                roles: editingUser.roles,
+            });
             closeRolesModal();
-            fetchUsers(page, searchQuery);
         } catch (error) {
             setFormError(resolveApiError(error, 'The roles could not be updated.'));
-        } finally {
-            setPendingRoles(false);
         }
     };
 
     const handleToggleActive = async (userId: number) => {
-        setPendingToggle(userId);
-
         try {
-            await processAtlasApi.adminUsers.toggleActive(userId);
-            fetchUsers(page, searchQuery);
-        } finally {
-            setPendingToggle(null);
+            await toggleActiveMutation.mutateAsync(userId);
+        } catch {
+            // Error handled by mutation
         }
     };
 
@@ -173,24 +130,17 @@ export function useAdminUsers() {
             return;
         }
 
-        setPendingDelete(userId);
-
         try {
-            await processAtlasApi.adminUsers.delete(userId);
-            fetchUsers(page, searchQuery);
-        } finally {
-            setPendingDelete(null);
+            await deleteMutation.mutateAsync(userId);
+        } catch {
+            // Error handled by mutation
         }
     };
 
     const toggleRole = (role: string) => {
         setEditingUser(prev => {
-            if (!prev) {
-                return prev;
-            }
-
+            if (!prev) return prev;
             const hasRole = prev.roles.includes(role);
-
             return {
                 ...prev,
                 roles: hasRole ? prev.roles.filter(item => item !== role) : [...prev.roles, role],
@@ -200,7 +150,7 @@ export function useAdminUsers() {
 
     return {
         users,
-        loading,
+        loading: isLoading,
         showCreateModal,
         setShowCreateModal,
         showRolesModal,
@@ -209,10 +159,12 @@ export function useAdminUsers() {
         setForm,
         errors,
         formError,
-        pendingCreate,
-        pendingRoles,
-        pendingToggle,
-        pendingDelete,
+        pendingCreate: createMutation.isPending,
+        pendingRoles: updateRolesMutation.isPending,
+        pendingToggle: toggleActiveMutation.isPending
+            ? (toggleActiveMutation.variables ?? null)
+            : null,
+        pendingDelete: deleteMutation.isPending ? (deleteMutation.variables ?? null) : null,
         searchQuery,
         setSearchQuery,
         page,
@@ -220,7 +172,7 @@ export function useAdminUsers() {
         total,
         from,
         to,
-        fetchUsers,
+        fetchUsers: setPage,
         openRolesModal,
         closeCreateModal,
         closeRolesModal,

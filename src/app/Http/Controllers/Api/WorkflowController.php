@@ -31,11 +31,19 @@ class WorkflowController extends Controller
     {
         $this->authorize('view', $project);
 
+        $validated = $request->validate([
+            'include_archived' => ['nullable', 'boolean'],
+            'page'             => ['nullable', 'integer', 'min:1'],
+            'per_page'         => ['nullable', 'integer', 'min:1', 'max:100'],
+            'search'           => ['nullable', 'string', 'max:120'],
+            'status'           => ['nullable', 'string', 'max:50'],
+        ]);
+
         $includeArchived = $request->boolean('include_archived');
-        $page = (int) $request->input('page', 1);
-        $perPage = (int) $request->input('per_page', 20);
-        $search = $request->input('search');
-        $status = $request->input('status');
+        $page = (int) ($validated['page'] ?? 1);
+        $perPage = (int) ($validated['per_page'] ?? 20);
+        $search = $validated['search'] ?? null;
+        $status = $validated['status'] ?? null;
 
         return response()->json(
             $this->workflows->listForProject($project, $includeArchived, $page, $perPage, $search, $status),

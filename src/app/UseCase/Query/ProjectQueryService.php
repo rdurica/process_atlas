@@ -18,7 +18,11 @@ final class ProjectQueryService
             ! $user->can(PermissionList::PROJECTS_ADMIN),
             fn (Builder $query) => $query->where(function (Builder $q) use ($user): void
             {
-                $q->where('is_public', true)
+                $q->where(function (Builder $public): void
+                {
+                    $public->where('is_public', true)
+                        ->whereNull('archived_at');
+                })
                     ->orWhereHas('members', fn ($m) => $m->where('user_id', $user->id));
             }),
         );

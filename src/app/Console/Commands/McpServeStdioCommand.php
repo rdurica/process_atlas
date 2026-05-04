@@ -74,10 +74,19 @@ class McpServeStdioCommand extends Command
         {
             $accessToken = PersonalAccessToken::findToken($token);
 
-            if ($accessToken && $accessToken->tokenable instanceof User)
-            {
+            if (
+                $accessToken
+                && $accessToken->can('mcp:use')
+                && ($accessToken->expires_at === null || ! $accessToken->expires_at->isPast())
+                && $accessToken->tokenable instanceof User
+                && $accessToken->tokenable->is_active
+            ) {
                 return $accessToken->tokenable;
             }
+
+            $this->error('MCP_TOKEN is invalid, expired, or missing mcp:use ability.');
+
+            return null;
         }
 
         $userId = (int) ($this->option('user') ?? config('services.mcp.user_id', 0));
@@ -94,6 +103,13 @@ class McpServeStdioCommand extends Command
         if (! $actor)
         {
             $this->error('Actor user not found.');
+
+            return null;
+        }
+
+        if (! $actor->is_active)
+        {
+            $this->error('Actor user is disabled.');
 
             return null;
         }

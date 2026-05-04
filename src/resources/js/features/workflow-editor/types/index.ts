@@ -1,3 +1,5 @@
+import type { WorkflowData } from '@/types/processAtlas';
+
 export type WorkflowNodeKind =
     | 'screen'
     | 'notification'
@@ -83,7 +85,7 @@ export type WorkflowNodeData =
     | EndNodeData;
 
 export interface WorkflowEditorProps {
-    workflow: import('@/types/processAtlas').WorkflowData;
+    workflow: WorkflowData;
     projectWorkflows: { id: number; name: string; status: 'draft' | 'published' }[];
     currentUserRole: 'process_owner' | 'editor' | 'viewer' | null;
 }

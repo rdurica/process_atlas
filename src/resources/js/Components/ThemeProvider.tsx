@@ -44,10 +44,15 @@ interface ThemeProviderProps {
 }
 
 export function ThemeProvider({ children, defaultTheme = 'system' }: ThemeProviderProps) {
-    const [theme, setThemeState] = useState<Theme>(() => getStoredTheme() ?? defaultTheme);
-    const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>(() =>
-        theme === 'system' ? getSystemTheme() : theme
-    );
+    const [theme, setThemeState] = useState<Theme>(defaultTheme);
+    const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
+
+    useEffect(() => {
+        const stored = getStoredTheme();
+        if (stored) {
+            setThemeState(stored);
+        }
+    }, []);
 
     useEffect(() => {
         const resolved = theme === 'system' ? getSystemTheme() : theme;

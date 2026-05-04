@@ -25,6 +25,7 @@ final class UpsertScreenCommand
     public function execute(User $actor, WorkflowRevision $workflowRevision, UpsertScreenRequest $request): ScreenResponse
     {
         abort_if($workflowRevision->is_published, 422, 'Cannot modify a published revision.');
+        abort_if($workflowRevision->is_locked, 422, 'Cannot modify a locked revision.');
 
         $newImagePath = null;
         $previousImagePath = null;

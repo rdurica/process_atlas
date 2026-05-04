@@ -30,9 +30,16 @@ class ProjectController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $page = (int) $request->input('page', 1);
-        $perPage = (int) $request->input('per_page', 20);
-        $search = $request->input('search');
+        $validated = $request->validate([
+            'page'             => ['nullable', 'integer', 'min:1'],
+            'per_page'         => ['nullable', 'integer', 'min:1', 'max:100'],
+            'search'           => ['nullable', 'string', 'max:120'],
+            'include_archived' => ['nullable', 'boolean'],
+        ]);
+
+        $page = (int) ($validated['page'] ?? 1);
+        $perPage = (int) ($validated['per_page'] ?? 20);
+        $search = $validated['search'] ?? null;
         $includeArchived = $request->boolean('include_archived');
 
         return response()->json(

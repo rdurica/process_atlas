@@ -46,6 +46,8 @@ test('owner creates a project, creates a workflow, and persists a screen node', 
 
     await page.keyboard.press('Control+S');
     await expect(page.getByTestId('graph-save-status')).toContainText('Saved');
+    await page.getByTestId('save-workflow-graph').click();
+    await expect(page.getByTestId('graph-save-status')).toContainText('Saved');
 
     await page.reload();
     await expect(page.getByRole('heading', { name: workflowName })).toBeVisible();

@@ -1,9 +1,10 @@
+import { memo } from 'react';
 import { Handle, Node, NodeProps, Position } from '@xyflow/react';
 import type { ConditionNodeData } from '../../types';
 import { conditionOutputHandles } from '../../lib/utils';
 import { ConditionIcon } from './icons';
 
-export default function ConditionNode({ data }: NodeProps<Node<ConditionNodeData>>) {
+function ConditionNode({ data }: NodeProps<Node<ConditionNodeData>>) {
     return (
         <div className="rf-flow-node rf-condition-node">
             <Handle type="target" position={Position.Left} />
@@ -26,3 +27,5 @@ export default function ConditionNode({ data }: NodeProps<Node<ConditionNodeData
         </div>
     );
 }
+
+export default memo(ConditionNode);

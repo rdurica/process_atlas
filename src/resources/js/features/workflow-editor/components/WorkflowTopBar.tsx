@@ -117,7 +117,7 @@ function WorkflowTopBar({
                 </div>
 
                 <div className="flex w-full items-center justify-center border-t border-border/50 bg-muted/30 px-5 py-1.5">
-                    <p className="text-sm font-medium text-foreground">{workflow.name}</p>
+                    <h1 className="text-sm font-medium text-foreground">{workflow.name}</h1>
                 </div>
 
                 {latestRevision &&

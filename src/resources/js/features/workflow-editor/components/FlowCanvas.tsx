@@ -65,7 +65,7 @@ function FlowCanvas({
                 onDrop={editable ? handleDrop : undefined}
                 nodesDraggable={editable}
                 nodesConnectable={editable}
-                elementsSelectable={editable}
+                elementsSelectable={true}
                 colorMode={resolvedTheme}
                 fitView
             >

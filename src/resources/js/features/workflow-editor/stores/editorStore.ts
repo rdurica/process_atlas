@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { WorkflowNodeKind, InspectorTab, GraphState } from '@/features/workflow-editor/types';
-import type { WorkflowRevisionSummary } from '@/types/processAtlas';
+import type { WorkflowRevisionSummary, Screen } from '@/types/processAtlas';
 
 interface EditorUiState {
     // Permissions
@@ -12,6 +12,9 @@ interface EditorUiState {
     selectedNodeId: string | null;
     selectedEdgeId: string | null;
     inspectorTab: InspectorTab;
+
+    // Data
+    screens: Screen[];
 
     // UI
     actionError: string | null;
@@ -33,6 +36,7 @@ interface EditorUiState {
 
     // Graph UI
     graphState: GraphState;
+    graphMessage: string;
     lastSavedAt: string | null;
 }
 
@@ -48,6 +52,9 @@ interface EditorActions {
     selectEdge: (edgeId: string | null) => void;
     clearSelection: () => void;
     setInspectorTab: (tab: InspectorTab) => void;
+
+    setScreens: (updater: Screen[] | ((prev: Screen[]) => Screen[])) => void;
+    updateScreen: (updatedScreen: Screen) => void;
 
     setActionError: (error: string | null) => void;
     setActionNotice: (notice: string | null) => void;
@@ -67,6 +74,7 @@ interface EditorActions {
     setPreviewRevision: (revision: WorkflowRevisionSummary | null) => void;
 
     setGraphState: (state: GraphState) => void;
+    setGraphMessage: (message: string) => void;
     setLastSavedAt: (timestamp: string | null) => void;
 
     resetUi: () => void;
@@ -87,6 +95,8 @@ const initialState: EditorUiState = {
     selectedEdgeId: null,
     inspectorTab: 'general',
 
+    screens: [],
+
     actionError: null,
     actionNotice: null,
     isRunningAction: false,
@@ -104,6 +114,7 @@ const initialState: EditorUiState = {
     previewRevision: null,
 
     graphState: 'saved',
+    graphMessage: 'No pending canvas changes.',
     lastSavedAt: null,
 };
 
@@ -117,6 +128,7 @@ export const useEditorStore = create<EditorUiState & EditorActions>((set, get) =
         const canEditWorkflows =
             canEditInProject &&
             latestRevision?.is_published !== true &&
+            latestRevision?.is_locked !== true &&
             get().previewRevision === null &&
             !isArchived;
 
@@ -152,6 +164,15 @@ export const useEditorStore = create<EditorUiState & EditorActions>((set, get) =
 
     setInspectorTab: inspectorTab => set({ inspectorTab }),
 
+    setScreens: updater =>
+        set(state => ({
+            screens: typeof updater === 'function' ? updater(state.screens) : updater,
+        })),
+    updateScreen: updatedScreen =>
+        set(state => ({
+            screens: state.screens.map(s => (s.id === updatedScreen.id ? updatedScreen : s)),
+        })),
+
     setActionError: actionError => set({ actionError }),
     setActionNotice: actionNotice => set({ actionNotice }),
     setIsRunningAction: isRunningAction => set({ isRunningAction }),
@@ -170,6 +191,7 @@ export const useEditorStore = create<EditorUiState & EditorActions>((set, get) =
     setPreviewRevision: previewRevision => set({ previewRevision }),
 
     setGraphState: graphState => set({ graphState }),
+    setGraphMessage: graphMessage => set({ graphMessage }),
     setLastSavedAt: lastSavedAt => set({ lastSavedAt }),
 
     resetUi: () => set(initialState),

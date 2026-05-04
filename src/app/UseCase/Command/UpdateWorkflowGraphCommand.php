@@ -27,6 +27,7 @@ final class UpdateWorkflowGraphCommand
         return $this->transactionManager->transactional(function () use ($actor, $workflowRevision, $request, $source): WorkflowGraphUpdateResponse
         {
             abort_if($workflowRevision->is_published, 422, 'Cannot modify a published revision.');
+            abort_if($workflowRevision->is_locked, 422, 'Cannot modify a locked revision.');
 
             $updated = WorkflowRevision::query()
                 ->whereKey($workflowRevision->id)

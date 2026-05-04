@@ -200,12 +200,7 @@ export default function AdminUsersPage() {
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() =>
-                                    adminUsers.fetchUsers(
-                                        adminUsers.page - 1,
-                                        adminUsers.searchQuery
-                                    )
-                                }
+                                onClick={() => adminUsers.fetchUsers(adminUsers.page - 1)}
                                 disabled={adminUsers.page <= 1}
                             >
                                 <ChevronLeft className="mr-1 h-4 w-4" />
@@ -217,12 +212,7 @@ export default function AdminUsersPage() {
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() =>
-                                    adminUsers.fetchUsers(
-                                        adminUsers.page + 1,
-                                        adminUsers.searchQuery
-                                    )
-                                }
+                                onClick={() => adminUsers.fetchUsers(adminUsers.page + 1)}
                                 disabled={adminUsers.page >= adminUsers.lastPage}
                             >
                                 Next

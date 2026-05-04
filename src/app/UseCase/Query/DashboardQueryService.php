@@ -11,6 +11,8 @@ use Illuminate\Support\Collection;
 
 final class DashboardQueryService
 {
+    public function __construct(private readonly ProjectQueryService $projects) {}
+
     /**
      * @return array<string, mixed>
      */
@@ -18,15 +20,7 @@ final class DashboardQueryService
     {
         $isAdmin = $user->can(PermissionList::PROJECTS_ADMIN);
 
-        $query = Project::query()
-            ->when(
-                ! $isAdmin,
-                fn ($query) => $query->where(function ($q) use ($user): void
-                {
-                    $q->where('is_public', true)
-                        ->orWhereHas('members', fn ($m) => $m->where('user_id', $user->id));
-                }),
-            );
+        $query = $this->projects->accessibleQuery($user);
 
         if (! $includeArchived)
         {

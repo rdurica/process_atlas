@@ -1,8 +1,9 @@
+import { memo } from 'react';
 import { Handle, Node, NodeProps, Position } from '@xyflow/react';
 import type { SubprocessNodeData } from '../../types';
 import { SubprocessIcon } from './icons';
 
-export default function SubprocessNode({ data }: NodeProps<Node<SubprocessNodeData>>) {
+function SubprocessNode({ data }: NodeProps<Node<SubprocessNodeData>>) {
     return (
         <div className="rf-flow-node rf-subprocess-node">
             <Handle type="target" position={Position.Left} />
@@ -16,3 +17,5 @@ export default function SubprocessNode({ data }: NodeProps<Node<SubprocessNodeDa
         </div>
     );
 }
+
+export default memo(SubprocessNode);

@@ -1,8 +1,9 @@
+import { memo } from 'react';
 import { Handle, Node, NodeProps, Position } from '@xyflow/react';
 import type { ActionNodeData } from '../../types';
 import { ActionIcon } from './icons';
 
-export default function ActionNode({ data }: NodeProps<Node<ActionNodeData>>) {
+function ActionNode({ data }: NodeProps<Node<ActionNodeData>>) {
     return (
         <div className="rf-flow-node rf-action-node">
             <Handle type="target" position={Position.Left} />
@@ -17,3 +18,5 @@ export default function ActionNode({ data }: NodeProps<Node<ActionNodeData>>) {
         </div>
     );
 }
+
+export default memo(ActionNode);

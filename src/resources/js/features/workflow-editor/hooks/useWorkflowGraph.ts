@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { Screen } from '@/types/processAtlas';
 import {
     addEdge,
     Connection,
@@ -20,6 +21,7 @@ import {
     isConditionNodeKind,
 } from '../lib/utils';
 import { processAtlasApi } from '@/shared/api/processAtlasApi';
+import { useEditorStore } from '../stores/editorStore';
 
 interface UseWorkflowGraphOptions {
     initialNodes: Node[];
@@ -50,6 +52,7 @@ interface UseWorkflowGraphReturn {
     graphState: GraphState;
     graphMessage: string;
     lockVersion: number;
+    setLockVersion: (lockVersion: number) => void;
     setGraphState: (state: GraphState) => void;
     setGraphMessage: (message: string) => void;
     dirtyCounter: number;
@@ -57,7 +60,7 @@ interface UseWorkflowGraphReturn {
     initializeGraph: (options: {
         nodes?: Node[];
         edges?: Edge[];
-        screens?: import('@/types/processAtlas').Screen[];
+        screens?: Screen[];
         lockVersion?: number;
     }) => void;
 }
@@ -81,11 +84,18 @@ export function useWorkflowGraph({
     const [lockVersion, setLockVersion] = useState(initialLockVersion);
     const [dirtyCounter, setDirtyCounter] = useState(0);
     const graphInitialized = useRef(false);
+    const setStoreGraphState = useEditorStore(state => state.setGraphState);
+    const setStoreGraphMessage = useEditorStore(state => state.setGraphMessage);
 
-    const markGraphSaved = useCallback((message: string) => {
-        setGraphState('saved');
-        setGraphMessage(message);
-    }, []);
+    const markGraphSaved = useCallback(
+        (message: string) => {
+            setGraphState('saved');
+            setGraphMessage(message);
+            setStoreGraphState('saved');
+            setStoreGraphMessage(message);
+        },
+        [setStoreGraphState, setStoreGraphMessage]
+    );
 
     useEffect(() => {
         if (!graphInitialized.current) {
@@ -95,8 +105,10 @@ export function useWorkflowGraph({
 
         setGraphState('dirty');
         setGraphMessage('Canvas changes are waiting to be saved.');
+        setStoreGraphState('dirty');
+        setStoreGraphMessage('Canvas changes are waiting to be saved.');
         setDirtyCounter(c => c + 1);
-    }, [edges, nodes]);
+    }, [edges, nodes, setStoreGraphState, setStoreGraphMessage]);
 
     const onConnect: OnConnect = useCallback(
         (connection: Connection) => {
@@ -230,6 +242,10 @@ export function useWorkflowGraph({
             setGraphMessage(
                 source === 'autosave' ? 'Autosaving canvas…' : 'Saving current canvas state.'
             );
+            setStoreGraphState('saving');
+            setStoreGraphMessage(
+                source === 'autosave' ? 'Autosaving canvas…' : 'Saving current canvas state.'
+            );
 
             try {
                 const response = await processAtlasApi.revisions.saveGraph(latestRevisionId, {
@@ -258,15 +274,27 @@ export function useWorkflowGraph({
 
                 if (err.response?.status === 409) {
                     setGraphState('conflict');
+                    setStoreGraphState('conflict');
                 } else {
                     setGraphState('error');
+                    setStoreGraphState('error');
                 }
 
                 setGraphMessage(message);
+                setStoreGraphMessage(message);
                 throw error;
             }
         },
-        [latestRevisionId, canEdit, nodes, edges, lockVersion, markGraphSaved]
+        [
+            latestRevisionId,
+            canEdit,
+            nodes,
+            edges,
+            lockVersion,
+            markGraphSaved,
+            setStoreGraphState,
+            setStoreGraphMessage,
+        ]
     );
 
     const initializeGraph = useCallback(
@@ -278,7 +306,7 @@ export function useWorkflowGraph({
         }: {
             nodes?: Node[];
             edges?: Edge[];
-            screens?: import('@/types/processAtlas').Screen[];
+            screens?: Screen[];
             lockVersion?: number;
         }) => {
             graphInitialized.current = false;
@@ -303,8 +331,10 @@ export function useWorkflowGraph({
             }
             setGraphState('saved');
             setGraphMessage('No pending canvas changes.');
+            setStoreGraphState('saved');
+            setStoreGraphMessage('No pending canvas changes.');
         },
-        [setNodes, setEdges]
+        [setNodes, setEdges, setStoreGraphState, setStoreGraphMessage]
     );
 
     return {
@@ -325,6 +355,7 @@ export function useWorkflowGraph({
         graphState,
         graphMessage,
         lockVersion,
+        setLockVersion,
         dirtyCounter,
         setGraphState,
         setGraphMessage,

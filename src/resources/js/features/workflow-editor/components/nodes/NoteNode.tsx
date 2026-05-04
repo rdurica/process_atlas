@@ -1,8 +1,9 @@
+import { memo } from 'react';
 import type { Node, NodeProps } from '@xyflow/react';
 import type { NoteNodeData } from '../../types';
 import { NoteIcon } from './icons';
 
-export default function NoteNode({ data }: NodeProps<Node<NoteNodeData>>) {
+function NoteNode({ data }: NodeProps<Node<NoteNodeData>>) {
     return (
         <div className="rf-note-node">
             <p>
@@ -14,3 +15,5 @@ export default function NoteNode({ data }: NodeProps<Node<NoteNodeData>>) {
         </div>
     );
 }
+
+export default memo(NoteNode);
