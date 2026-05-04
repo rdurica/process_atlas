@@ -31,6 +31,7 @@ function WorkflowTopBar({
 }: WorkflowTopBarProps) {
     const graphState = useEditorStore(state => state.graphState);
     const canEditWorkflows = useEditorStore(state => state.canEditWorkflows);
+    const previewRevision = useEditorStore(state => state.previewRevision);
     const setRevisionsPanelOpen = useEditorStore(state => state.setRevisionsPanelOpen);
     return (
         <TooltipProvider delayDuration={300}>
@@ -42,11 +43,13 @@ function WorkflowTopBar({
                                 <ChevronLeft className="h-3.5 w-3.5" />
                             </Link>
                         </Button>
-                        <span data-testid="graph-save-status">
-                            <StatusBadge tone={graphTone(graphState)}>
-                                {graphLabel(graphState)}
-                            </StatusBadge>
-                        </span>
+                        {!previewRevision && (
+                            <span data-testid="graph-save-status">
+                                <StatusBadge tone={graphTone(graphState)}>
+                                    {graphLabel(graphState)}
+                                </StatusBadge>
+                            </span>
+                        )}
                     </div>
 
                     <div className="workflow-actions">
@@ -122,6 +125,7 @@ function WorkflowTopBar({
 
                 {latestRevision &&
                     !latestRevision.is_published &&
+                    !previewRevision &&
                     workflow.published_revision != null &&
                     latestRevision.source_revision_id !== workflow.published_revision.id && (
                         <div className="flex w-full items-center justify-center border-t border-destructive/20 bg-destructive/10 px-5 py-2">
