@@ -5,13 +5,7 @@ import { Input } from '@/Components/ui/input';
 import { Button } from '@/Components/ui/button';
 import { Label } from '@/Components/ui/label';
 
-export default function Login({
-    status,
-    canResetPassword,
-}: {
-    status?: string;
-    canResetPassword: boolean;
-}) {
+export default function Login({ canResetPassword }: { canResetPassword: boolean }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         email: '',
         password: '',
@@ -64,12 +58,6 @@ export default function Login({
                         </p>
                         <h2 className="mt-2 text-2xl font-bold text-foreground">Log in</h2>
                     </div>
-
-                    {status && (
-                        <div className="mb-5 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700 dark:border-green-900 dark:bg-green-950/30 dark:text-green-400">
-                            {status}
-                        </div>
-                    )}
 
                     <form onSubmit={submit} className="space-y-5">
                         <div className="space-y-1.5">

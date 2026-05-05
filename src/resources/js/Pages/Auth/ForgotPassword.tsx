@@ -5,7 +5,7 @@ import { Input } from '@/Components/ui/input';
 import { Button } from '@/Components/ui/button';
 import { Label } from '@/Components/ui/label';
 
-export default function ForgotPassword({ status }: { status?: string }) {
+export default function ForgotPassword() {
     const { data, setData, post, processing, errors } = useForm({
         email: '',
     });
@@ -36,12 +36,6 @@ export default function ForgotPassword({ status }: { status?: string }) {
                     Forgot your password? No problem. Just let us know your email address and we
                     will email you a password reset link that will allow you to choose a new one.
                 </p>
-
-                {status && (
-                    <div className="mb-5 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700 dark:border-green-900 dark:bg-green-950/30 dark:text-green-400">
-                        {status}
-                    </div>
-                )}
 
                 <form onSubmit={submit} className="space-y-5">
                     <div className="space-y-1.5">

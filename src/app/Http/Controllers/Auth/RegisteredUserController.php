@@ -49,6 +49,6 @@ class RegisteredUserController extends Controller
         event(new Registered($user));
 
         return redirect(route('verification.notice'))
-            ->with('status', 'verification-link-sent');
+            ->with('status', 'Your account has been created. Please check your email to verify your account.');
     }
 }

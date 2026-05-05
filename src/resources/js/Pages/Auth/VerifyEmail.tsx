@@ -2,7 +2,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 import { Button } from '@/Components/ui/button';
 
-export default function VerifyEmail({ status }: { status?: string }) {
+export default function VerifyEmail() {
     const { post, processing } = useForm({});
 
     const submit: FormEventHandler = e => {
@@ -32,13 +32,6 @@ export default function VerifyEmail({ status }: { status?: string }) {
                     address by clicking on the link we just emailed to you? If you didn't receive
                     the email, we will gladly send you another.
                 </p>
-
-                {status === 'verification-link-sent' && (
-                    <div className="mb-5 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700 dark:border-green-900 dark:bg-green-950/30 dark:text-green-400">
-                        A new verification link has been sent to the email address you provided
-                        during registration.
-                    </div>
-                )}
 
                 <form onSubmit={submit} className="mt-6 flex items-center justify-between gap-4">
                     <Button type="submit" disabled={processing}>
