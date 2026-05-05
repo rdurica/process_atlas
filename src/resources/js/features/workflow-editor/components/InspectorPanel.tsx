@@ -1,4 +1,4 @@
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useState } from 'react';
 import { workflowNodeKindLabel } from '../lib/utils';
 import type { InspectorTab, WorkflowNodeData, WorkflowNodeKind } from '../types';
 import type { Edge, Node } from '@xyflow/react';
@@ -11,7 +11,7 @@ import type { ScreenEditorState } from './inspector/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
 import { Badge } from '@/Components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/Components/ui/tabs';
-import { Copy } from 'lucide-react';
+import { Check, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface InspectorPanelProps {
@@ -64,6 +64,15 @@ function InspectorPanel({
         },
         [selectedNode, updateNodeData]
     );
+    const [nodeIdCopied, setNodeIdCopied] = useState(false);
+    const [edgeIdCopied, setEdgeIdCopied] = useState(false);
+
+    const handleCopy = useCallback((text: string, setCopied: (value: boolean) => void) => {
+        navigator.clipboard.writeText(text);
+        toast.success('Copied to clipboard');
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    }, []);
 
     if (!isVisible) {
         return (
@@ -110,14 +119,44 @@ function InspectorPanel({
                             </code>
                             <button
                                 type="button"
-                                className="inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                                onClick={() => {
-                                    navigator.clipboard.writeText(selectedNode.id);
-                                    toast.success('Node ID copied');
-                                }}
+                                className={`inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md transition-colors ${
+                                    nodeIdCopied
+                                        ? 'text-green-600 dark:text-green-400'
+                                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                                }`}
+                                onClick={() => handleCopy(selectedNode.id, setNodeIdCopied)}
                                 title="Copy node ID"
                             >
-                                <Copy className="h-3.5 w-3.5" />
+                                {nodeIdCopied ? (
+                                    <Check className="h-3.5 w-3.5" />
+                                ) : (
+                                    <Copy className="h-3.5 w-3.5" />
+                                )}
+                            </button>
+                        </div>
+                    )}
+
+                    {selectedEdge && (
+                        <div className="mb-3 flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2">
+                            <span className="text-xs font-medium text-muted-foreground">ID:</span>
+                            <code className="flex-1 break-all font-mono text-xs text-foreground">
+                                {selectedEdge.id}
+                            </code>
+                            <button
+                                type="button"
+                                className={`inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md transition-colors ${
+                                    edgeIdCopied
+                                        ? 'text-green-600 dark:text-green-400'
+                                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                                }`}
+                                onClick={() => handleCopy(selectedEdge.id, setEdgeIdCopied)}
+                                title="Copy edge ID"
+                            >
+                                {edgeIdCopied ? (
+                                    <Check className="h-3.5 w-3.5" />
+                                ) : (
+                                    <Copy className="h-3.5 w-3.5" />
+                                )}
                             </button>
                         </div>
                     )}
