@@ -10,7 +10,7 @@ use JsonSerializable;
 final readonly class ProjectResponse implements JsonSerializable
 {
     public function __construct(
-        public int $id,
+        public string $id,
         public string $name,
         public ?string $description,
         public string $createdAt,
@@ -19,7 +19,7 @@ final readonly class ProjectResponse implements JsonSerializable
     public static function fromModel(Project $project): self
     {
         return new self(
-            id: $project->id,
+            id: $project->uuid,
             name: $project->name,
             description: $project->description,
             createdAt: $project->created_at !== null

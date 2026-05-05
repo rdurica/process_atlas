@@ -27,7 +27,7 @@ interface UseWorkflowGraphOptions {
     initialNodes: Node[];
     initialEdges: Edge[];
     lockVersion: number;
-    latestRevisionId: number | null;
+    latestRevisionId: string | null;
     canEdit: boolean;
 }
 

@@ -18,16 +18,16 @@ final class McpQueryService
     ) {}
 
     /**
-     * @return array<int, array{id: int, name: string, description: ?string}>
+     * @return array<int, array{id: string, name: string, description: ?string}>
      */
     public function listProjects(User $actor): array
     {
         return $this->projects->accessibleQuery($actor)
-            ->select(['id', 'name', 'description'])
+            ->select(['uuid', 'name', 'description'])
             ->orderBy('id')
             ->get()
             ->map(fn (Project $project): array => [
-                'id'          => $project->id,
+                'id'          => $project->uuid,
                 'name'        => $project->name,
                 'description' => $project->description,
             ])->values()->all();
@@ -42,13 +42,13 @@ final class McpQueryService
     }
 
     /** @return Workflow|array<string, mixed> */
-    public function workflowDetails(int $workflowId): Workflow|array
+    public function workflowDetails(string $workflowId): Workflow|array
     {
-        $workflow = Workflow::query()->findOrFail($workflowId);
+        $workflow = Workflow::query()->where('uuid', $workflowId)->firstOrFail();
 
         if ($workflow->published_revision_id !== null)
         {
-            $cached = $this->cache->get($workflow->id);
+            $cached = $this->cache->get($workflow->uuid);
 
             if ($cached !== null)
             {
@@ -61,7 +61,7 @@ final class McpQueryService
                 'revisions' => fn ($query) => $query->orderByDesc('revision_number'),
             ]);
 
-            $this->cache->put($workflow->id, $workflow->toArray());
+            $this->cache->put($workflow->uuid, $workflow->toArray());
 
             return $workflow;
         }
@@ -72,35 +72,38 @@ final class McpQueryService
         ]);
     }
 
-    public function screenDetails(int $screenId): Screen
+    public function screenDetails(string $screenId): Screen
     {
         return Screen::query()
             ->with(['customFields', 'workflowRevision.workflow.project'])
-            ->findOrFail($screenId);
+            ->where('uuid', $screenId)
+            ->firstOrFail();
     }
 
-    public function revisionWithProject(int $revisionId): WorkflowRevision
+    public function revisionWithProject(string $revisionId): WorkflowRevision
     {
         return WorkflowRevision::query()
             ->with('workflow.project')
-            ->findOrFail($revisionId);
+            ->where('uuid', $revisionId)
+            ->firstOrFail();
     }
 
-    public function findRevision(int $revisionId): WorkflowRevision
+    public function findRevision(string $revisionId): WorkflowRevision
     {
-        return WorkflowRevision::query()->findOrFail($revisionId);
+        return WorkflowRevision::query()->where('uuid', $revisionId)->firstOrFail();
     }
 
-    public function workflowWithProject(int $workflowId): Workflow
+    public function workflowWithProject(string $workflowId): Workflow
     {
-        return Workflow::query()->with('project')->findOrFail($workflowId);
+        return Workflow::query()->with('project')->where('uuid', $workflowId)->firstOrFail();
     }
 
-    public function projectResourceById(int $projectId): Project
+    public function projectResourceById(string $projectId): Project
     {
         return Project::query()
             ->with(['workflows.latestRevision', 'workflows.publishedRevision'])
-            ->findOrFail($projectId);
+            ->where('uuid', $projectId)
+            ->firstOrFail();
     }
 
     /**
@@ -109,7 +112,7 @@ final class McpQueryService
     public function projectsForResources(User $actor): array
     {
         return $this->accessibleProjectsQuery($actor)
-            ->select(['id', 'name'])
+            ->select(['id', 'uuid', 'name'])
             ->orderBy('id')
             ->get()
             ->all();
@@ -123,7 +126,7 @@ final class McpQueryService
     {
         return Workflow::query()
             ->whereIn('project_id', $projectIds)
-            ->select(['id', 'name'])
+            ->select(['id', 'uuid', 'name'])
             ->orderBy('id')
             ->get()
             ->all();
@@ -137,7 +140,7 @@ final class McpQueryService
     {
         return WorkflowRevision::query()
             ->whereIn('workflow_id', $workflowIds)
-            ->select(['id', 'revision_number'])
+            ->select(['id', 'uuid', 'revision_number'])
             ->orderBy('id')
             ->get()
             ->all();
@@ -151,7 +154,7 @@ final class McpQueryService
     {
         return Screen::query()
             ->whereIn('workflow_revision_id', $revisionIds)
-            ->select(['id', 'title', 'node_id'])
+            ->select(['id', 'uuid', 'title', 'node_id'])
             ->orderBy('id')
             ->get()
             ->all();
@@ -167,7 +170,7 @@ final class McpQueryService
             ->orderBy('name')
             ->get()
             ->map(fn (Project $project): array => [
-                'id'              => $project->id,
+                'id'              => $project->uuid,
                 'name'            => $project->name,
                 'description'     => $project->description,
                 'workflows_count' => $project->workflows_count,
@@ -191,13 +194,13 @@ final class McpQueryService
     }
 
     /** @return Workflow|array<string, mixed> */
-    public function workflowResourceById(int $workflowId): Workflow|array
+    public function workflowResourceById(string $workflowId): Workflow|array
     {
-        $workflow = Workflow::query()->findOrFail($workflowId);
+        $workflow = Workflow::query()->where('uuid', $workflowId)->firstOrFail();
 
         if ($workflow->published_revision_id !== null)
         {
-            $cached = $this->cache->get($workflow->id);
+            $cached = $this->cache->get($workflow->uuid);
 
             if ($cached !== null)
             {
@@ -211,7 +214,7 @@ final class McpQueryService
                 'revisions' => fn ($query) => $query->with('creator')->orderByDesc('revision_number'),
             ]);
 
-            $this->cache->put($workflow->id, $workflow->toArray());
+            $this->cache->put($workflow->uuid, $workflow->toArray());
 
             return $workflow;
         }
@@ -240,11 +243,12 @@ final class McpQueryService
             ->toArray();
     }
 
-    public function revisionResourceById(int $revisionId): WorkflowRevision
+    public function revisionResourceById(string $revisionId): WorkflowRevision
     {
         return WorkflowRevision::query()
             ->with(['workflow.project', 'screens.customFields', 'creator', 'sourceRevision'])
-            ->findOrFail($revisionId);
+            ->where('uuid', $revisionId)
+            ->firstOrFail();
     }
 
     /**
@@ -266,10 +270,11 @@ final class McpQueryService
             ->toArray();
     }
 
-    public function screenResourceById(int $screenId): Screen
+    public function screenResourceById(string $screenId): Screen
     {
         return Screen::query()
             ->with(['workflowRevision.workflow.project', 'customFields'])
-            ->findOrFail($screenId);
+            ->where('uuid', $screenId)
+            ->firstOrFail();
     }
 }

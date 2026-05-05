@@ -25,7 +25,7 @@ import type { ProjectRole } from '@/types/processAtlas';
 import { Archive, RotateCcw, Trash2, UserPlus } from 'lucide-react';
 
 interface ProjectSettingsModalProps {
-    projectId: number;
+    projectId: string;
     projectName: string;
     projectDescription: string | null;
     isPublic: boolean;

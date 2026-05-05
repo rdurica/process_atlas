@@ -47,7 +47,7 @@ class WorkflowRevisionController extends Controller
             $this->user(),
             $workflow,
             $request->input('draft_name'),
-            $request->input('source_revision_id') ? (int) $request->input('source_revision_id') : null,
+            $request->input('source_revision_id') ? (string) $request->input('source_revision_id') : null,
         );
 
         return response()->json(['data' => $response->jsonSerialize()], 201);

@@ -11,11 +11,11 @@ use JsonSerializable;
 final readonly class WorkflowResponse implements JsonSerializable
 {
     public function __construct(
-        public int $id,
+        public string $id,
         public string $name,
         public string $status,
-        public ?int $latestRevisionId,
-        public ?int $publishedRevisionId,
+        public ?string $latestRevisionId,
+        public ?string $publishedRevisionId,
         public ?string $archivedAt,
         /** @var array<string, mixed>|null */
         public ?array $latestRevision,
@@ -26,20 +26,27 @@ final readonly class WorkflowResponse implements JsonSerializable
     public static function fromModel(Workflow $workflow): self
     {
         return new self(
-            id: $workflow->id,
+            id: $workflow->uuid,
             name: $workflow->name,
             status: $workflow->status,
-            latestRevisionId: $workflow->latest_revision_id,
-            publishedRevisionId: $workflow->published_revision_id,
+            latestRevisionId: $workflow->latestRevision?->uuid,
+            publishedRevisionId: $workflow->publishedRevision?->uuid,
             /** @phpstan-ignore-next-line */
             archivedAt: $workflow->archived_at instanceof Carbon
                 ? $workflow->archived_at->toIso8601String()
                 : $workflow->archived_at,
             latestRevision: $workflow->relationLoaded('latestRevision') && $workflow->latestRevision !== null
-                ? $workflow->latestRevision->toArray()
+                ? [
+                    'id'              => $workflow->latestRevision->uuid,
+                    'revision_number' => $workflow->latestRevision->revision_number,
+                    'is_published'    => $workflow->latestRevision->is_published,
+                ]
                 : null,
             publishedRevision: $workflow->relationLoaded('publishedRevision') && $workflow->publishedRevision !== null
-                ? $workflow->publishedRevision->toArray()
+                ? [
+                    'id'              => $workflow->publishedRevision->uuid,
+                    'revision_number' => $workflow->publishedRevision->revision_number,
+                ]
                 : null,
         );
     }

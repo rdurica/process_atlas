@@ -32,7 +32,7 @@ it('creates a workflow and edits screen properties via api', function (): void
 
     $workflowShow = $this->getJson("/api/v1/workflows/{$workflowId}")->assertOk();
 
-    $versionId = (int) $workflowShow->json('data.latest_revision.id');
+    $versionId = $workflowShow->json('data.latest_revision.id');
 
     $this->patchJson("/api/v1/workflow-revisions/{$versionId}/graph", [
         'graph_json' => [
@@ -100,7 +100,7 @@ it('creates a workflow and edits screen properties via api', function (): void
     $draftResponse = $this->postJson("/api/v1/workflows/{$workflowId}/revisions")
         ->assertCreated();
 
-    $draftVersionId = (int) $draftResponse->json('data.id');
+    $draftVersionId = $draftResponse->json('data.id');
 
     $draftVersion = $this->getJson("/api/v1/workflow-revisions/{$draftVersionId}")
         ->assertOk();
@@ -144,12 +144,12 @@ it('does not allow direct workflow status updates', function (): void
     $projectResponse = $this->postJson('/api/v1/projects', [
         'name' => 'Status Guard Project',
     ])->assertCreated();
-    $projectId = (int) $projectResponse->json('data.id');
+    $projectId = $projectResponse->json('data.id');
 
     $workflowResponse = $this->postJson("/api/v1/projects/{$projectId}/workflows", [
         'name' => 'Status Guard Workflow',
     ])->assertCreated();
-    $workflowId = (int) $workflowResponse->json('data.id');
+    $workflowId = $workflowResponse->json('data.id');
 
     $this->patchJson("/api/v1/workflows/{$workflowId}", [
         'status' => 'published',
@@ -169,10 +169,10 @@ it('prevents process owner from changing their own role', function (): void
     $projectResponse = $this->postJson('/api/v1/projects', [
         'name' => 'Ownership Guard Project',
     ])->assertCreated();
-    $projectId = (int) $projectResponse->json('data.id');
+    $projectId = $projectResponse->json('data.id');
 
     // Owner cannot demote themselves even if they are the only process owner
-    $this->patchJson("/api/v1/projects/{$projectId}/members/{$owner->id}", [
+    $this->patchJson("/api/v1/projects/{$projectId}/members/{$owner->uuid}", [
         'role' => 'viewer',
     ])->assertForbidden();
 
@@ -184,7 +184,7 @@ it('prevents process owner from changing their own role', function (): void
     ])->assertCreated();
 
     // Owner still cannot change their own role even with another process owner present
-    $this->patchJson("/api/v1/projects/{$projectId}/members/{$owner->id}", [
+    $this->patchJson("/api/v1/projects/{$projectId}/members/{$owner->uuid}", [
         'role' => 'viewer',
     ])->assertForbidden();
 });
@@ -199,15 +199,15 @@ it('keeps screen image metadata when creating a draft revision', function (): vo
     $projectResponse = $this->postJson('/api/v1/projects', [
         'name' => 'Image Clone Project',
     ])->assertCreated();
-    $projectId = (int) $projectResponse->json('data.id');
+    $projectId = $projectResponse->json('data.id');
 
     $workflowResponse = $this->postJson("/api/v1/projects/{$projectId}/workflows", [
         'name' => 'Image Clone Workflow',
     ])->assertCreated();
-    $workflowId = (int) $workflowResponse->json('data.id');
+    $workflowId = $workflowResponse->json('data.id');
 
     $workflowShow = $this->getJson("/api/v1/workflows/{$workflowId}")->assertOk();
-    $versionId = (int) $workflowShow->json('data.latest_revision.id');
+    $versionId = $workflowShow->json('data.latest_revision.id');
 
     $screenResponse = $this->post('/api/v1/screens/upsert', [
         'workflow_revision_id' => $versionId,
@@ -222,7 +222,7 @@ it('keeps screen image metadata when creating a draft revision', function (): vo
 
     $draftResponse = $this->postJson("/api/v1/workflows/{$workflowId}/revisions")
         ->assertCreated();
-    $draftVersionId = (int) $draftResponse->json('data.id');
+    $draftVersionId = $draftResponse->json('data.id');
 
     $this->getJson("/api/v1/workflow-revisions/{$draftVersionId}")
         ->assertOk()
@@ -237,15 +237,15 @@ it('saves screen drawing with json and image', function (): void
     $projectResponse = $this->postJson('/api/v1/projects', [
         'name' => 'Drawing Test Project',
     ])->assertCreated();
-    $projectId = (int) $projectResponse->json('data.id');
+    $projectId = $projectResponse->json('data.id');
 
     $workflowResponse = $this->postJson("/api/v1/projects/{$projectId}/workflows", [
         'name' => 'Drawing Test Workflow',
     ])->assertCreated();
-    $workflowId = (int) $workflowResponse->json('data.id');
+    $workflowId = $workflowResponse->json('data.id');
 
     $workflowShow = $this->getJson("/api/v1/workflows/{$workflowId}")->assertOk();
-    $versionId = (int) $workflowShow->json('data.latest_revision.id');
+    $versionId = $workflowShow->json('data.latest_revision.id');
 
     $drawingJson = json_encode([
         ['id' => '1', 'type' => 'pen', 'color' => '#000', 'strokeWidth' => 2, 'points' => [['x' => 10, 'y' => 10], ['x' => 50, 'y' => 50]]],
@@ -313,12 +313,12 @@ it('lists and reads mcp resources over api endpoint', function (): void
     $projectResponse = $this->postJson('/api/v1/projects', [
         'name' => 'MCP Resource Project',
     ])->assertCreated();
-    $projectId = (int) $projectResponse->json('data.id');
+    $projectId = $projectResponse->json('data.id');
 
     $workflowResponse = $this->postJson("/api/v1/projects/{$projectId}/workflows", [
         'name' => 'MCP Resource Workflow',
     ])->assertCreated();
-    $workflowId = (int) $workflowResponse->json('data.id');
+    $workflowId = $workflowResponse->json('data.id');
 
     $token = $owner->createToken('mcp-test-resources', ['mcp:use'])->plainTextToken;
 
@@ -359,15 +359,15 @@ it('calls mcp tools and reports revision conflicts', function (): void
     $projectResponse = $this->postJson('/api/v1/projects', [
         'name' => 'MCP Tool Project',
     ])->assertCreated();
-    $projectId = (int) $projectResponse->json('data.id');
+    $projectId = $projectResponse->json('data.id');
 
     $workflowResponse = $this->postJson("/api/v1/projects/{$projectId}/workflows", [
         'name' => 'MCP Tool Workflow',
     ])->assertCreated();
-    $workflowId = (int) $workflowResponse->json('data.id');
+    $workflowId = $workflowResponse->json('data.id');
 
     $workflowShow = $this->getJson("/api/v1/workflows/{$workflowId}")->assertOk();
-    $revisionId = (int) $workflowShow->json('data.latest_revision.id');
+    $revisionId = $workflowShow->json('data.latest_revision.id');
 
     $token = $owner->createToken('mcp-test-tools', ['mcp:use'])->plainTextToken;
 

@@ -56,7 +56,7 @@ it('scopes dashboard activity to projects visible to the current user', function
         ])
         ->assertCreated();
 
-    $projectId = (int) $projectResponse->json('data.id');
+    $projectId = $projectResponse->json('data.id');
 
     $this->actingAs($owner)
         ->postJson("/api/v1/projects/{$projectId}/workflows", [
@@ -88,7 +88,7 @@ it('does not expose archived public projects to non-members through list endpoin
         ])
         ->assertCreated();
 
-    $projectId = (int) $projectResponse->json('data.id');
+    $projectId = $projectResponse->json('data.id');
 
     $this->actingAs($owner)
         ->postJson("/api/v1/projects/{$projectId}/archive")
@@ -142,7 +142,7 @@ it('caps api list pagination size', function (): void
         ->postJson('/api/v1/projects', ['name' => 'Pagination Guard'])
         ->assertCreated();
 
-    $projectId = (int) $projectResponse->json('data.id');
+    $projectId = $projectResponse->json('data.id');
 
     $this->actingAs($owner)
         ->getJson('/api/v1/projects?per_page=101')
@@ -163,7 +163,7 @@ it('rejects oversized image dimensions before screen upload processing', functio
         ->postJson('/api/v1/projects', ['name' => 'Upload Guard Project'])
         ->assertCreated();
 
-    $projectId = (int) $projectResponse->json('data.id');
+    $projectId = $projectResponse->json('data.id');
 
     $workflowResponse = $this->actingAs($owner)
         ->postJson("/api/v1/projects/{$projectId}/workflows", [
@@ -171,11 +171,11 @@ it('rejects oversized image dimensions before screen upload processing', functio
         ])
         ->assertCreated();
 
-    $workflowId = (int) $workflowResponse->json('data.id');
+    $workflowId = $workflowResponse->json('data.id');
     $workflowShow = $this->actingAs($owner)
         ->getJson("/api/v1/workflows/{$workflowId}")
         ->assertOk();
-    $revisionId = (int) $workflowShow->json('data.latest_revision.id');
+    $revisionId = $workflowShow->json('data.latest_revision.id');
 
     $this->actingAs($owner)
         ->withHeader('Accept', 'application/json')

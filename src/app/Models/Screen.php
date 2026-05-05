@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasUuid;
 use Database\Factories\ScreenFactory;
 use Illuminate\Database\Eloquent\Attributes\Appends;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -17,7 +18,12 @@ use Illuminate\Support\Facades\Storage;
 class Screen extends Model
 {
     /** @use HasFactory<ScreenFactory> */
-    use HasFactory;
+    use HasFactory, HasUuid;
+
+    /**
+     * @var list<string>
+     */
+    protected $hidden = ['id'];
 
     /**
      * @return Attribute<string|null, never>

@@ -46,7 +46,7 @@ class AdminUserController extends Controller
         );
 
         $paginator->getCollection()->transform(fn (User $user): array => [
-            'id'         => $user->id,
+            'id'         => $user->uuid,
             'name'       => $user->name,
             'email'      => $user->email,
             'roles'      => $user->roles->pluck('name'),

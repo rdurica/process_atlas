@@ -14,34 +14,36 @@ beforeEach(function (): void
 it('stores and retrieves published workflow data', function (): void
 {
     $service = new PublishedWorkflowCacheService;
+    $uuid = '019df97e-0000-7000-8000-000000000001';
 
-    expect($service->get(1))->toBeNull();
+    expect($service->get($uuid))->toBeNull();
 
     $data = [
-        'id'                 => 1,
+        'id'                 => $uuid,
         'name'               => 'Test Workflow',
         'published_revision' => [
-            'id'              => 10,
+            'id'              => '019df97e-0000-7000-8000-000000000010',
             'revision_number' => 1,
             'graph_json'      => ['nodes' => [], 'edges' => []],
             'screens'         => [],
         ],
     ];
 
-    $service->put(1, $data);
+    $service->put($uuid, $data);
 
-    expect($service->get(1))->toBe($data);
+    expect($service->get($uuid))->toBe($data);
 });
 
 it('forgets cached data', function (): void
 {
     $service = new PublishedWorkflowCacheService;
+    $uuid = '019df97e-0000-7000-8000-000000000002';
 
-    $service->put(1, ['id' => 1]);
-    expect($service->get(1))->not->toBeNull();
+    $service->put($uuid, ['id' => $uuid]);
+    expect($service->get($uuid))->not->toBeNull();
 
-    $service->forget(1);
-    expect($service->get(1))->toBeNull();
+    $service->forget($uuid);
+    expect($service->get($uuid))->toBeNull();
 });
 
 it('uses the configured ttl', function (): void
@@ -49,8 +51,9 @@ it('uses the configured ttl', function (): void
     config()->set('cache.ttl.published_workflow', 7200);
 
     $service = new PublishedWorkflowCacheService;
+    $uuid = '019df97e-0000-7000-8000-000000000003';
 
-    $service->put(1, ['id' => 1]);
+    $service->put($uuid, ['id' => $uuid]);
 
-    expect(Cache::get('published_workflow.1'))->not->toBeNull();
+    expect($service->get($uuid))->not->toBeNull();
 });

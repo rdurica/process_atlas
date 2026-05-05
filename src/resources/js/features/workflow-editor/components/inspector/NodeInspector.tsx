@@ -184,12 +184,12 @@ export default function NodeInspector({
                         <Select
                             value={String(
                                 (selectedNode.data.linked_workflow_id as
-                                    | number
+                                    | string
                                     | null
                                     | undefined) ?? ''
                             )}
                             onValueChange={value => {
-                                const id = value ? Number(value) : null;
+                                const id = value || null;
                                 const name =
                                     projectWorkflows.find(workflow => workflow.id === id)?.name ??
                                     null;
@@ -207,7 +207,7 @@ export default function NodeInspector({
                                 {projectWorkflows
                                     .filter(workflow => workflow.id !== workflowId)
                                     .map(workflow => (
-                                        <SelectItem key={workflow.id} value={String(workflow.id)}>
+                                        <SelectItem key={workflow.id} value={workflow.id}>
                                             {workflow.name}
                                             {workflow.status === 'published' ? ' ✓' : ''}
                                         </SelectItem>
@@ -216,10 +216,10 @@ export default function NodeInspector({
                         </Select>
                     </div>
 
-                    {(selectedNode.data.linked_workflow_id as number | null | undefined) && (
+                    {(selectedNode.data.linked_workflow_id as string | null | undefined) && (
                         <Link
                             href={route('workflows.editor', {
-                                workflow: selectedNode.data.linked_workflow_id as number,
+                                workflow: selectedNode.data.linked_workflow_id as string,
                             })}
                             className="inline-flex items-center text-sm text-primary hover:text-primary/80 hover:underline"
                         >
@@ -259,12 +259,12 @@ export default function NodeInspector({
                         <Select
                             value={String(
                                 (selectedNode.data.linked_workflow_id as
-                                    | number
+                                    | string
                                     | null
                                     | undefined) ?? ''
                             )}
                             onValueChange={value => {
-                                const id = value ? Number(value) : null;
+                                const id = value || null;
                                 const name =
                                     projectWorkflows.find(workflow => workflow.id === id)?.name ??
                                     null;
@@ -282,7 +282,7 @@ export default function NodeInspector({
                                 {projectWorkflows
                                     .filter(workflow => workflow.id !== workflowId)
                                     .map(workflow => (
-                                        <SelectItem key={workflow.id} value={String(workflow.id)}>
+                                        <SelectItem key={workflow.id} value={workflow.id}>
                                             {workflow.name}
                                             {workflow.status === 'published' ? ' ✓' : ''}
                                         </SelectItem>
@@ -291,10 +291,10 @@ export default function NodeInspector({
                         </Select>
                     </div>
 
-                    {(selectedNode.data.linked_workflow_id as number | null | undefined) && (
+                    {(selectedNode.data.linked_workflow_id as string | null | undefined) && (
                         <Link
                             href={route('workflows.editor', {
-                                workflow: selectedNode.data.linked_workflow_id as number,
+                                workflow: selectedNode.data.linked_workflow_id as string,
                             })}
                             className="inline-flex items-center text-sm text-primary hover:text-primary/80 hover:underline"
                         >

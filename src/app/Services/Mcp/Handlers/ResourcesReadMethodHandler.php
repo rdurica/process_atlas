@@ -57,7 +57,7 @@ final class ResourcesReadMethodHandler implements McpMethodHandler
     /**
      * @return array{project: array<string, mixed>}
      */
-    private function projectPayload(User $actor, int $projectId): array
+    private function projectPayload(User $actor, string $projectId): array
     {
         $project = $this->queries->projectResourceById($projectId);
 
@@ -69,7 +69,7 @@ final class ResourcesReadMethodHandler implements McpMethodHandler
     /**
      * @return array{workflow: array<string, mixed>}
      */
-    private function workflowPayload(User $actor, int $workflowId): array
+    private function workflowPayload(User $actor, string $workflowId): array
     {
         $workflow = $this->queries->workflowResourceById($workflowId);
 
@@ -80,7 +80,7 @@ final class ResourcesReadMethodHandler implements McpMethodHandler
             return ['workflow' => $workflow->toArray()];
         }
 
-        Gate::forUser($actor)->authorize('view', Workflow::query()->findOrFail($workflowId));
+        Gate::forUser($actor)->authorize('view', Workflow::query()->where('uuid', $workflowId)->firstOrFail());
 
         return ['workflow' => $workflow];
     }
@@ -88,7 +88,7 @@ final class ResourcesReadMethodHandler implements McpMethodHandler
     /**
      * @return array{revision: array<string, mixed>}
      */
-    private function revisionPayload(User $actor, int $revisionId): array
+    private function revisionPayload(User $actor, string $revisionId): array
     {
         $revision = $this->queries->revisionResourceById($revisionId);
 
@@ -100,7 +100,7 @@ final class ResourcesReadMethodHandler implements McpMethodHandler
     /**
      * @return array{screen: array<string, mixed>}
      */
-    private function screenPayload(User $actor, int $screenId): array
+    private function screenPayload(User $actor, string $screenId): array
     {
         $screen = $this->queries->screenResourceById($screenId);
 

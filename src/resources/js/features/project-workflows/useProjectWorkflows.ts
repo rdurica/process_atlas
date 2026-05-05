@@ -23,7 +23,7 @@ export function useProjectWorkflows({
     const [pendingWorkflow, setPendingWorkflow] = useState(false);
     const [workflowError, setWorkflowError] = useState<string | null>(null);
 
-    const [confirmArchiveId, setConfirmArchiveId] = useState<number | null>(null);
+    const [confirmArchiveId, setConfirmArchiveId] = useState<string | null>(null);
     const [pendingArchive, setPendingArchive] = useState(false);
     const [archiveError, setArchiveError] = useState<string | null>(null);
 
@@ -119,7 +119,7 @@ export function useProjectWorkflows({
         }
     };
 
-    const archiveWorkflow = async (workflowId: number) => {
+    const archiveWorkflow = async (workflowId: string) => {
         setPendingArchive(true);
         setArchiveError(null);
 
@@ -134,7 +134,7 @@ export function useProjectWorkflows({
         }
     };
 
-    const unarchiveWorkflow = async (workflowId: number) => {
+    const unarchiveWorkflow = async (workflowId: string) => {
         setPendingArchive(true);
         setArchiveError(null);
 

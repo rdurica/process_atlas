@@ -38,7 +38,7 @@ export function useRevisionActions() {
     );
 
     const createDraft = useCallback(
-        async (workflowId: number, draftName?: string, sourceRevisionId?: number) => {
+        async (workflowId: string, draftName?: string, sourceRevisionId?: string) => {
             await runAction(
                 () =>
                     createRevisionMutation
@@ -55,7 +55,7 @@ export function useRevisionActions() {
     );
 
     const publishCurrent = useCallback(
-        async (revisionId: number, force = false) => {
+        async (revisionId: string, force = false) => {
             await runAction(
                 () =>
                     publishRevisionMutation
@@ -78,7 +78,7 @@ export function useRevisionActions() {
     );
 
     const switchToDraft = useCallback(
-        async (revisionId: number) => {
+        async (revisionId: string) => {
             await runAction(
                 () => switchToDraftMutation.mutateAsync(revisionId).then(() => undefined),
                 'Switched to draft.'
@@ -88,7 +88,7 @@ export function useRevisionActions() {
     );
 
     const saveDraftName = useCallback(
-        async (revisionId: number, name: string) => {
+        async (revisionId: string, name: string) => {
             if (!name) return;
             await runAction(
                 () =>

@@ -10,7 +10,7 @@ use JsonSerializable;
 final readonly class ScreenCustomFieldResponse implements JsonSerializable
 {
     public function __construct(
-        public int $id,
+        public string $id,
         public string $key,
         public string $fieldType,
         public ?string $value,
@@ -20,7 +20,7 @@ final readonly class ScreenCustomFieldResponse implements JsonSerializable
     public static function fromModel(ScreenCustomField $field): self
     {
         return new self(
-            id: $field->id,
+            id: $field->uuid,
             key: $field->key,
             fieldType: $field->field_type,
             value: $field->value,

@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('screen_error_messages', function (Blueprint $table): void
         {
             $table->id();
+            $table->uuid('uuid')->unique();
             $table->foreignId('screen_id')->constrained()->cascadeOnDelete();
             $table->string('code')->nullable();
             $table->string('severity')->default('error');

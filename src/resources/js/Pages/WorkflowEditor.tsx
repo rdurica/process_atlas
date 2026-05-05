@@ -22,7 +22,7 @@ import { ErrorBoundary } from '@/Components/ErrorBoundary';
 
 type WorkflowEditorProps = {
     workflow: WorkflowData;
-    projectWorkflows: { id: number; name: string; status: 'draft' | 'published' }[];
+    projectWorkflows: { id: string; name: string; status: 'draft' | 'published' }[];
     currentUserRole: 'process_owner' | 'editor' | 'viewer' | null;
 };
 

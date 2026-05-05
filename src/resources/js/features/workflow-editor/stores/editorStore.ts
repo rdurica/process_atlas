@@ -23,14 +23,14 @@ interface EditorUiState {
     revisionsPanelOpen: boolean;
     draftModalOpen: boolean;
     draftNameInput: string;
-    draftSourceRevisionId: number | undefined;
+    draftSourceRevisionId: string | undefined;
     publishConfirmOpen: boolean;
     publishConfirmInput: string;
     previewImageUrl: string | null;
     edgeDraftLabel: string;
 
     // Revisions
-    activeRevisionId: number | null;
+    activeRevisionId: string | null;
     editingDraftName: string;
     previewRevision: WorkflowRevisionSummary | null;
 
@@ -63,13 +63,13 @@ interface EditorActions {
     setRevisionsPanelOpen: (open: boolean) => void;
     setDraftModalOpen: (open: boolean) => void;
     setDraftNameInput: (name: string) => void;
-    setDraftSourceRevisionId: (id: number | undefined) => void;
+    setDraftSourceRevisionId: (id: string | undefined) => void;
     setPublishConfirmOpen: (open: boolean) => void;
     setPublishConfirmInput: (input: string) => void;
     setPreviewImageUrl: (url: string | null) => void;
     setEdgeDraftLabel: (label: string) => void;
 
-    setActiveRevisionId: (id: number | null) => void;
+    setActiveRevisionId: (id: string | null) => void;
     setEditingDraftName: (name: string) => void;
     setPreviewRevision: (revision: WorkflowRevisionSummary | null) => void;
 

@@ -13,7 +13,7 @@ export type CreateUserPayload = {
 };
 
 export type AdminUserItem = {
-    id: number;
+    id: string;
     name: string;
     email: string;
     roles: string[];
@@ -44,19 +44,19 @@ export const processAtlasApi = {
             return window.axios.get<PaginatedResponse<unknown>>('/api/v1/projects', { params });
         },
         update(
-            projectId: number,
+            projectId: string,
             payload: { name?: string; description?: string | null; is_public?: boolean }
         ) {
             return window.axios.patch(`/api/v1/projects/${projectId}`, payload);
         },
-        archive(projectId: number) {
+        archive(projectId: string) {
             return window.axios.post(`/api/v1/projects/${projectId}/archive`);
         },
-        unarchive(projectId: number) {
+        unarchive(projectId: string) {
             return window.axios.post(`/api/v1/projects/${projectId}/unarchive`);
         },
         workflows(
-            projectId: number,
+            projectId: string,
             params: {
                 page?: number;
                 per_page?: number;
@@ -70,69 +70,69 @@ export const processAtlasApi = {
                 { params }
             );
         },
-        createWorkflow(projectId: number, payload: { name: string }) {
-            return window.axios.post<{ data?: { id?: number } }>(
+        createWorkflow(projectId: string, payload: { name: string }) {
+            return window.axios.post<{ data?: { id?: string } }>(
                 `/api/v1/projects/${projectId}/workflows`,
                 payload
             );
         },
-        members(projectId: number) {
+        members(projectId: string) {
             return window.axios.get<{ data: ProjectMember[] }>(
                 `/api/v1/projects/${projectId}/members`
             );
         },
-        addMember(projectId: number, payload: { email: string; role: string }) {
+        addMember(projectId: string, payload: { email: string; role: string }) {
             return window.axios.post<{ data: ProjectMember }>(
                 `/api/v1/projects/${projectId}/members`,
                 payload
             );
         },
-        updateMember(projectId: number, userId: number, payload: { role: string }) {
+        updateMember(projectId: string, userId: string, payload: { role: string }) {
             return window.axios.patch<{ data: ProjectMember }>(
                 `/api/v1/projects/${projectId}/members/${userId}`,
                 payload
             );
         },
-        removeMember(projectId: number, userId: number) {
+        removeMember(projectId: string, userId: string) {
             return window.axios.delete(`/api/v1/projects/${projectId}/members/${userId}`);
         },
     },
     workflows: {
-        archive(workflowId: number) {
+        archive(workflowId: string) {
             return window.axios.post(`/api/v1/workflows/${workflowId}/archive`);
         },
-        unarchive(workflowId: number) {
+        unarchive(workflowId: string) {
             return window.axios.post(`/api/v1/workflows/${workflowId}/unarchive`);
         },
         createRevision(
-            workflowId: number,
-            payload: { draft_name?: string; source_revision_id?: number }
+            workflowId: string,
+            payload: { draft_name?: string; source_revision_id?: string }
         ) {
             return window.axios.post(`/api/v1/workflows/${workflowId}/revisions`, payload);
         },
     },
     revisions: {
-        publish(revisionId: number, force: boolean) {
+        publish(revisionId: string, force: boolean) {
             return window.axios.post(`/api/v1/workflow-revisions/${revisionId}/publish`, { force });
         },
-        delete(revisionId: number) {
+        delete(revisionId: string) {
             return window.axios.delete(`/api/v1/workflow-revisions/${revisionId}`);
         },
-        switchToDraft(revisionId: number) {
+        switchToDraft(revisionId: string) {
             return window.axios.post(`/api/v1/workflow-revisions/${revisionId}/switch-to-draft`);
         },
-        get(revisionId: number) {
+        get(revisionId: string) {
             return window.axios.get<{ data: WorkflowRevisionSummary }>(
                 `/api/v1/workflow-revisions/${revisionId}`
             );
         },
-        saveDraftName(revisionId: number, draftName: string) {
+        saveDraftName(revisionId: string, draftName: string) {
             return window.axios.patch(`/api/v1/workflow-revisions/${revisionId}/draft-name`, {
                 draft_name: draftName,
             });
         },
         saveGraph(
-            revisionId: number,
+            revisionId: string,
             payload: {
                 graph_json: unknown;
                 lock_version: number;
@@ -151,10 +151,10 @@ export const processAtlasApi = {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
         },
-        upsertCustomField(screenId: number, payload: Record<string, unknown>) {
+        upsertCustomField(screenId: string, payload: Record<string, unknown>) {
             return window.axios.post(`/api/v1/screens/${screenId}/custom-fields/upsert`, payload);
         },
-        deleteCustomField(fieldId: number) {
+        deleteCustomField(fieldId: string) {
             return window.axios.delete(`/api/v1/custom-fields/${fieldId}`);
         },
     },
@@ -168,13 +168,13 @@ export const processAtlasApi = {
         create(payload: CreateUserPayload) {
             return window.axios.post('/api/v1/admin/users', payload);
         },
-        updateRoles(userId: number, roles: string[]) {
+        updateRoles(userId: string, roles: string[]) {
             return window.axios.patch(`/api/v1/admin/users/${userId}/roles`, { roles });
         },
-        toggleActive(userId: number) {
+        toggleActive(userId: string) {
             return window.axios.patch(`/api/v1/admin/users/${userId}/active`);
         },
-        delete(userId: number) {
+        delete(userId: string) {
             return window.axios.delete(`/api/v1/admin/users/${userId}`);
         },
     },

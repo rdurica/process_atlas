@@ -4,7 +4,7 @@ import type { GraphState } from '../types';
 
 interface UseDirtyGraphUnloadOptions {
     graphState: GraphState;
-    revisionId: number | null;
+    revisionId: string | null;
     nodes: Node[];
     edges: Edge[];
     lockVersion: number;

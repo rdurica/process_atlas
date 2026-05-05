@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasUuid;
 use Database\Factories\ScreenCustomFieldFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,7 +13,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ScreenCustomField extends Model
 {
     /** @use HasFactory<ScreenCustomFieldFactory> */
-    use HasFactory;
+    use HasFactory, HasUuid;
+
+    /**
+     * @var list<string>
+     */
+    protected $hidden = ['id'];
 
     /**
      * @return BelongsTo<Screen, $this>

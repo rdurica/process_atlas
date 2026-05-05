@@ -6,11 +6,12 @@ use App\Models\WorkflowRevision;
 
 final class WorkflowRevisionQueryService
 {
-    public function findForUpsert(int $workflowRevisionId): WorkflowRevision
+    public function findForUpsert(string $workflowRevisionId): WorkflowRevision
     {
         return WorkflowRevision::query()
             ->with('workflow.project')
-            ->findOrFail($workflowRevisionId);
+            ->where('uuid', $workflowRevisionId)
+            ->firstOrFail();
     }
 
     public function detailForApi(WorkflowRevision $workflowRevision): WorkflowRevision

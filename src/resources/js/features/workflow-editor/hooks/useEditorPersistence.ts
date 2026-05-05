@@ -4,7 +4,7 @@ import { useEditorStore } from '../stores/editorStore';
 import { useAutosave } from '@/hooks/useAutosave';
 
 interface UseEditorPersistenceOptions {
-    latestRevisionId: number | null;
+    latestRevisionId: string | null;
     canEdit: boolean;
     nodes: unknown[];
     edges: unknown[];

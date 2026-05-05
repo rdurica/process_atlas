@@ -1,7 +1,7 @@
 import { Edge, Node } from '@xyflow/react';
 
 export interface ActivityItem {
-    id: number;
+    id: string;
     event: string;
     description: string;
     created_at?: string | null;
@@ -11,16 +11,16 @@ export interface ActivityItem {
 }
 
 export interface WorkflowSummary {
-    id: number;
+    id: string;
     name: string;
     status: 'draft' | 'published';
     latest_revision?: {
-        id: number;
+        id: string;
         revision_number: number | null;
         is_published: boolean;
     } | null;
     published_revision?: {
-        id: number;
+        id: string;
         revision_number: number;
     } | null;
     updated_at?: string | null;
@@ -30,14 +30,14 @@ export interface WorkflowSummary {
 export type ProjectRole = 'process_owner' | 'editor' | 'viewer';
 
 export interface ProjectMember {
-    id: number;
+    id: string;
     name: string;
     email: string;
     role: ProjectRole;
 }
 
 export interface ProjectSummary {
-    id: number;
+    id: string;
     name: string;
     description?: string | null;
     is_public: boolean;
@@ -68,7 +68,7 @@ export interface PaginatedResponse<T> {
 }
 
 export interface ScreenCustomField {
-    id: number;
+    id: string;
     key: string;
     field_type: 'text' | 'number' | 'boolean' | 'json';
     value?: string | null;
@@ -76,7 +76,7 @@ export interface ScreenCustomField {
 }
 
 export interface Screen {
-    id: number;
+    id: string;
     node_id: string;
     title?: string | null;
     subtitle?: string | null;
@@ -88,13 +88,13 @@ export interface Screen {
 }
 
 export interface WorkflowRevisionSummary {
-    id: number;
+    id: string;
     revision_number: number | null;
     draft_name: string | null;
     lock_version: number;
     is_published: boolean;
     is_locked: boolean;
-    source_revision_id?: number | null;
+    source_revision_id?: string | null;
     graph_json?: {
         nodes?: Node[];
         edges?: Edge[];
@@ -102,23 +102,23 @@ export interface WorkflowRevisionSummary {
     screens: Screen[];
     created_at?: string | null;
     creator?: {
-        id: number;
+        id: string;
         name: string;
     } | null;
 }
 
 export interface WorkflowData {
-    id: number;
+    id: string;
     name: string;
     status: 'draft' | 'published';
     archived_at?: string | null;
     project: {
-        id: number;
+        id: string;
         name: string;
     };
     latest_revision?: WorkflowRevisionSummary | null;
     published_revision?: {
-        id: number;
+        id: string;
         revision_number: number;
     } | null;
     revisions: WorkflowRevisionSummary[];

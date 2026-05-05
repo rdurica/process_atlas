@@ -4,7 +4,7 @@ export type WorkflowStatusFilter = 'all' | 'published' | 'draft';
 
 export interface ProjectWorkflowsProps {
     project: {
-        id: number;
+        id: string;
         name: string;
         description?: string | null;
         is_public: boolean;

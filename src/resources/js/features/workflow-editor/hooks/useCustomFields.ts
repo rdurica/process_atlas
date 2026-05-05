@@ -6,7 +6,7 @@ import { resolveApiError } from '@/shared/lib/apiErrors';
 
 export function useCustomFields() {
     const [fieldEditorMode, setFieldEditorMode] = useState<'hidden' | 'create' | 'edit'>('hidden');
-    const [editingFieldId, setEditingFieldId] = useState<number | null>(null);
+    const [editingFieldId, setEditingFieldId] = useState<string | null>(null);
     const [newCustomKey, setNewCustomKey] = useState('');
     const [newCustomValue, setNewCustomValue] = useState('');
     const [newCustomFieldType, setNewCustomFieldType] =
@@ -162,7 +162,7 @@ export function useCustomFields() {
     );
 
     const removeCustomField = useCallback(
-        async (fieldId: number): Promise<boolean> => {
+        async (fieldId: string): Promise<boolean> => {
             try {
                 await deleteMutation.mutateAsync(fieldId);
                 setScreens(current =>

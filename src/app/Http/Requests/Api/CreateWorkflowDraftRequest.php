@@ -19,7 +19,7 @@ class CreateWorkflowDraftRequest extends FormRequest
     {
         return [
             'draft_name'         => ['nullable', 'string', 'max:255'],
-            'source_revision_id' => ['nullable', 'integer', 'exists:workflow_revisions,id'],
+            'source_revision_id' => ['nullable', 'string', 'exists:workflow_revisions,uuid'],
         ];
     }
 }

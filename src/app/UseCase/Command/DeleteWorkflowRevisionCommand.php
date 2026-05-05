@@ -23,12 +23,11 @@ final class DeleteWorkflowRevisionCommand
 
     public function execute(User $actor, WorkflowRevision $workflowRevision): void
     {
-        $workflowId = $this->transactionManager->transactional(function () use ($actor, $workflowRevision): int
+        $workflowUuid = $this->transactionManager->transactional(function () use ($actor, $workflowRevision): string
         {
             $workflowRevision->loadMissing('workflow');
 
             $revisionNumber = $workflowRevision->revision_number;
-            $workflowId = $workflowRevision->workflow_id;
 
             $workflow = $workflowRevision->workflow;
             if (! $workflow instanceof Workflow)
@@ -38,14 +37,14 @@ final class DeleteWorkflowRevisionCommand
             $workflow = $this->revisionService->deleteRevision($workflow, $workflowRevision);
 
             AuditLogger::log($actor, $workflow, 'deleted', 'Workflow revision deleted', [
-                'revision_id'     => $workflowRevision->id,
+                'revision_id'     => $workflowRevision->uuid,
                 'revision_number' => $revisionNumber,
-                'workflow_id'     => $workflowId,
+                'workflow_id'     => $workflow->uuid,
             ]);
 
-            return $workflow->id;
+            return $workflow->uuid;
         });
 
-        $this->cache->forget($workflowId);
+        $this->cache->forget($workflowUuid);
     }
 }

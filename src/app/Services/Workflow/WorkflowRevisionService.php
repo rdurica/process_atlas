@@ -34,7 +34,7 @@ final class WorkflowRevisionService
         return $revision;
     }
 
-    public function createDraftFromSource(Workflow $workflow, User $actor, ?string $draftName = null, ?int $sourceRevisionId = null): WorkflowRevision
+    public function createDraftFromSource(Workflow $workflow, User $actor, ?string $draftName = null, ?string $sourceRevisionId = null): WorkflowRevision
     {
         $workflow = $this->lockWorkflow($workflow);
 
@@ -43,7 +43,7 @@ final class WorkflowRevisionService
             $source = $workflow
                 ->revisions()
                 ->with(['screens.customFields'])
-                ->whereKey($sourceRevisionId)
+                ->where('uuid', $sourceRevisionId)
                 ->first();
 
             abort_if($source === null, 422, 'Source revision does not belong to this workflow.');

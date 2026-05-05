@@ -50,9 +50,9 @@ const menuGroups: MenuGroup[] = [
                 kind: 'condition',
                 label: 'Condition',
                 icon: <ConditionIcon />,
-                indicatorColor: '#7c3aed',
+                indicatorColor: '#0f5ef7',
             },
-            { kind: 'action', label: 'Action', icon: <ActionIcon />, indicatorColor: '#0f5ef7' },
+            { kind: 'action', label: 'Action', icon: <ActionIcon />, indicatorColor: '#f59e0b' },
             { kind: 'timer', label: 'Timer', icon: <TimerIcon />, indicatorColor: '#64748b' },
             {
                 kind: 'subprocess',
@@ -66,7 +66,7 @@ const menuGroups: MenuGroup[] = [
         label: 'Annotations & End',
         items: [
             { kind: 'note', label: 'Note', icon: <NoteIcon />, indicatorColor: '#fbbf24' },
-            { kind: 'end', label: 'End', icon: <EndIcon />, indicatorColor: '#64748b' },
+            { kind: 'end', label: 'End', icon: <EndIcon />, indicatorColor: '#ef4444' },
         ],
     },
 ];

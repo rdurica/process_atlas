@@ -20,7 +20,7 @@ final class UnarchiveWorkflowCommand
     {
         $workflow->update(['archived_at' => null]);
 
-        $this->cache->forget($workflow->id);
+        $this->cache->forget($workflow->uuid);
 
         AuditLogger::log($actor, $workflow, 'unarchived', 'Workflow unarchived');
 

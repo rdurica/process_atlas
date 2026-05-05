@@ -27,7 +27,7 @@ final class McpToolCatalog
                 inputSchema: [
                     'type'       => 'object',
                     'properties' => [
-                        'workflow_id' => ['type' => 'integer', 'minimum' => 1],
+                        'workflow_id' => ['type' => 'string', 'format' => 'uuid'],
                     ],
                     'required'             => ['workflow_id'],
                     'additionalProperties' => false,
@@ -39,7 +39,7 @@ final class McpToolCatalog
                 inputSchema: [
                     'type'       => 'object',
                     'properties' => [
-                        'screen_id' => ['type' => 'integer', 'minimum' => 1],
+                        'screen_id' => ['type' => 'string', 'format' => 'uuid'],
                     ],
                     'required'             => ['screen_id'],
                     'additionalProperties' => false,
@@ -51,7 +51,7 @@ final class McpToolCatalog
                 inputSchema: [
                     'type'       => 'object',
                     'properties' => [
-                        'workflow_revision_id' => ['type' => 'integer', 'minimum' => 1],
+                        'workflow_revision_id' => ['type' => 'string', 'format' => 'uuid'],
                         'node_id'              => ['type' => 'string', 'minLength' => 1],
                         'title'                => ['type' => ['string', 'null']],
                         'subtitle'             => ['type' => ['string', 'null']],
@@ -67,7 +67,7 @@ final class McpToolCatalog
                 inputSchema: [
                     'type'       => 'object',
                     'properties' => [
-                        'workflow_revision_id' => ['type' => 'integer', 'minimum' => 1],
+                        'workflow_revision_id' => ['type' => 'string', 'format' => 'uuid'],
                         'lock_revision'        => ['type' => 'integer', 'minimum' => 0],
                         'graph_json'           => ['type' => 'object'],
                     ],
@@ -81,7 +81,7 @@ final class McpToolCatalog
                 inputSchema: [
                     'type'       => 'object',
                     'properties' => [
-                        'workflow_id' => ['type' => 'integer', 'minimum' => 1],
+                        'workflow_id' => ['type' => 'string', 'format' => 'uuid'],
                     ],
                     'required'             => ['workflow_id'],
                     'additionalProperties' => false,
@@ -93,7 +93,7 @@ final class McpToolCatalog
                 inputSchema: [
                     'type'       => 'object',
                     'properties' => [
-                        'workflow_revision_id' => ['type' => 'integer', 'minimum' => 1],
+                        'workflow_revision_id' => ['type' => 'string', 'format' => 'uuid'],
                     ],
                     'required'             => ['workflow_revision_id'],
                     'additionalProperties' => false,

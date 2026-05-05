@@ -1,7 +1,7 @@
 import { Config } from 'ziggy-js';
 
 export interface User {
-    id: number;
+    id: string;
     name: string;
     email: string;
     email_verified_at?: string;
@@ -13,7 +13,7 @@ export interface User {
 export type ProjectRole = 'process_owner' | 'editor' | 'viewer';
 
 export interface ProjectNavItem {
-    id: number;
+    id: string;
     name: string;
     description?: string | null;
     current_user_role: ProjectRole | null;

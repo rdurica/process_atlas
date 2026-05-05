@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasUuid;
 use Database\Factories\WorkflowFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -14,7 +15,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Workflow extends Model
 {
     /** @use HasFactory<WorkflowFactory> */
-    use HasFactory;
+    use HasFactory, HasUuid;
+
+    /**
+     * @var list<string>
+     */
+    protected $hidden = ['id'];
 
     /**
      * @return array<string, string>

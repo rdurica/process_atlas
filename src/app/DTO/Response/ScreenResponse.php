@@ -11,7 +11,7 @@ use JsonSerializable;
 final readonly class ScreenResponse implements JsonSerializable
 {
     public function __construct(
-        public int $id,
+        public string $id,
         public string $nodeId,
         public ?string $title,
         public ?string $subtitle,
@@ -36,7 +36,7 @@ final readonly class ScreenResponse implements JsonSerializable
     public static function fromModel(Screen $screen): self
     {
         return new self(
-            id: $screen->id,
+            id: $screen->uuid,
             nodeId: $screen->node_id,
             title: $screen->title,
             subtitle: $screen->subtitle,
@@ -44,7 +44,18 @@ final readonly class ScreenResponse implements JsonSerializable
             imagePath: $screen->image_path,
             drawingJson: $screen->drawing_json,
             drawingImagePath: $screen->drawing_image_path,
-            customFields: $screen->relationLoaded('customFields') ? $screen->customFields->toArray() : null,
+            customFields: $screen->relationLoaded('customFields')
+                ? array_map(
+                    static fn (array $field): array => [
+                        'id'         => $field['uuid'] ?? $field['id'] ?? null,
+                        'key'        => $field['key'],
+                        'field_type' => $field['field_type'],
+                        'value'      => $field['value'],
+                        'sort_order' => $field['sort_order'],
+                    ],
+                    $screen->customFields->toArray(),
+                )
+                : null,
         );
     }
 

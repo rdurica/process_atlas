@@ -17,7 +17,7 @@ import type { WorkflowNodeKind } from '../types';
 
 interface UseWorkflowEditorOptions {
     workflow: WorkflowData;
-    projectWorkflows: { id: number; name: string; status: 'draft' | 'published' }[];
+    projectWorkflows: { id: string; name: string; status: 'draft' | 'published' }[];
     currentUserRole: 'process_owner' | 'editor' | 'viewer' | null;
 }
 
@@ -497,7 +497,7 @@ export function useWorkflowEditor({
         handleRevisionTimelineClick,
         deleteRevision: revisions.deleteRevision,
         createDraft: useCallback(
-            (draftName?: string, sourceRevisionId?: number) =>
+            (draftName?: string, sourceRevisionId?: string) =>
                 revisions.createDraft(workflow.id, draftName, sourceRevisionId),
             [revisions, workflow.id]
         ),

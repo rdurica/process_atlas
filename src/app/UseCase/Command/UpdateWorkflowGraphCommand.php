@@ -45,7 +45,7 @@ final class UpdateWorkflowGraphCommand
             AuditLogger::log($actor, $workflowRevision, 'updated', 'Workflow graph updated', source: $source);
 
             return new WorkflowGraphUpdateResponse(
-                workflowRevisionId: $workflowRevision->id,
+                workflowRevisionId: $workflowRevision->uuid,
                 lockVersion: $workflowRevision->lock_version,
             );
         });

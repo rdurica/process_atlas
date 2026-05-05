@@ -1,8 +1,8 @@
 <?php
 
 use App\Models\User;
+use App\Services\Cache\PublishedWorkflowCacheService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Cache;
 
 uses(RefreshDatabase::class);
 
@@ -19,25 +19,25 @@ it('caches published workflow data after first api request', function (): void
     $projectResponse = $this->postJson('/api/v1/projects', [
         'name' => 'Cache Test Project',
     ])->assertCreated();
-    $projectId = (int) $projectResponse->json('data.id');
+    $projectId = $projectResponse->json('data.id');
 
     $workflowResponse = $this->postJson("/api/v1/projects/{$projectId}/workflows", [
         'name' => 'Cache Test Workflow',
     ])->assertCreated();
-    $workflowId = (int) $workflowResponse->json('data.id');
+    $workflowId = $workflowResponse->json('data.id');
 
-    $versionId = (int) $workflowResponse->json('data.latest_revision.id');
+    $versionId = $workflowResponse->json('data.latest_revision.id');
 
     $this->postJson("/api/v1/workflow-revisions/{$versionId}/publish")
         ->assertOk();
 
-    $cacheKey = 'published_workflow.' . $workflowId;
-    expect(Cache::get($cacheKey))->toBeNull();
+    $service = new PublishedWorkflowCacheService;
+    expect($service->get($workflowId))->toBeNull();
 
     $response = $this->getJson("/api/v1/workflows/{$workflowId}")
         ->assertOk();
 
-    $cached = Cache::get($cacheKey);
+    $cached = $service->get($workflowId);
     expect($cached)->not->toBeNull();
     expect($cached['id'])->toBe($workflowId);
     expect($cached['published_revision']['id'])->toBe($versionId);
@@ -52,14 +52,14 @@ it('invalidates cache when workflow is archived', function (): void
     $projectResponse = $this->postJson('/api/v1/projects', [
         'name' => 'Cache Invalidation Project',
     ])->assertCreated();
-    $projectId = (int) $projectResponse->json('data.id');
+    $projectId = $projectResponse->json('data.id');
 
     $workflowResponse = $this->postJson("/api/v1/projects/{$projectId}/workflows", [
         'name' => 'Cache Invalidation Workflow',
     ])->assertCreated();
-    $workflowId = (int) $workflowResponse->json('data.id');
+    $workflowId = $workflowResponse->json('data.id');
 
-    $versionId = (int) $workflowResponse->json('data.latest_revision.id');
+    $versionId = $workflowResponse->json('data.latest_revision.id');
 
     $this->postJson("/api/v1/workflow-revisions/{$versionId}/publish")
         ->assertOk();
@@ -67,13 +67,13 @@ it('invalidates cache when workflow is archived', function (): void
     $this->getJson("/api/v1/workflows/{$workflowId}")
         ->assertOk();
 
-    $cacheKey = 'published_workflow.' . $workflowId;
-    expect(Cache::get($cacheKey))->not->toBeNull();
+    $service = new PublishedWorkflowCacheService;
+    expect($service->get($workflowId))->not->toBeNull();
 
     $this->postJson("/api/v1/workflows/{$workflowId}/archive")
         ->assertOk();
 
-    expect(Cache::get($cacheKey))->toBeNull();
+    expect($service->get($workflowId))->toBeNull();
 });
 
 it('invalidates cache when a new version is published', function (): void
@@ -84,14 +84,14 @@ it('invalidates cache when a new version is published', function (): void
     $projectResponse = $this->postJson('/api/v1/projects', [
         'name' => 'Republish Project',
     ])->assertCreated();
-    $projectId = (int) $projectResponse->json('data.id');
+    $projectId = $projectResponse->json('data.id');
 
     $workflowResponse = $this->postJson("/api/v1/projects/{$projectId}/workflows", [
         'name' => 'Republish Workflow',
     ])->assertCreated();
-    $workflowId = (int) $workflowResponse->json('data.id');
+    $workflowId = $workflowResponse->json('data.id');
 
-    $versionId = (int) $workflowResponse->json('data.latest_revision.id');
+    $versionId = $workflowResponse->json('data.latest_revision.id');
 
     $this->postJson("/api/v1/workflow-revisions/{$versionId}/publish")
         ->assertOk();
@@ -99,23 +99,23 @@ it('invalidates cache when a new version is published', function (): void
     $this->getJson("/api/v1/workflows/{$workflowId}")
         ->assertOk();
 
-    $cacheKey = 'published_workflow.' . $workflowId;
-    $firstCached = Cache::get($cacheKey);
+    $service = new PublishedWorkflowCacheService;
+    $firstCached = $service->get($workflowId);
     expect($firstCached)->not->toBeNull();
 
     $draftResponse = $this->postJson("/api/v1/workflows/{$workflowId}/revisions")
         ->assertCreated();
-    $draftVersionId = (int) $draftResponse->json('data.id');
+    $draftVersionId = $draftResponse->json('data.id');
 
     $this->postJson("/api/v1/workflow-revisions/{$draftVersionId}/publish")
         ->assertOk();
 
-    expect(Cache::get($cacheKey))->toBeNull();
+    expect($service->get($workflowId))->toBeNull();
 
     $response = $this->getJson("/api/v1/workflows/{$workflowId}")
         ->assertOk();
 
-    $secondCached = Cache::get($cacheKey);
+    $secondCached = $service->get($workflowId);
     expect($secondCached)->not->toBeNull();
     expect($secondCached['published_revision']['id'])->toBe($draftVersionId);
 });

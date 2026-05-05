@@ -3,7 +3,7 @@ import { processAtlasApi } from '@/shared/api/processAtlasApi';
 import { resolveApiError } from '@/shared/lib/apiErrors';
 import type { ProjectMember, ProjectRole } from '@/types/processAtlas';
 
-export function useProjectSettings(projectId: number, isOpen: boolean, onClose: () => void) {
+export function useProjectSettings(projectId: string, isOpen: boolean, onClose: () => void) {
     const [activeTab, setActiveTab] = useState<'general' | 'members'>('general');
     const [members, setMembers] = useState<ProjectMember[]>([]);
     const [loadingMembers, setLoadingMembers] = useState(false);
@@ -62,7 +62,7 @@ export function useProjectSettings(projectId: number, isOpen: boolean, onClose: 
         }
     };
 
-    const updateMemberRole = async (userId: number, role: ProjectRole) => {
+    const updateMemberRole = async (userId: string, role: ProjectRole) => {
         setMembersError(null);
         try {
             await processAtlasApi.projects.updateMember(projectId, userId, { role });
@@ -72,7 +72,7 @@ export function useProjectSettings(projectId: number, isOpen: boolean, onClose: 
         }
     };
 
-    const removeMember = async (userId: number) => {
+    const removeMember = async (userId: string) => {
         setMembersError(null);
         try {
             await processAtlasApi.projects.removeMember(projectId, userId);

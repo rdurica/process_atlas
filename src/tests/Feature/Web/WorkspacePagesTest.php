@@ -78,7 +78,7 @@ it('renders workflow editor with recent activity and version metadata', function
     $workflowId = $workflowResponse->json('data.id');
 
     $workflowShow = $this->getJson("/api/v1/workflows/{$workflowId}")->assertOk();
-    $versionId = (int) $workflowShow->json('data.latest_revision.id');
+    $versionId = $workflowShow->json('data.latest_revision.id');
 
     $this->patchJson("/api/v1/workflow-revisions/{$versionId}/graph", [
         'graph_json' => [

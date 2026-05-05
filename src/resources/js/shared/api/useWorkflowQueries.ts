@@ -5,8 +5,8 @@ import type { WorkflowRevisionSummary } from '@/types/processAtlas';
 
 const workflowKeys = {
     all: ['workflows'] as const,
-    detail: (id: number) => [...workflowKeys.all, id] as const,
-    revisions: (id: number) => [...workflowKeys.detail(id), 'revisions'] as const,
+    detail: (id: string) => [...workflowKeys.all, id] as const,
+    revisions: (id: string) => [...workflowKeys.detail(id), 'revisions'] as const,
 };
 
 export function useCreateRevision() {
@@ -16,9 +16,9 @@ export function useCreateRevision() {
             draftName,
             sourceRevisionId,
         }: {
-            workflowId: number;
+            workflowId: string;
             draftName?: string;
-            sourceRevisionId?: number;
+            sourceRevisionId?: string;
         }) =>
             processAtlasApi.workflows.createRevision(workflowId, {
                 draft_name: draftName || undefined,
@@ -32,7 +32,7 @@ export function useCreateRevision() {
 
 export function usePublishRevision() {
     return useMutation({
-        mutationFn: ({ revisionId, force }: { revisionId: number; force?: boolean }) =>
+        mutationFn: ({ revisionId, force }: { revisionId: string; force?: boolean }) =>
             processAtlasApi.revisions.publish(revisionId, force ?? false),
         onSuccess: () => {
             router.reload({ only: ['workflow'] });
@@ -42,7 +42,7 @@ export function usePublishRevision() {
 
 export function useDeleteRevision() {
     return useMutation({
-        mutationFn: (revisionId: number) => processAtlasApi.revisions.delete(revisionId),
+        mutationFn: (revisionId: string) => processAtlasApi.revisions.delete(revisionId),
         onSuccess: () => {
             router.reload({ only: ['workflow'] });
         },
@@ -51,7 +51,7 @@ export function useDeleteRevision() {
 
 export function useSwitchToDraft() {
     return useMutation({
-        mutationFn: (revisionId: number) => processAtlasApi.revisions.switchToDraft(revisionId),
+        mutationFn: (revisionId: string) => processAtlasApi.revisions.switchToDraft(revisionId),
         onSuccess: () => {
             router.reload({ only: ['workflow'] });
         },
@@ -66,7 +66,7 @@ export function useGetRevision() {
     });
 }
 
-export function usePreviewRevision(revisionId: number | null) {
+export function usePreviewRevision(revisionId: string | null) {
     return useQuery({
         queryKey: [...workflowKeys.all, 'preview', revisionId],
         queryFn: async () => {
@@ -80,7 +80,7 @@ export function usePreviewRevision(revisionId: number | null) {
 
 export function useSaveDraftName() {
     return useMutation({
-        mutationFn: ({ revisionId, draftName }: { revisionId: number; draftName: string }) =>
+        mutationFn: ({ revisionId, draftName }: { revisionId: string; draftName: string }) =>
             processAtlasApi.revisions.saveDraftName(revisionId, draftName),
         onSuccess: () => {
             router.reload({ only: ['workflow'] });
@@ -96,7 +96,7 @@ export function useSaveGraph() {
             lockVersion,
             source,
         }: {
-            revisionId: number;
+            revisionId: string;
             graphJson: unknown;
             lockVersion: number;
             source: 'ui' | 'autosave';

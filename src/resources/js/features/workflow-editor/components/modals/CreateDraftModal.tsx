@@ -5,7 +5,7 @@ import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
 
 interface CreateDraftModalProps {
-    createDraft: (name?: string, sourceId?: number) => Promise<void>;
+    createDraft: (name?: string, sourceId?: string) => Promise<void>;
 }
 
 export default function CreateDraftModal({ createDraft }: CreateDraftModalProps) {

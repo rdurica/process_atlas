@@ -10,26 +10,27 @@ use JsonSerializable;
 final readonly class WorkflowRevisionResponse implements JsonSerializable
 {
     public function __construct(
-        public int $id,
-        public int $workflowId,
+        public string $id,
+        public string $workflowId,
         public ?int $revisionNumber,
         public ?string $draftName,
         public bool $isPublished,
         public bool $isLocked,
-        public ?int $sourceRevisionId,
+        public ?string $sourceRevisionId,
         public ?string $createdAt,
     ) {}
 
     public static function fromModel(WorkflowRevision $revision): self
     {
         return new self(
-            id: $revision->id,
-            workflowId: $revision->workflow_id,
+            id: $revision->uuid,
+            /** @phpstan-ignore nullsafe.neverNull */
+            workflowId: $revision->workflow?->uuid ?? '',
             revisionNumber: $revision->revision_number,
             draftName: $revision->draft_name,
             isPublished: $revision->is_published,
             isLocked: $revision->is_locked ?? false,
-            sourceRevisionId: $revision->source_revision_id,
+            sourceRevisionId: $revision->sourceRevision?->uuid,
             createdAt: $revision->created_at?->toIso8601String(),
         );
     }

@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Cache;
 
 final class PublishedWorkflowCacheService
 {
-    private const string KEY_PREFIX = 'published_workflow.';
+    private const string KEY_PREFIX = 'published_workflow_v2.';
 
     private readonly int $ttlSeconds;
 
@@ -18,26 +18,26 @@ final class PublishedWorkflowCacheService
     /**
      * @return array<string, mixed>|null
      */
-    public function get(int $workflowId): ?array
+    public function get(string $workflowUuid): ?array
     {
-        return Cache::get($this->key($workflowId));
+        return Cache::get($this->key($workflowUuid));
     }
 
     /**
      * @param  array<string, mixed>  $data
      */
-    public function put(int $workflowId, array $data): void
+    public function put(string $workflowUuid, array $data): void
     {
-        Cache::put($this->key($workflowId), $data, $this->ttlSeconds);
+        Cache::put($this->key($workflowUuid), $data, $this->ttlSeconds);
     }
 
-    public function forget(int $workflowId): void
+    public function forget(string $workflowUuid): void
     {
-        Cache::forget($this->key($workflowId));
+        Cache::forget($this->key($workflowUuid));
     }
 
-    private function key(int $workflowId): string
+    private function key(string $workflowUuid): string
     {
-        return self::KEY_PREFIX . $workflowId;
+        return self::KEY_PREFIX . $workflowUuid;
     }
 }

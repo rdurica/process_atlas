@@ -21,7 +21,7 @@ final class UpdateWorkflowCommand
     {
         $workflow->update($request->toArray());
 
-        $this->cache->forget($workflow->id);
+        $this->cache->forget($workflow->uuid);
 
         AuditLogger::log($actor, $workflow, 'updated', 'Workflow updated');
 

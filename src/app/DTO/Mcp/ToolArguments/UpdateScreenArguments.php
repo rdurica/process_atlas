@@ -7,7 +7,7 @@ use App\DTO\Mcp\McpParams;
 final readonly class UpdateScreenArguments
 {
     public function __construct(
-        public int $workflowRevisionId,
+        public string $workflowRevisionId,
         public string $nodeId,
         public ?string $title,
         public ?string $subtitle,
@@ -18,7 +18,7 @@ final readonly class UpdateScreenArguments
     public static function fromParams(McpParams $params): self
     {
         return new self(
-            workflowRevisionId: $params->int('workflow_revision_id'),
+            workflowRevisionId: $params->string('workflow_revision_id'),
             nodeId: trim($params->string('node_id')),
             title: $params->nullableString('title'),
             subtitle: $params->nullableString('subtitle'),

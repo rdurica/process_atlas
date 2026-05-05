@@ -9,7 +9,7 @@ function ConditionNode({ data }: NodeProps<Node<ConditionNodeData>>) {
         <div className="rf-flow-node rf-condition-node">
             <Handle type="target" position={Position.Left} />
             <div className="rf-node-main">
-                <span className="rf-node-main-icon" style={{ color: '#7c3aed' }}>
+                <span className="rf-node-main-icon" style={{ color: '#0f5ef7' }}>
                     <ConditionIcon />
                 </span>
                 <p className="rf-node-title">{data.condition ?? 'Condition'}</p>

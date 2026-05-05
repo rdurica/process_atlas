@@ -34,7 +34,7 @@ final class SwitchToDraftCommand
             ]);
 
             AuditLogger::log($actor, $targetDraft, 'updated', 'Switched to draft', [
-                'workflow_id' => $workflow->id,
+                'workflow_id' => $workflow->uuid,
             ]);
 
             return WorkflowRevisionResponse::fromModel($targetDraft);

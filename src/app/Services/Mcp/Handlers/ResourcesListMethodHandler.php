@@ -39,8 +39,8 @@ final class ResourcesListMethodHandler implements McpMethodHandler
         foreach ($projects as $project)
         {
             $resources[] = new McpResourceDefinition(
-                uri: "process-atlas://projects/{$project->id}",
-                name: "Project {$project->id}: {$project->name}",
+                uri: "process-atlas://projects/{$project->uuid}",
+                name: "Project {$project->uuid}: {$project->name}",
                 description: 'Project details and workflow links.',
                 mimeType: 'application/json',
             );
@@ -49,8 +49,8 @@ final class ResourcesListMethodHandler implements McpMethodHandler
         foreach ($workflows as $workflow)
         {
             $resources[] = new McpResourceDefinition(
-                uri: "process-atlas://workflows/{$workflow->id}",
-                name: "Workflow {$workflow->id}: {$workflow->name}",
+                uri: "process-atlas://workflows/{$workflow->uuid}",
+                name: "Workflow {$workflow->uuid}: {$workflow->name}",
                 description: 'Workflow details including revision timeline.',
                 mimeType: 'application/json',
             );
@@ -59,7 +59,7 @@ final class ResourcesListMethodHandler implements McpMethodHandler
         foreach ($revisions as $revision)
         {
             $resources[] = new McpResourceDefinition(
-                uri: "process-atlas://revisions/{$revision->id}",
+                uri: "process-atlas://revisions/{$revision->uuid}",
                 name: "Revision {$revision->revision_number}",
                 description: 'Workflow revision with graph and screens.',
                 mimeType: 'application/json',
@@ -69,8 +69,8 @@ final class ResourcesListMethodHandler implements McpMethodHandler
         foreach ($screens as $screen)
         {
             $resources[] = new McpResourceDefinition(
-                uri: "process-atlas://screens/{$screen->id}",
-                name: "Screen {$screen->id}: " . ($screen->title ?: $screen->node_id),
+                uri: "process-atlas://screens/{$screen->uuid}",
+                name: "Screen {$screen->uuid}: " . ($screen->title ?: $screen->node_id),
                 description: 'Screen details and custom fields.',
                 mimeType: 'application/json',
             );

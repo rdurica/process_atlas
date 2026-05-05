@@ -5,12 +5,12 @@ namespace App\DTO\Response;
 final readonly class WorkflowGraphUpdateResponse
 {
     public function __construct(
-        public int $workflowRevisionId,
+        public string $workflowRevisionId,
         public int $lockVersion,
     ) {}
 
     /**
-     * @return array{workflow_revision_id: int, lock_version: int}
+     * @return array{workflow_revision_id: string, lock_version: int}
      */
     public function toApiArray(): array
     {
@@ -21,7 +21,7 @@ final readonly class WorkflowGraphUpdateResponse
     }
 
     /**
-     * @return array{workflow_revision_id: int, lock_revision: int}
+     * @return array{workflow_revision_id: string, lock_revision: int}
      */
     public function toMcpArray(): array
     {

@@ -117,7 +117,7 @@ export function useAdminUsers() {
         }
     };
 
-    const handleToggleActive = async (userId: number) => {
+    const handleToggleActive = async (userId: string) => {
         try {
             await toggleActiveMutation.mutateAsync(userId);
         } catch {
@@ -125,7 +125,7 @@ export function useAdminUsers() {
         }
     };
 
-    const handleDelete = async (userId: number) => {
+    const handleDelete = async (userId: string) => {
         if (!window.confirm('Are you sure you want to delete this user?')) {
             return;
         }

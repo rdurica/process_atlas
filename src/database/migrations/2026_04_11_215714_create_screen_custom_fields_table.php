@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('screen_custom_fields', function (Blueprint $table): void
         {
             $table->id();
+            $table->uuid('uuid')->unique();
             $table->foreignId('screen_id')->constrained()->cascadeOnDelete();
             $table->string('key');
             $table->string('field_type')->default('text');

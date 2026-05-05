@@ -18,14 +18,14 @@ final class CreateWorkflowDraftCommand
         private readonly TransactionManager $transactionManager,
     ) {}
 
-    public function execute(User $actor, Workflow $workflow, ?string $draftName = null, ?int $sourceRevisionId = null): WorkflowRevisionResponse
+    public function execute(User $actor, Workflow $workflow, ?string $draftName = null, ?string $sourceRevisionId = null): WorkflowRevisionResponse
     {
         return $this->transactionManager->transactional(function () use ($actor, $workflow, $draftName, $sourceRevisionId): WorkflowRevisionResponse
         {
             $revision = $this->revisionService->createDraftFromSource($workflow, $actor, $draftName, $sourceRevisionId);
 
             AuditLogger::log($actor, $revision, 'created', 'Draft workflow revision created', [
-                'workflow_id' => $workflow->id,
+                'workflow_id' => $workflow->uuid,
             ]);
 
             return WorkflowRevisionResponse::fromModel($revision);

@@ -31,7 +31,7 @@ export interface ScreenEditorState {
     drawingStrokeWidth: number;
     setDrawingStrokeWidth: (width: number) => void;
     fieldEditorMode: FieldEditorMode;
-    editingFieldId: number | null;
+    editingFieldId: string | null;
     newCustomKey: string;
     setNewCustomKey: (key: string) => void;
     newCustomValue: string;
@@ -40,7 +40,7 @@ export interface ScreenEditorState {
     setNewCustomFieldType: (type: ScreenCustomField['field_type']) => void;
     editingField: ScreenCustomField | null;
     setFieldEditorMode: (mode: FieldEditorMode) => void;
-    setEditingFieldId: (id: number | null) => void;
+    setEditingFieldId: (id: string | null) => void;
     openCreateFieldEditor: () => void;
     openEditFieldEditor: (field: ScreenCustomField) => void;
     closeFieldEditor: () => void;
@@ -53,7 +53,7 @@ export interface ScreenEditorState {
     saveDrawingDirect: (json: string, blob: Blob | null) => Promise<void>;
     upsertScreen: (event: React.FormEvent) => Promise<void>;
     submitFieldEditor: (event: React.FormEvent) => Promise<void>;
-    removeCustomField: (fieldId: number) => Promise<boolean>;
+    removeCustomField: (fieldId: string) => Promise<boolean>;
 }
 
 export type NodeDataPatchHandler = (patch: Partial<WorkflowNodeData>) => void;
@@ -73,8 +73,8 @@ export interface NodeInspectorProps {
     selectedNodeKind: WorkflowNodeKind;
     inspectorTab: InspectorTab;
     canEditWorkflows: boolean;
-    projectWorkflows: { id: number; name: string; status: 'draft' | 'published' }[];
-    workflowId: number;
+    projectWorkflows: { id: string; name: string; status: 'draft' | 'published' }[];
+    workflowId: string;
     updateNodeData: NodeDataPatchHandler;
     removeWorkflowNode: (nodeId: string) => void;
 }

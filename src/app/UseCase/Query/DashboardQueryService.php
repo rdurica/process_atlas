@@ -101,16 +101,16 @@ final class DashboardQueryService
             foreach ($project->workflows as $workflow)
             {
                 $workflows[] = [
-                    'id'              => $workflow->id,
+                    'id'              => $workflow->uuid,
                     'name'            => $workflow->name,
                     'status'          => $workflow->status,
                     'latest_revision' => $workflow->latestRevision ? [
-                        'id'              => $workflow->latestRevision->id,
+                        'id'              => $workflow->latestRevision->uuid,
                         'revision_number' => $workflow->latestRevision->revision_number,
                         'is_published'    => $workflow->latestRevision->is_published,
                     ] : null,
                     'published_revision' => $workflow->publishedRevision ? [
-                        'id'              => $workflow->publishedRevision->id,
+                        'id'              => $workflow->publishedRevision->uuid,
                         'revision_number' => $workflow->publishedRevision->revision_number,
                     ] : null,
                     'updated_at' => $workflow->updated_at !== null ? $workflow->updated_at->toIso8601String() : null, // @phpstan-ignore method.nonObject
@@ -118,7 +118,7 @@ final class DashboardQueryService
             }
 
             $serializedProjects[] = [
-                'id'                    => $project->id,
+                'id'                    => $project->uuid,
                 'name'                  => $project->name,
                 'description'           => $project->description,
                 'is_public'             => $project->is_public,

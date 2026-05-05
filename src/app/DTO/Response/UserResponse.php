@@ -13,7 +13,7 @@ final readonly class UserResponse implements JsonSerializable
      * @param  list<string>  $roles
      */
     public function __construct(
-        public int $id,
+        public string $id,
         public string $name,
         public string $email,
         public array $roles,
@@ -27,7 +27,7 @@ final readonly class UserResponse implements JsonSerializable
         $roles = $user->roles->pluck('name')->all();
 
         return new self(
-            id: $user->id,
+            id: $user->uuid,
             name: $user->name,
             email: $user->email,
             roles: $roles,

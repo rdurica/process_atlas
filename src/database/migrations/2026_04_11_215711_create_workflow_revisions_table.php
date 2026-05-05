@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('workflow_revisions', function (Blueprint $table): void
         {
             $table->id();
+            $table->uuid('uuid')->unique();
             $table->foreignId('workflow_id')->constrained()->cascadeOnDelete();
             $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
             $table->unsignedInteger('revision_number');

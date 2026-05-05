@@ -2,13 +2,14 @@
 
 namespace App\DTO\Mcp;
 
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 final readonly class McpResourceUri
 {
     public function __construct(
         public string $kind,
-        public ?int $id,
+        public ?string $id,
     ) {}
 
     public static function parse(string $uri): self
@@ -39,11 +40,11 @@ final readonly class McpResourceUri
             return new self($kind, null);
         }
 
-        if (! ctype_digit($id) || (int) $id <= 0)
+        if (! Str::isUuid($id))
         {
-            throw ValidationException::withMessages(['uri' => 'Resource ID must be a positive integer.']);
+            throw ValidationException::withMessages(['uri' => 'Resource ID must be a valid UUID.']);
         }
 
-        return new self($kind, (int) $id);
+        return new self($kind, $id);
     }
 }

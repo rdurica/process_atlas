@@ -52,7 +52,7 @@ export type TimerNodeData = Record<string, unknown> & {
 };
 
 export type SubprocessNodeData = Record<string, unknown> & {
-    linked_workflow_id?: number | null;
+    linked_workflow_id?: string | null;
     linked_workflow_name?: string | null;
     note?: string;
 };
@@ -68,7 +68,7 @@ export type StartNodeData = Record<string, unknown> & {
 
 export type EndNodeData = Record<string, unknown> & {
     title?: string;
-    linked_workflow_id?: number | null;
+    linked_workflow_id?: string | null;
     linked_workflow_name?: string | null;
     note?: string;
 };
@@ -86,7 +86,7 @@ export type WorkflowNodeData =
 
 export interface WorkflowEditorProps {
     workflow: WorkflowData;
-    projectWorkflows: { id: number; name: string; status: 'draft' | 'published' }[];
+    projectWorkflows: { id: string; name: string; status: 'draft' | 'published' }[];
     currentUserRole: 'process_owner' | 'editor' | 'viewer' | null;
 }
 

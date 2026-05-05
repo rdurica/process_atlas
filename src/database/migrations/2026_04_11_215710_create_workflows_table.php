@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('workflows', function (Blueprint $table): void
         {
             $table->id();
+            $table->uuid('uuid')->unique();
             $table->foreignId('project_id')->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->string('status')->default('draft');

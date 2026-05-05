@@ -35,7 +35,7 @@ export function useCreateAdminUser() {
 export function useUpdateAdminUserRoles() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({ userId, roles }: { userId: number; roles: string[] }) =>
+        mutationFn: ({ userId, roles }: { userId: string; roles: string[] }) =>
             processAtlasApi.adminUsers.updateRoles(userId, roles).then(() => undefined),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: adminKeys.all });
@@ -46,7 +46,7 @@ export function useUpdateAdminUserRoles() {
 export function useToggleAdminUserActive() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (userId: number) =>
+        mutationFn: (userId: string) =>
             processAtlasApi.adminUsers.toggleActive(userId).then(() => undefined),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: adminKeys.all });
@@ -57,7 +57,7 @@ export function useToggleAdminUserActive() {
 export function useDeleteAdminUser() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (userId: number) =>
+        mutationFn: (userId: string) =>
             processAtlasApi.adminUsers.delete(userId).then(() => undefined),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: adminKeys.all });

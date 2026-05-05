@@ -18,12 +18,12 @@ it('allows process owner to archive and unarchive a workflow', function (): void
     $projectResponse = $this->postJson('/api/v1/projects', [
         'name' => 'Archive Test Project',
     ])->assertCreated();
-    $projectId = (int) $projectResponse->json('data.id');
+    $projectId = $projectResponse->json('data.id');
 
     $workflowResponse = $this->postJson("/api/v1/projects/{$projectId}/workflows", [
         'name' => 'Archive Test Workflow',
     ])->assertCreated();
-    $workflowId = (int) $workflowResponse->json('data.id');
+    $workflowId = $workflowResponse->json('data.id');
 
     $this->postJson("/api/v1/workflows/{$workflowId}/archive")
         ->assertOk()
@@ -56,12 +56,12 @@ it('allows listing archived workflows with include_archived flag', function (): 
     $projectResponse = $this->postJson('/api/v1/projects', [
         'name' => 'Include Archived Project',
     ])->assertCreated();
-    $projectId = (int) $projectResponse->json('data.id');
+    $projectId = $projectResponse->json('data.id');
 
     $workflowResponse = $this->postJson("/api/v1/projects/{$projectId}/workflows", [
         'name' => 'Archived Workflow',
     ])->assertCreated();
-    $workflowId = (int) $workflowResponse->json('data.id');
+    $workflowId = $workflowResponse->json('data.id');
 
     $this->postJson("/api/v1/workflows/{$workflowId}/archive")->assertOk();
 
@@ -86,7 +86,7 @@ it('denies archive action for editor role', function (): void
     $projectResponse = $this->postJson('/api/v1/projects', [
         'name' => 'Editor Archive Project',
     ])->assertCreated();
-    $projectId = (int) $projectResponse->json('data.id');
+    $projectId = $projectResponse->json('data.id');
 
     $this->postJson("/api/v1/projects/{$projectId}/members", [
         'email' => $editor->email,
@@ -96,7 +96,7 @@ it('denies archive action for editor role', function (): void
     $workflowResponse = $this->postJson("/api/v1/projects/{$projectId}/workflows", [
         'name' => 'Editor Archive Workflow',
     ])->assertCreated();
-    $workflowId = (int) $workflowResponse->json('data.id');
+    $workflowId = $workflowResponse->json('data.id');
 
     $this->actingAs($editor);
     $this->postJson("/api/v1/workflows/{$workflowId}/archive")
@@ -112,7 +112,7 @@ it('denies archive action for viewer role', function (): void
     $projectResponse = $this->postJson('/api/v1/projects', [
         'name' => 'Viewer Archive Project',
     ])->assertCreated();
-    $projectId = (int) $projectResponse->json('data.id');
+    $projectId = $projectResponse->json('data.id');
 
     $this->postJson("/api/v1/projects/{$projectId}/members", [
         'email' => $viewer->email,
@@ -122,7 +122,7 @@ it('denies archive action for viewer role', function (): void
     $workflowResponse = $this->postJson("/api/v1/projects/{$projectId}/workflows", [
         'name' => 'Viewer Archive Workflow',
     ])->assertCreated();
-    $workflowId = (int) $workflowResponse->json('data.id');
+    $workflowId = $workflowResponse->json('data.id');
 
     $this->actingAs($viewer);
     $this->postJson("/api/v1/workflows/{$workflowId}/archive")
@@ -137,12 +137,12 @@ it('excludes archived workflows from project workflows_count', function (): void
     $projectResponse = $this->postJson('/api/v1/projects', [
         'name' => 'Count Project',
     ])->assertCreated();
-    $projectId = (int) $projectResponse->json('data.id');
+    $projectId = $projectResponse->json('data.id');
 
     $workflowResponse = $this->postJson("/api/v1/projects/{$projectId}/workflows", [
         'name' => 'Count Workflow',
     ])->assertCreated();
-    $workflowId = (int) $workflowResponse->json('data.id');
+    $workflowId = $workflowResponse->json('data.id');
 
     $this->get(route('projects.show', $projectId))
         ->assertInertia(fn ($page) => $page

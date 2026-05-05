@@ -23,7 +23,7 @@ final class PublishWorkflowRevisionCommand
 
     public function execute(User $actor, WorkflowRevision $workflowRevision, bool $force = false): WorkflowRevisionResponse
     {
-        /** @var array{workflow_id: int, response: WorkflowRevisionResponse} $result */
+        /** @var array{workflow_id: string, response: WorkflowRevisionResponse} $result */
         $result = $this->transactionManager->transactional(function () use ($actor, $workflowRevision, $force): array
         {
             $workflow = $this->revisionService->publishRevision($workflowRevision, $force);
@@ -39,7 +39,7 @@ final class PublishWorkflowRevisionCommand
             }
 
             return [
-                'workflow_id' => $workflow->id,
+                'workflow_id' => $workflow->uuid,
                 'response'    => WorkflowRevisionResponse::fromModel($freshRevision),
             ];
         });

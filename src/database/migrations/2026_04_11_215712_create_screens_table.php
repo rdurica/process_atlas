@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('screens', function (Blueprint $table): void
         {
             $table->id();
+            $table->uuid('uuid')->unique();
             $table->foreignId('workflow_revision_id')->constrained()->cascadeOnDelete();
             $table->string('node_id');
             $table->string('title')->nullable();

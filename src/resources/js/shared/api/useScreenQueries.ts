@@ -13,7 +13,7 @@ export function useUpsertCustomField() {
             screenId,
             payload,
         }: {
-            screenId: number;
+            screenId: string;
             payload: Record<string, unknown>;
         }) => processAtlasApi.screens.upsertCustomField(screenId, payload),
     });
@@ -21,6 +21,6 @@ export function useUpsertCustomField() {
 
 export function useDeleteCustomField() {
     return useMutation({
-        mutationFn: (fieldId: number) => processAtlasApi.screens.deleteCustomField(fieldId),
+        mutationFn: (fieldId: string) => processAtlasApi.screens.deleteCustomField(fieldId),
     });
 }

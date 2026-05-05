@@ -7,7 +7,7 @@ use App\Models\User;
 final readonly class ProjectMemberResponse
 {
     public function __construct(
-        public int $id,
+        public string $id,
         public string $name,
         public string $email,
         public string $role,
@@ -16,7 +16,7 @@ final readonly class ProjectMemberResponse
     public static function fromUser(User $member, string $role): self
     {
         return new self(
-            id: $member->id,
+            id: $member->uuid,
             name: $member->name,
             email: $member->email,
             role: $role,
@@ -24,7 +24,7 @@ final readonly class ProjectMemberResponse
     }
 
     /**
-     * @return array{id: int, name: string, email: string, role: string}
+     * @return array{id: string, name: string, email: string, role: string}
      */
     public function toArray(): array
     {

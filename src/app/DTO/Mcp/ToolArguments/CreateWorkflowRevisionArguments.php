@@ -6,10 +6,10 @@ use App\DTO\Mcp\McpParams;
 
 final readonly class CreateWorkflowRevisionArguments
 {
-    public function __construct(public int $workflowId) {}
+    public function __construct(public string $workflowId) {}
 
     public static function fromParams(McpParams $params): self
     {
-        return new self(workflowId: $params->int('workflow_id'));
+        return new self(workflowId: $params->string('workflow_id'));
     }
 }

@@ -12,7 +12,7 @@ import { Button } from '@/Components/ui/button';
 import { LogOut, User, Users, LayoutDashboard, Menu, Search } from 'lucide-react';
 
 type ProjectNavItem = {
-    id: number;
+    id: string;
     name: string;
     description?: string | null;
     current_user_role: ProjectRole | null;
@@ -41,7 +41,7 @@ export default function AuthenticatedLayout({
         return 'mx-auto w-full max-w-7xl';
     }, [contentWidth]);
 
-    const isProjectActive = (projectId: number) => {
+    const isProjectActive = (projectId: string) => {
         return route().current('projects.show', { project: projectId });
     };
 

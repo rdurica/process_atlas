@@ -55,7 +55,7 @@ final class WorkflowQueryService
     {
         if ($workflow->published_revision_id !== null)
         {
-            $cached = $this->cache->get($workflow->id);
+            $cached = $this->cache->get($workflow->uuid);
 
             if ($cached !== null)
             {
@@ -64,21 +64,23 @@ final class WorkflowQueryService
 
             $workflow->load([
                 'project',
+                'latestRevision.sourceRevision',
                 'latestRevision.screens.customFields',
                 'publishedRevision.screens.customFields',
-                'revisions' => fn ($query) => $query->orderByRaw('revision_number IS NULL DESC, revision_number DESC, created_at DESC'),
+                'revisions' => fn ($query) => $query->with('sourceRevision')->orderByRaw('revision_number IS NULL DESC, revision_number DESC, created_at DESC'),
             ]);
 
-            $this->cache->put($workflow->id, $workflow->toArray());
+            $this->cache->put($workflow->uuid, $workflow->toArray());
 
             return $workflow;
         }
 
         return $workflow->load([
             'project',
+            'latestRevision.sourceRevision',
             'latestRevision.screens.customFields',
             'publishedRevision',
-            'revisions' => fn ($query) => $query->orderByRaw('revision_number IS NULL DESC, revision_number DESC, created_at DESC'),
+            'revisions' => fn ($query) => $query->with('sourceRevision')->orderByRaw('revision_number IS NULL DESC, revision_number DESC, created_at DESC'),
         ]);
     }
 
@@ -87,9 +89,10 @@ final class WorkflowQueryService
         return $workflow->load([
             'project',
             'latestRevision.creator',
+            'latestRevision.sourceRevision',
             'latestRevision.screens.customFields',
             'publishedRevision',
-            'revisions' => fn ($query) => $query->with('creator')->orderByRaw('revision_number IS NULL DESC, revision_number DESC, created_at DESC'),
+            'revisions' => fn ($query) => $query->with(['creator', 'sourceRevision'])->orderByRaw('revision_number IS NULL DESC, revision_number DESC, created_at DESC'),
         ]);
     }
 
@@ -109,7 +112,7 @@ final class WorkflowQueryService
         return $project
             ->workflows()
             ->notArchived()
-            ->select(['id', 'name', 'status'])
+            ->select(['id', 'uuid', 'name', 'status'])
             ->orderBy('name')
             ->get();
     }

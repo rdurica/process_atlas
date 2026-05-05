@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasUuid;
 use Database\Factories\ProjectFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -15,7 +16,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Project extends Model
 {
     /** @use HasFactory<ProjectFactory> */
-    use HasFactory;
+    use HasFactory, HasUuid;
+
+    /**
+     * @var list<string>
+     */
+    protected $hidden = ['id'];
 
     /**
      * Get the attributes that should be cast.

@@ -8,7 +8,7 @@ function ActionNode({ data }: NodeProps<Node<ActionNodeData>>) {
         <div className="rf-flow-node rf-action-node">
             <Handle type="target" position={Position.Left} />
             <div className="rf-node-main">
-                <span className="rf-node-main-icon" style={{ color: '#0f5ef7' }}>
+                <span className="rf-node-main-icon" style={{ color: '#f59e0b' }}>
                     <ActionIcon />
                 </span>
                 <p className="rf-node-title">{data.title ?? 'Action'}</p>

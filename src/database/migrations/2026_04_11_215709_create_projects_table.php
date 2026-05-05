@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('projects', function (Blueprint $table): void
         {
             $table->id();
+            $table->uuid('uuid')->unique();
             $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
             $table->string('name');
             $table->text('description')->nullable();

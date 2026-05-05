@@ -73,7 +73,7 @@ it('forbids non-admin from updating user roles via api', function (): void
     $target = User::query()->where('email', 'owner@example.com')->firstOrFail();
 
     $this->actingAs($viewer)
-        ->patchJson("/api/v1/admin/users/{$target->id}/roles", [
+        ->patchJson("/api/v1/admin/users/{$target->uuid}/roles", [
             'roles' => ['user'],
         ])
         ->assertForbidden();
@@ -85,7 +85,7 @@ it('forbids non-admin from toggling user active status via api', function (): vo
     $target = User::query()->where('email', 'owner@example.com')->firstOrFail();
 
     $this->actingAs($viewer)
-        ->patchJson("/api/v1/admin/users/{$target->id}/active")
+        ->patchJson("/api/v1/admin/users/{$target->uuid}/active")
         ->assertForbidden();
 });
 
@@ -95,7 +95,7 @@ it('forbids non-admin from deleting users via api', function (): void
     $target = User::factory()->create();
 
     $this->actingAs($viewer)
-        ->deleteJson("/api/v1/admin/users/{$target->id}")
+        ->deleteJson("/api/v1/admin/users/{$target->uuid}")
         ->assertForbidden();
 });
 
@@ -141,7 +141,7 @@ it('revokes api tokens when user is deactivated', function (): void
 
     // Deactivate the user via admin token
     $this->withHeader('Authorization', "Bearer {$adminToken}")
-        ->patchJson("/api/v1/admin/users/{$target->id}/active")
+        ->patchJson("/api/v1/admin/users/{$target->uuid}/active")
         ->assertOk();
 
     // Clear auth state between requests

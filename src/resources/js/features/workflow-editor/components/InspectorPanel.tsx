@@ -27,8 +27,8 @@ interface InspectorPanelProps {
     removeWorkflowNode: (nodeId: string) => void;
     saveSelectedEdgeLabel: (event: React.FormEvent) => void;
     removeSelectedEdge: () => void;
-    projectWorkflows: { id: number; name: string; status: 'draft' | 'published' }[];
-    workflowId: number;
+    projectWorkflows: { id: string; name: string; status: 'draft' | 'published' }[];
+    workflowId: string;
 }
 
 function InspectorPanel({

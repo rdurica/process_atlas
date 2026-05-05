@@ -19,7 +19,7 @@ class UpsertScreenRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'workflow_revision_id' => ['required', 'integer', 'exists:workflow_revisions,id'],
+            'workflow_revision_id' => ['required', 'string', 'exists:workflow_revisions,uuid'],
             'node_id'              => ['required', 'string', 'max:255'],
             'title'                => ['nullable', 'string', 'max:255'],
             'subtitle'             => ['nullable', 'string', 'max:255'],

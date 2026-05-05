@@ -83,7 +83,7 @@ final class ToolsCallMethodHandler implements McpMethodHandler
             return ['workflow' => $workflow->toArray()];
         }
 
-        Gate::forUser($actor)->authorize('view', Workflow::query()->findOrFail($arguments->workflowId));
+        Gate::forUser($actor)->authorize('view', Workflow::query()->where('uuid', $arguments->workflowId)->firstOrFail());
 
         return ['workflow' => $workflow];
     }
@@ -93,7 +93,7 @@ final class ToolsCallMethodHandler implements McpMethodHandler
      */
     private function getScreen(User $actor, GetScreenArguments $arguments): array
     {
-        if ($arguments->screenId <= 0)
+        if ($arguments->screenId === '')
         {
             throw ValidationException::withMessages(['screen_id' => 'screen_id is required.']);
         }
@@ -110,7 +110,7 @@ final class ToolsCallMethodHandler implements McpMethodHandler
      */
     private function updateScreen(User $actor, UpdateScreenArguments $arguments): array
     {
-        if ($arguments->workflowRevisionId <= 0 || $arguments->nodeId === '')
+        if ($arguments->workflowRevisionId === '' || $arguments->nodeId === '')
         {
             throw ValidationException::withMessages([
                 'workflow_revision_id' => 'workflow_revision_id is required.',
@@ -130,7 +130,7 @@ final class ToolsCallMethodHandler implements McpMethodHandler
         );
 
         AuditLogger::log($actor, $revision, 'updated', 'Screen updated by MCP', [
-            'revision_id' => $revision->id,
+            'revision_id' => $revision->uuid,
         ], source: 'mcp');
 
         return ['screen' => $response->jsonSerialize()];
@@ -185,7 +185,7 @@ final class ToolsCallMethodHandler implements McpMethodHandler
         $response = $this->createDraft->execute($actor, $workflow);
 
         AuditLogger::log($actor, $workflow, 'created', 'Draft revision created by MCP', [
-            'workflow_id' => $workflow->id,
+            'workflow_id' => $workflow->uuid,
         ], source: 'mcp');
 
         return ['workflow_revision' => $response->jsonSerialize()];
@@ -203,7 +203,8 @@ final class ToolsCallMethodHandler implements McpMethodHandler
         $response = $this->publish->execute($actor, $revision);
 
         AuditLogger::log($actor, $revision, 'published', 'Workflow revision published by MCP', [
-            'workflow_id' => $revision->workflow_id,
+            /** @phpstan-ignore nullsafe.neverNull */
+            'workflow_id' => $revision->workflow?->uuid ?? '',
         ], source: 'mcp');
 
         return [
