@@ -15,6 +15,7 @@ RUN apk update && apk add --no-cache \
     bash \
     curl \
     git \
+    openssh-client \
     linux-headers \
     libpq-dev \
     libzip-dev \
