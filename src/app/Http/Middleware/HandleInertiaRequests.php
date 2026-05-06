@@ -80,7 +80,7 @@ class HandleInertiaRequests extends Middleware
                     }
 
                     return [
-                        'id'                => $project->id,
+                        'id'                => $project->uuid,
                         'name'              => $project->name,
                         'description'       => $project->description,
                         'current_user_role' => $currentUserRole,
