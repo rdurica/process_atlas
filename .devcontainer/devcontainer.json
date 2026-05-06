@@ -2,10 +2,14 @@
     "name": "Process Atlas",
     "dockerComposeFile": "../compose.yaml",
     "service": "php-fpm",
-    "workspaceFolder": "/app/src",
+    "workspaceFolder": "/app",
+    "initializeCommand": "make up",
     "overrideCommand": false,
-    "forwardPorts": [443, 5173],
-    "runServices": ["node"],
+    "updateRemoteUserUID": true,
+    "shutdownAction": "stopCompose",
+    "runServices": [
+        "node"
+    ],
     "remoteUser": "robbyte",
     "customizations": {
         "vscode": {
@@ -17,7 +21,13 @@
                 "bradlc.vscode-tailwindcss",
                 "ms-vscode.vscode-typescript-next",
                 "christian-kohler.path-intellisense"
-            ]
+            ],
+            "settings": {
+                "php.validate.executablePath": "/usr/local/bin/php",
+                "php.debug.idekey": "PHPSTORM",
+                "remote.restoreEditors": false,
+                "workbench.startupEditor": "none"
+            }
         }
     }
 }
