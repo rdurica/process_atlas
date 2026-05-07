@@ -1,16 +1,6 @@
-import fs from 'node:fs';
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import react from '@vitejs/plugin-react';
-
-const certKeyPath = '/etc/nginx/certs/tls.key';
-const certPath = '/etc/nginx/certs/tls.crt';
-const httpsConfig = fs.existsSync(certKeyPath) && fs.existsSync(certPath)
-    ? {
-          key: fs.readFileSync(certKeyPath),
-          cert: fs.readFileSync(certPath),
-      }
-    : undefined;
 
 export default defineConfig({
     plugins: [
@@ -22,13 +12,18 @@ export default defineConfig({
         react(),
     ],
     server: {
-        https: httpsConfig,
+        https: false,
         host: '0.0.0.0',
         port: 5173,
-        origin: 'https://localhost:5173',
+        origin: 'https://localhost',
         cors: {
-            origin: ['https://localhost', 'https://php-fpm'],
+            origin: ['https://localhost'],
             credentials: true,
+        },
+        hmr: {
+            protocol: 'wss',
+            host: 'localhost',
+            clientPort: 443,
         },
     },
 });

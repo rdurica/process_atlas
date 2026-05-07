@@ -1,0 +1,14 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: build/ci/Dockerfile
+    volumes:
+      - ./src:/app/src
+    environment:
+      - APP_ENV=testing
+      - DB_CONNECTION=sqlite
+      - DB_DATABASE=:memory:
+      - CACHE_DRIVER=array
+      - SESSION_DRIVER=array
+      - QUEUE_CONNECTION=sync

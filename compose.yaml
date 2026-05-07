@@ -1,35 +1,31 @@
 services:
-  php-fpm:
+  frankenphp:
+    container_name: frankenphp
     build:
       context: .
       dockerfile: build/dev/Dockerfile
     volumes:
       - .:/app
-      - ./build/dev/certs:/etc/nginx/certs
       - node_modules:/app/src/node_modules
+      - ./build/dev/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./build/dev/xdebug.ini:/usr/local/etc/php/conf.d/xdebug.ini:ro
+      - caddy_data:/data
+      - caddy_config:/config
     ports:
-      - 443:443
       - 80:80
+      - 443:443
+      - 443:443/udp
     extra_hosts:
       - host.docker.internal:host-gateway
     networks:
       - apps
-  node:
-    build:
-      context: .
-      dockerfile: build/dev/node/Dockerfile
-    ports:
-      - 5173:5173
-    restart: unless-stopped
-    working_dir: /app/src
-    volumes:
-      - .:/app
-      - ./build/dev/certs:/etc/nginx/certs
-      - node_modules:/app/src/node_modules
-    networks:
-      - apps
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
 volumes:
   node_modules:
+  caddy_data:
+  caddy_config:
 networks:
   apps:
     external: true

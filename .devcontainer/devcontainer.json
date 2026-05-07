@@ -1,7 +1,7 @@
 {
     "name": "Process Atlas",
     "dockerComposeFile": "../compose.yaml",
-    "service": "php-fpm",
+    "service": "frankenphp",
     "workspaceFolder": "/app",
     "initializeCommand": "make up",
     "overrideCommand": false,

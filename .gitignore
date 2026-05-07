@@ -23,3 +23,7 @@ manifest.yaml
 
 # Laravel
 !src/.env.example
+
+# Caddy local data (if running outside Docker)
+caddy_data/
+caddy_config/
