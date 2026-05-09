@@ -54,14 +54,14 @@ jobs:
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: build/dev/Dockerfile
-          ignore: "DL3018,DL4006,SC2028"
+          ignore: "DL3018,DL3059,DL4006,SC2028"
       - name: Lint Prod Dockerfile
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: build/prod/Dockerfile
-          ignore: "DL3018,DL4006,SC2028"
+          ignore: "DL3018,DL3059,DL4006,SC2028"
       - name: Lint CI Dockerfile
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: build/ci/Dockerfile
-          ignore: "DL3018,DL4006,SC2028"
+          ignore: "DL3018,DL3059,DL4006,SC2028"

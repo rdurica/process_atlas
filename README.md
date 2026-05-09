@@ -70,24 +70,23 @@ Stop with `Ctrl+C` or `docker compose -f compose.demo.yaml down`. Data persists 
 **Prerequisites**
 
 - [Docker](https://www.docker.com/)
-- [mkcert](https://github.com/FiloSottile/mkcert) for local HTTPS
 
 **Local setup**
 
 ```shell
-mkcert -install          # Trust the local CA (once)
-make init                # Build images, generate certs, start containers
-make php                 # Shell into the PHP container
-composer setup           # Install deps, generate key, run migrations
+make init          # Build images & start containers
+make trust-cert    # Trust Caddy's local CA
+make php           # Shell into the container
+composer setup     # Install deps, generate key, migrate, build assets
 ```
 
-Open **https://localhost** (local dev uses HTTPS via mkcert).
+Open **https://localhost**.
 
-All `php artisan` and `npm` commands must run inside their containers:
+All commands run inside the `process-atlas` container:
 
 ```shell
-docker compose exec php-fpm php artisan migrate
-docker compose exec node npm run build
+docker compose exec process-atlas php artisan migrate
+docker compose exec process-atlas npm run build
 ```
 
 See [`makefile`](makefile) for the full list of available commands.
@@ -95,9 +94,9 @@ See [`makefile`](makefile) for the full list of available commands.
 **Frontend quality**
 
 ```shell
-docker compose exec node npm run typecheck
-docker compose exec node npm run lint
-docker compose exec node npm run format:check
+docker compose exec process-atlas npm run typecheck
+docker compose exec process-atlas npm run lint
+docker compose exec process-atlas npm run format:check
 ```
 
 **Production**

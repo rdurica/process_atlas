@@ -1,7 +1,7 @@
 # ENV
 DOCKER_COMP = docker compose
 PHP      = $(PHP_CONT) php
-PHP_CONT = $(DOCKER_COMP) exec --user=robbyte frankenphp
+PHP_CONT = $(DOCKER_COMP) exec --user=robbyte process-atlas
 
 ## Initialize containers
 init:
@@ -47,7 +47,7 @@ phpstan: ## Run PHPStan static analysis
 
 trust-cert: ## Trust Caddy's local CA certificate (Fedora/Debian)
 	@echo "Extracting Caddy root CA certificate..."
-	@$(DOCKER_COMP) exec frankenphp cat /data/caddy/pki/authorities/local/root.crt > /tmp/caddy-root.crt 2>/dev/null || (echo "Error: Failed to extract certificate. Is FrankenPHP running?" && exit 1)
+	@$(DOCKER_COMP) exec process-atlas cat /data/caddy/pki/authorities/local/root.crt > /tmp/caddy-root.crt 2>/dev/null || (echo "Error: Failed to extract certificate. Is FrankenPHP running?" && exit 1)
 	@if command -v update-ca-certificates >/dev/null 2>&1; then \
 		echo "Detected Debian/Ubuntu-based system..."; \
 		sudo cp /tmp/caddy-root.crt /usr/local/share/ca-certificates/caddy-root.crt; \
