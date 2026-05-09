@@ -1,6 +1,5 @@
 services:
-  frankenphp:
-    container_name: frankenphp
+  process-atlas:
     build:
       context: .
       dockerfile: build/dev/Dockerfile
